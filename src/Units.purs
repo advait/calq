@@ -1,4 +1,4 @@
-module Main where
+module Units where
 
 import Prelude
 import Data.Map as Map

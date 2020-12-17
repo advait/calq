@@ -15,6 +15,7 @@ You can edit this file as you like.
   , "quickcheck"
   , "sorted-arrays"
   , "spec"
+  , "spec-discovery"
   , "spec-quickcheck"
   ]
 , packages = ./packages.dhall

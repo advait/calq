@@ -16,34 +16,37 @@ spec = do
     it "Converts m to m with 1.0" do
       (convertBaseUnit (Distance Meters) (Distance Meters)) `shouldEqual` (Just 1.0)
     it "Converts m to feet" do
-      (convertBaseUnit (Distance Meters) (Distance Feet)) `shouldEqual` (Just 3.28084)
+      (convertBaseUnit (Distance Meters) (Distance Feet)) `shouldApproxEqual` (Just 3.28084)
     it "Converts feet to m" do
-      (convertBaseUnit (Distance Feet) (Distance Meters)) `shouldEqual` (Just 0.3047999902464003)
+      (convertBaseUnit (Distance Feet) (Distance Meters)) `shouldApproxEqual` (Just 0.3048)
     it "Fails to convert length to time" do
       (convertBaseUnit (Distance Meters) (Time Seconds)) `shouldEqual` Nothing
   describe "convertCompositeUnit" do
     let
-      scalarCompUnit = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
-    let
-      mps = CompUnit { num: SortedArray.sort [ Distance Meters ], den: SortedArray.sort [ Time Seconds ] }
-    let
-      fph = CompUnit { num: SortedArray.sort [ Distance Feet ], den: SortedArray.sort [ Time Hours ] }
+      scalarCompUnit = compUnit [] []
     it "Converts scalars with 1.0" do
       convertCompUnit scalarCompUnit scalarCompUnit `shouldEqual` (Just 1.0)
+    let
+      mps = compUnit [ Distance Meters ] [ Time Seconds ]
+
+      fph = compUnit [ Distance Feet ] [ Time Hours ]
     it "Converts mps to fph" do
-      convertCompUnit mps fph `shouldApproxEqual` (Just 11811.014551188358)
+      convertCompUnit mps fph `shouldApproxEqual` (Just 11811.01)
     let
-      m2 = CompUnit { num: SortedArray.sort [ Distance Meters, Distance Meters ], den: SortedArray.sort [] }
-    let
-      ft2 = CompUnit { num: SortedArray.sort [ Distance Feet, Distance Feet ], den: SortedArray.sort [] }
+      m2 = compUnit [ Distance Meters, Distance Meters ] []
+
+      ft2 = compUnit [ Distance Feet, Distance Feet ] []
     it "Converts m^2 to f^2" do
       convertCompUnit m2 ft2 `shouldApproxEqual` (Just 10.7639)
     let
-      s2 = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [ Time Seconds, Time Seconds ] }
+      s2 = compUnit [] [ Time Seconds, Time Seconds ]
 
-      hr2 = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [ Time Hours, Time Hours ] }
+      hr2 = compUnit [] [ Time Hours, Time Hours ]
     it "Converts 1/s^2 to 1/hr^2" do
       convertCompUnit s2 hr2 `shouldApproxEqual` (Just 12960000.0)
+    it "Fails to convert incompatible units" do
+      convertCompUnit mps m2 `shouldEqual` Nothing
+      convertCompUnit scalarCompUnit m2 `shouldEqual` Nothing
 
 -- | Succeeds when the quantities are within .001% of each other.
 shouldApproxEqual ::
@@ -60,3 +63,6 @@ shouldApproxEqual (Just v1) (Just v2) =
     <> show v2
 
 shouldApproxEqual v1 v2 = fail $ show v1 <> " ~≠ " <> show v2
+
+compUnit :: Array BaseUnit -> Array BaseUnit -> CompUnit
+compUnit num den = CompUnit { num: SortedArray.sort num, den: SortedArray.sort den }

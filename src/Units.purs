@@ -1,9 +1,12 @@
 module Units where
 
 import Prelude
+import Data.List (List(..))
+import Data.List as List
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.SortedArray (SortedArray)
+import Data.SortedArray as SortedArray
 import Data.Tuple (Tuple(..))
 
 data DistanceUnit
@@ -42,7 +45,7 @@ convertBaseUnit a b =
     ratios :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } Number)
     ratios =
       [ Tuple { from: Distance Meters, to: Distance Feet } 3.28084
-      , Tuple { from: Time Seconds, to: Time Hours } 0.000277778
+      , Tuple { from: Time Hours, to: Time Seconds } 3600.0
       ]
 
     inverses :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } Number)
@@ -64,6 +67,27 @@ newtype CompUnit
   }
 
 derive instance eqCompUnit :: Eq CompUnit
+
+-- | A `CompUnit` with no numerator or denominator indicating a scalar quantity.
+scalarCompUnit :: CompUnit
+scalarCompUnit = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
+
+-- | Given a number with the first unit, return what you need to multiply that number by to
+-- | produce a quantity in the second unit.
+convertCompUnit :: CompUnit -> CompUnit -> Maybe Number
+convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) =
+  let
+    convertList :: List BaseUnit -> List BaseUnit -> Maybe Number
+    convertList Nil Nil = Just 1.0
+
+    convertList (Cons from tail1) (Cons to tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
+
+    convertList _ _ = Nothing
+  in
+    do
+      numeratorRatio <- convertList (List.fromFoldable n1) (List.fromFoldable n2)
+      denominatorRatio <- convertList (List.fromFoldable d1) (List.fromFoldable d2)
+      pure $ numeratorRatio / denominatorRatio
 
 -- | Represents a Dimenseioned value - a number and a corresponding unit.
 newtype DValue

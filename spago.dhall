@@ -10,6 +10,7 @@ You can edit this file as you like.
   , "maybe"
   , "newtype"
   , "ordered-collections"
+  , "parsing"
   , "partial"
   , "psci-support"
   , "quickcheck"

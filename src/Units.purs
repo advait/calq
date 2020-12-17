@@ -17,6 +17,10 @@ derive instance eqDistanceUnit :: Eq DistanceUnit
 
 derive instance ordDistanceUnit :: Ord DistanceUnit
 
+instance showDistanceUnit :: Show DistanceUnit where
+  show Meters = "m"
+  show Feet = "ft"
+
 data TimeUnit
   = Seconds
   | Hours
@@ -24,6 +28,10 @@ data TimeUnit
 derive instance eqTimeUnit :: Eq TimeUnit
 
 derive instance ordTimeUnit :: Ord TimeUnit
+
+instance showTimeUnit :: Show TimeUnit where
+  show Seconds = "s"
+  show Hours = "h"
 
 -- | Represents a simple base unit with one dimension.
 data BaseUnit
@@ -33,6 +41,10 @@ data BaseUnit
 derive instance eqBaseUnit :: Eq BaseUnit
 
 derive instance ordBaseUnit :: Ord BaseUnit
+
+instance showBaseUnit :: Show BaseUnit where
+  show (Distance d) = show d
+  show (Time t) = show t
 
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
@@ -68,6 +80,15 @@ newtype CompUnit
 
 derive instance eqCompUnit :: Eq CompUnit
 
+-- | A `CompUnit` is a `Semigroup` where we simply merge the numerators and merge the denominators.
+instance semigroupCompUnit :: Semigroup CompUnit where
+  append :: CompUnit -> CompUnit -> CompUnit
+  append (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) = CompUnit { num: n1 <> n2, den: d1 <> d2 }
+
+-- | An empty `CompUnit` represents no units (i.e. a scalar quantity).
+instance monoidCompUnit :: Monoid CompUnit where
+  mempty = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
+
 -- | A `CompUnit` with no numerator or denominator indicating a scalar quantity.
 scalarCompUnit :: CompUnit
 scalarCompUnit = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
@@ -88,6 +109,9 @@ convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) 
       numeratorRatio <- convertList (List.fromFoldable n1) (List.fromFoldable n2)
       denominatorRatio <- convertList (List.fromFoldable d1) (List.fromFoldable d2)
       pure $ numeratorRatio / denominatorRatio
+
+instance showCompUnit :: Show CompUnit where
+  show _ = "[CompUnit/TODO]"
 
 -- | Represents a Dimenseioned value - a number and a corresponding unit.
 newtype DValue

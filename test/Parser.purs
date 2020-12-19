@@ -31,10 +31,17 @@ spec = do
       let
         expected = compUnit [ Distance Meters, Distance Feet ] []
       parseTest "m*ft" expected compUnitParser
+      parseTest "(m)*ft" expected compUnitParser
+      parseTest "(m)*(ft)" expected compUnitParser
+      parseTest "((m)*(ft))" expected compUnitParser
     it "parses ft/s*m/hr" do
       let
         expected = compUnit [ Distance Feet, Distance Meters ] [ Time Seconds, Time Hours ]
       parseTest "ft/s*m/hr" expected compUnitParser
+    it "parses powers" do
+      let
+        expected = compUnit [ Distance Meters ] [ Time Seconds, Time Seconds ]
+      parseTest "m/s^2" expected compUnitParser
 
 parseTest ::
   forall a m.

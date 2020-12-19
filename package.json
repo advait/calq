@@ -1,0 +1,12 @@
+{
+  "name": "calq",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:advait/calq.git",
+  "author": "Advait Shinde <advait.shinde@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "bignumber.js": "^9.0.1"
+  }
+}

@@ -3,6 +3,7 @@ module Test.Units where
 import Prelude
 import Units
 import Control.Monad.Error.Class (class MonadThrow)
+import Data.BigNumber (BigNumber)
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
 import Data.SortedArray as SortedArray
@@ -14,36 +15,36 @@ spec :: Spec Unit
 spec = do
   describe "convertBaseUnit" do
     it "Converts m to m with 1.0" do
-      (convertBaseUnit (Distance Meters) (Distance Meters)) `shouldEqual` (Just 1.0)
+      (convertBaseUnit (Distance Meters) (Distance Meters)) `shouldEqual` (Just (bigNum "1.0"))
     it "Converts m to feet" do
-      (convertBaseUnit (Distance Meters) (Distance Feet)) `shouldApproxEqual` (Just 3.28084)
+      (convertBaseUnit (Distance Meters) (Distance Feet)) `shouldApproxEqual` (Just (bigNum "3.28084"))
     it "Converts feet to m" do
-      (convertBaseUnit (Distance Feet) (Distance Meters)) `shouldApproxEqual` (Just 0.3048)
+      (convertBaseUnit (Distance Feet) (Distance Meters)) `shouldApproxEqual` (Just (bigNum "0.3048"))
     it "Fails to convert length to time" do
       (convertBaseUnit (Distance Meters) (Time Seconds)) `shouldEqual` Nothing
   describe "convertCompositeUnit" do
     let
       scalarCompUnit = compUnit [] []
     it "Converts scalars with 1.0" do
-      convertCompUnit scalarCompUnit scalarCompUnit `shouldEqual` (Just 1.0)
+      convertCompUnit scalarCompUnit scalarCompUnit `shouldEqual` (Just (bigNum "1.0"))
     let
       mps = compUnit [ Distance Meters ] [ Time Seconds ]
 
       fph = compUnit [ Distance Feet ] [ Time Hours ]
     it "Converts mps to fph" do
-      convertCompUnit mps fph `shouldApproxEqual` (Just 11811.01)
+      convertCompUnit mps fph `shouldApproxEqual` (Just (bigNum "11811"))
     let
       m2 = compUnit [ Distance Meters, Distance Meters ] []
 
       ft2 = compUnit [ Distance Feet, Distance Feet ] []
     it "Converts m^2 to f^2" do
-      convertCompUnit m2 ft2 `shouldApproxEqual` (Just 10.7639)
+      convertCompUnit m2 ft2 `shouldApproxEqual` (Just (bigNum "10.7639"))
     let
       s2 = compUnit [] [ Time Seconds, Time Seconds ]
 
       hr2 = compUnit [] [ Time Hours, Time Hours ]
     it "Converts 1/s^2 to 1/hr^2" do
-      convertCompUnit s2 hr2 `shouldApproxEqual` (Just 12960000.0)
+      convertCompUnit s2 hr2 `shouldApproxEqual` (Just (bigNum "12960000.0"))
     it "Fails to convert incompatible units" do
       convertCompUnit mps m2 `shouldEqual` Nothing
       convertCompUnit scalarCompUnit m2 `shouldEqual` Nothing
@@ -52,11 +53,11 @@ spec = do
 shouldApproxEqual ::
   forall m.
   MonadThrow Error m =>
-  Maybe Number -> Maybe Number -> m Unit
+  Maybe BigNumber -> Maybe BigNumber -> m Unit
 shouldApproxEqual Nothing Nothing = pure unit
 
 shouldApproxEqual (Just v1) (Just v2) =
-  when (abs (v1 - v2) / v1 > 1e-5)
+  when (abs (v1 - v2) / v2 > (bigNum "1e-5"))
     $ fail
     $ show v1
     <> " ~≠ "

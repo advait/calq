@@ -1,6 +1,10 @@
 module Units where
 
 import Prelude
+import Data.BigNumber (BigNumber)
+import Data.DivisionRing as DivisionRing
+import Data.Generic.Rep (Argument(..), Constructor(..))
+import Data.Generic.Rep as Generic
 import Data.List (List(..))
 import Data.List as List
 import Data.Map as Map
@@ -46,27 +50,33 @@ instance showBaseUnit :: Show BaseUnit where
   show (Distance d) = show d
   show (Time t) = show t
 
+-- | Create a constant `BigNumber` from a `String`
+bigNum :: String -> BigNumber
+bigNum = Generic.to <<< Constructor <<< Argument
+
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
-convertBaseUnit :: BaseUnit -> BaseUnit -> Maybe Number
+convertBaseUnit :: BaseUnit -> BaseUnit -> Maybe BigNumber
 convertBaseUnit a b
-  | a == b = Just 1.0
+  | a == b = Just (bigNum "1.0")
 
 convertBaseUnit a b =
   let
-    ratios :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } Number)
+    ratios :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } BigNumber)
     ratios =
-      [ Tuple { from: Distance Meters, to: Distance Feet } 3.28084
-      , Tuple { from: Time Hours, to: Time Seconds } 3600.0
+      [ Tuple { from: Distance Meters, to: Distance Feet } (bigNum "3.28084")
+      , Tuple { from: Time Hours, to: Time Seconds } (bigNum "3600")
       ]
 
-    inverses :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } Number)
-    inverses = (\(Tuple { from, to } ratio) -> Tuple { from: to, to: from } (1.0 / ratio)) <$> ratios
+    inverses :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } BigNumber)
+    inverses = invert <$> ratios
+      where
+      invert (Tuple { from, to } ratio) = Tuple { from: to, to: from } (DivisionRing.recip ratio)
 
     -- TODO(advait): Support acyclic graphs of conversions without duplicatively representing ratios
     -- Either consider using a search algorithm against this graph or pre-computing all possible
     -- traversals upfront.
-    mappings :: Map.Map { from :: BaseUnit, to :: BaseUnit } Number
+    mappings :: Map.Map { from :: BaseUnit, to :: BaseUnit } BigNumber
     mappings = Map.fromFoldable (ratios <> inverses)
   in
     Map.lookup { from: a, to: b } mappings
@@ -95,11 +105,11 @@ scalarCompUnit = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
 
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
-convertCompUnit :: CompUnit -> CompUnit -> Maybe Number
+convertCompUnit :: CompUnit -> CompUnit -> Maybe BigNumber
 convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) =
   let
-    convertList :: List BaseUnit -> List BaseUnit -> Maybe Number
-    convertList Nil Nil = Just 1.0
+    convertList :: List BaseUnit -> List BaseUnit -> Maybe BigNumber
+    convertList Nil Nil = Just (bigNum "1.0")
 
     convertList (Cons from tail1) (Cons to tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
 

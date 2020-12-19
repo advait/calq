@@ -5,6 +5,7 @@ You can edit this file as you like.
 { name = "calq"
 , dependencies =
   [ "arrays"
+  , "bignumber"
   , "console"
   , "effect"
   , "maybe"

@@ -124,3 +124,13 @@ in  upstream
       , version =
           "v0.2.0"
       }
+  with bignumber =
+      { dependencies =
+          [ "row-extra"
+          , "tuples-native"
+          ]
+      , repo =
+          "https://github.com/athanclark/purescript-bignumber.git"
+      , version =
+          "v1.0.1"
+      }

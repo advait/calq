@@ -152,7 +152,7 @@ convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) 
       pure $ numeratorRatio / denominatorRatio
 
 instance showCompUnit :: Show CompUnit where
-  show _ = "[CompUnit/TODO]"
+  show (CompUnit { num, den }) = show num <> "/" <> show den
 
 -- | Represents a Dimenseioned value - a number and a corresponding unit.
 newtype DValue

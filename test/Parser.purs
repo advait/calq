@@ -10,6 +10,7 @@ import Parser (baseUnitParser, compUnitParser)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Text.Parsing.Parser (Parser, runParser)
+import Text.Parsing.Parser.String (eof)
 
 spec :: Spec Unit
 spec = do
@@ -27,7 +28,12 @@ spec = do
       parseTest "second" (Time Seconds) baseUnitParser
       parseTest "s" (Time Seconds) baseUnitParser
   describe "compUnitParser" do
-    it "parses mt*ft" do
+    it "parses m" do
+      let
+        expected = compUnit [ Distance Meters ] []
+      parseTest "m" expected compUnitParser
+      parseTest "(m)" expected compUnitParser
+    it "parses m*ft" do
       let
         expected = compUnit [ Distance Meters, Distance Feet ] []
       parseTest "m*ft" expected compUnitParser
@@ -42,6 +48,12 @@ spec = do
       let
         expected = compUnit [ Distance Meters ] [ Time Seconds, Time Seconds ]
       parseTest "m/s^2" expected compUnitParser
+      parseTest "(m)/(s)^2" expected compUnitParser
+      let
+        expected' = compUnit [ Distance Meters, Distance Meters ] [ Time Seconds, Time Seconds ]
+      parseTest "(m/s)^2" expected' compUnitParser
+      parseTest "((m)/s)^2" expected' compUnitParser
+      parseTest "((m)/(s))^2" expected' compUnitParser
 
 parseTest ::
   forall a m.
@@ -49,8 +61,7 @@ parseTest ::
   Eq a =>
   MonadThrow Error m =>
   String -> a -> Parser String a -> m Unit
-parseTest input expected p = case runParser input p of
-  -- TODO(advait): Check that the entire input was parsed
+parseTest input expected p = case runParser input (p <* eof) of
   Right actual -> do
     when (expected /= actual) $ fail $ show actual <> " ≠ " <> show expected
   Left err -> fail ("error: " <> show err)

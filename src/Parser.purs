@@ -1,10 +1,8 @@
 module Parser where
 
 import Prelude
-import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Data.Array (many, cons)
-import Data.Foldable (foldl)
+import Control.Alt ((<|>))
 import Data.SortedArray as SortedArray
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (choice)
@@ -30,7 +28,7 @@ baseUnitParser =
     timeParser =
       choice
         [ (choice $ string <$> [ "seconds", "second", "s" ]) *> pure (Time Seconds)
-        , (choice $ string <$> [ "hours", "hour", "h" ]) *> pure (Time Hours)
+        , (choice $ string <$> [ "hours", "hour", "hr", "h" ]) *> pure (Time Hours)
         ]
   in
     choice
@@ -41,49 +39,35 @@ compUnitParser :: Parser String CompUnit
 compUnitParser =
   fix \compUnitParser' ->
     let
-      item :: Parser String (CompUnit -> CompUnit)
+      -- | Attempt to greedily apply powers
+      powOrIdentity :: CompUnit -> Parser String CompUnit
+      powOrIdentity p1 = ((pow p1) <$> (string "^" *> tokenParser.integer)) <|> pure p1
+
+      -- | Either a `BaseUnit` or a `CompUnit` wrapped in parens.
+      item :: Parser String CompUnit
       item =
-        let
-          paren = do
-            _ <- string "("
-            c2 <- compUnitParser'
-            _ <- string ")"
-            pure (\c1 -> c1 `times` c2)
+        choice
+          [ string "(" *> compUnitParser' <* string ")"
+          , (\u -> CompUnit { num: SortedArray.singleton u, den: mempty }) <$> baseUnitParser
+          ]
+          >>= powOrIdentity
 
-          baseItem = do
-            parsedUnit <- baseUnitParser
-            pure (\(CompUnit { num, den }) -> CompUnit { num: SortedArray.insert parsedUnit num, den: den })
-        in
-          choice [ paren, baseItem ]
+      operators :: Parser String (CompUnit -> CompUnit)
+      operators =
+        choice
+          [ (flip times) <$> (string "*" *> item)
+          , (flip div) <$> (string "/" *> item)
+          ]
 
-      timesParser :: Parser String (CompUnit -> CompUnit)
-      timesParser = do
-        _ <- string "*"
-        c2 <- item
-        pure (\c1 -> c1 `times` (c2 mempty))
-
-      divParser :: Parser String (CompUnit -> CompUnit)
-      divParser = do
-        _ <- string "/"
-        c2 <- item
-        pure (\c1 -> c1 `div` (c2 mempty))
-
-      powParser :: Parser String (CompUnit -> CompUnit)
-      powParser = do
-        base <- item
-        _ <- string "^"
-        exp <- tokenParser.integer
-        pure (\c1 -> c1 `times` ((base mempty) `pow` exp))
-
-      tailItems :: Parser String (Array (CompUnit -> CompUnit))
-      tailItems = many (timesParser <|> divParser <|> powParser)
-
-      items :: Parser String (Array (CompUnit -> CompUnit))
-      items = cons <$> item <*> tailItems
-
-      mergeCompUnits :: CompUnit -> (CompUnit -> CompUnit) -> CompUnit
-      mergeCompUnits c f = f c
+      -- | Attempt to repeatedly apply operators left to right
+      chainOperators :: CompUnit -> Parser String CompUnit
+      chainOperators acc =
+        ( do
+            op <- operators
+            chainOperators (op acc)
+        )
+          <|> pure acc -- If we can't apply additional operators, fall back to acc
     in
       do
-        parsedItems <- items
-        pure $ foldl mergeCompUnits mempty parsedItems
+        start <- item <|> pure mempty
+        chainOperators start

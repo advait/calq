@@ -3,6 +3,7 @@ module Units where
 import Prelude
 import Data.BigNumber (BigNumber)
 import Data.DivisionRing as DivisionRing
+import Data.Foldable (class Foldable)
 import Data.Generic.Rep (Argument(..), Constructor(..))
 import Data.Generic.Rep as Generic
 import Data.List (List(..))
@@ -103,6 +104,36 @@ instance monoidCompUnit :: Monoid CompUnit where
 scalarCompUnit :: CompUnit
 scalarCompUnit = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
 
+-- | Multiplies the given `CompUnit`s together.
+times :: CompUnit -> CompUnit -> CompUnit
+times (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) = CompUnit { num: n1 <> n2, den: d1 <> d2 }
+
+-- | Divides the first `CompUnit` by the second.
+div :: CompUnit -> CompUnit -> CompUnit
+div c1 c2 = c1 `times` (inverse c2)
+
+-- | Returns the `CompUnit` to the nth power.
+pow :: CompUnit -> Int -> CompUnit
+pow c1 n =
+  let
+    repeat :: forall f a. Foldable f => Monoid (f a) => Int -> f a -> f a
+    repeat n' item = rec n' mempty
+      where
+      rec 0 acc = acc
+
+      rec n'' acc = rec (n'' - 1) (acc <> item)
+
+    repeatCompUnit (CompUnit { num, den }) = CompUnit { num: repeat n num, den: repeat n den }
+  in
+    if n >= 0 then
+      repeatCompUnit c1
+    else
+      repeatCompUnit (inverse c1)
+
+-- | Returns the multiplicative inverse of the given unit (num and den flipped).
+inverse :: CompUnit -> CompUnit
+inverse (CompUnit { num, den }) = CompUnit { num: den, den: num }
+
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
 convertCompUnit :: CompUnit -> CompUnit -> Maybe BigNumber
@@ -121,7 +152,7 @@ convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) 
       pure $ numeratorRatio / denominatorRatio
 
 instance showCompUnit :: Show CompUnit where
-  show _ = "[CompUnit/TODO]"
+  show (CompUnit { num, den }) = show num <> "/" <> show den
 
 -- | Represents a Dimenseioned value - a number and a corresponding unit.
 newtype DValue

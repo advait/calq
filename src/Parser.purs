@@ -1,16 +1,15 @@
 module Parser where
 
 import Prelude
+import Control.Lazy (fix)
 import Control.Alt ((<|>))
-import Data.Array (many, cons)
-import Data.Foldable (foldl)
 import Data.SortedArray as SortedArray
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (choice)
 import Text.Parsing.Parser.Language (haskellDef)
 import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.Token as Token
-import Units (BaseUnit(..), DistanceUnit(..), TimeUnit(..), CompUnit(..))
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), div, pow, times)
 
 tokenParser :: Token.TokenParser
 tokenParser = Token.makeTokenParser haskellDef
@@ -29,7 +28,7 @@ baseUnitParser =
     timeParser =
       choice
         [ (choice $ string <$> [ "seconds", "second", "s" ]) *> pure (Time Seconds)
-        , (choice $ string <$> [ "hours", "hour", "h" ]) *> pure (Time Hours)
+        , (choice $ string <$> [ "hours", "hour", "hr", "h" ]) *> pure (Time Hours)
         ]
   in
     choice
@@ -38,33 +37,37 @@ baseUnitParser =
 
 compUnitParser :: Parser String CompUnit
 compUnitParser =
-  let
-    start :: Parser String (CompUnit -> CompUnit)
-    start = do
-      parsedUnit <- baseUnitParser
-      pure (\(CompUnit { num, den }) -> CompUnit { num: SortedArray.insert parsedUnit num, den: den })
+  fix \compUnitParser' ->
+    let
+      -- | Attempt to greedily apply powers
+      powOrIdentity :: CompUnit -> Parser String CompUnit
+      powOrIdentity p1 = ((pow p1) <$> (string "^" *> tokenParser.integer)) <|> pure p1
 
-    timesParser :: Parser String (CompUnit -> CompUnit)
-    timesParser = do
-      _ <- string "*"
-      parsedUnit <- baseUnitParser
-      pure (\(CompUnit { num, den }) -> CompUnit { num: SortedArray.insert parsedUnit num, den: den })
+      -- | Either a `BaseUnit` or a `CompUnit` wrapped in parens.
+      item :: Parser String CompUnit
+      item =
+        choice
+          [ string "(" *> compUnitParser' <* string ")"
+          , (\u -> CompUnit { num: SortedArray.singleton u, den: mempty }) <$> baseUnitParser
+          ]
+          >>= powOrIdentity
 
-    divParser :: Parser String (CompUnit -> CompUnit)
-    divParser = do
-      _ <- string "/"
-      parsedUnit <- baseUnitParser
-      pure (\(CompUnit { num, den }) -> CompUnit { num: num, den: SortedArray.insert parsedUnit den })
+      operators :: Parser String (CompUnit -> CompUnit)
+      operators =
+        choice
+          [ (flip times) <$> (string "*" *> item)
+          , (flip div) <$> (string "/" *> item)
+          ]
 
-    tailItems :: Parser String (Array (CompUnit -> CompUnit))
-    tailItems = many (timesParser <|> divParser)
-
-    items :: Parser String (Array (CompUnit -> CompUnit))
-    items = cons <$> start <*> tailItems
-
-    mergeCompUnits :: CompUnit -> (CompUnit -> CompUnit) -> CompUnit
-    mergeCompUnits c f = f c
-  in
-    do
-      parsedItems <- items
-      pure $ foldl mergeCompUnits mempty parsedItems
+      -- | Attempt to repeatedly apply operators left to right
+      chainOperators :: CompUnit -> Parser String CompUnit
+      chainOperators acc =
+        ( do
+            op <- operators
+            chainOperators (op acc)
+        )
+          <|> pure acc -- If we can't apply additional operators, fall back to acc
+    in
+      do
+        start <- item <|> pure mempty
+        chainOperators start

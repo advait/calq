@@ -1,7 +1,6 @@
 module Test.Parser where
 
 import Prelude
-import Units
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.Either (Either(..))
 import Data.SortedArray as SortedArray
@@ -11,6 +10,7 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (eof)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..))
 
 spec :: Spec Unit
 spec = do

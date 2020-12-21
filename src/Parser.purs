@@ -1,8 +1,8 @@
 module Parser where
 
 import Prelude
-import Control.Lazy (fix)
 import Control.Alt ((<|>))
+import Control.Lazy (fix)
 import Data.SortedArray as SortedArray
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (choice)
@@ -21,6 +21,7 @@ baseUnitParser =
     distanceParser =
       choice
         [ (choice $ string <$> [ "meters", "meter", "m" ]) *> pure (Distance Meters)
+        , (choice $ string <$> [ "kilometers", "kilometer", "km" ]) *> pure (Distance Kilometers)
         , (choice $ string <$> [ "ft", "feet", "foot" ]) *> pure (Distance Feet)
         ]
 

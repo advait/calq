@@ -22,6 +22,8 @@ spec = do
       (convertBaseUnit (Distance Feet) (Distance Meters)) `shouldApproxEqual` (Just (bigNum "0.3048"))
     it "Fails to convert length to time" do
       (convertBaseUnit (Distance Meters) (Time Seconds)) `shouldEqual` Nothing
+    it "Converts km to ft (bfs)" do
+      (convertBaseUnit (Distance Kilometers) (Distance Feet)) `shouldApproxEqual` (Just (bigNum "3280.84"))
   describe "convertCompositeUnit" do
     let
       scalarCompUnit = compUnit [] []

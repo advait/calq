@@ -1,21 +1,27 @@
 module Units where
 
 import Prelude
+import Control.Alt ((<|>))
+import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.DivisionRing as DivisionRing
 import Data.Foldable (class Foldable)
 import Data.Generic.Rep (Argument(..), Constructor(..))
 import Data.Generic.Rep as Generic
+import Data.Lazy (Lazy)
+import Data.Lazy as Lazy
 import Data.List (List(..))
 import Data.List as List
-import Data.Map as Map
 import Data.Maybe (Maybe(..))
+import Data.Set (Set)
+import Data.Set as Set
 import Data.SortedArray (SortedArray)
 import Data.SortedArray as SortedArray
 import Data.Tuple (Tuple(..))
 
 data DistanceUnit
   = Meters
+  | Kilometers
   | Feet
 
 derive instance eqDistanceUnit :: Eq DistanceUnit
@@ -24,6 +30,7 @@ derive instance ordDistanceUnit :: Ord DistanceUnit
 
 instance showDistanceUnit :: Show DistanceUnit where
   show Meters = "m"
+  show Kilometers = "km"
   show Feet = "ft"
 
 data TimeUnit
@@ -63,24 +70,37 @@ convertBaseUnit a b
 
 convertBaseUnit a b =
   let
-    ratios :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } BigNumber)
+    ratios :: Array { from :: BaseUnit, to :: BaseUnit, ratio :: BigNumber }
     ratios =
-      [ Tuple { from: Distance Meters, to: Distance Feet } (bigNum "3.28084")
-      , Tuple { from: Time Hours, to: Time Seconds } (bigNum "3600")
+      [ { from: Distance Meters, to: Distance Feet, ratio: bigNum "3.28084" }
+      , { from: Distance Kilometers, to: Distance Meters, ratio: bigNum "1000" }
+      , { from: Time Hours, to: Time Seconds, ratio: bigNum "3600" }
       ]
 
-    inverses :: Array (Tuple { from :: BaseUnit, to :: BaseUnit } BigNumber)
-    inverses = invert <$> ratios
-      where
-      invert (Tuple { from, to } ratio) = Tuple { from: to, to: from } (DivisionRing.recip ratio)
+    first :: forall a. Array (Lazy (Maybe a)) -> Maybe a
+    first a' = do
+      { head, tail } <- Array.uncons a'
+      Lazy.force head <|> first tail
 
-    -- TODO(advait): Support acyclic graphs of conversions without duplicatively representing ratios
-    -- Either consider using a search algorithm against this graph or pre-computing all possible
-    -- traversals upfront.
-    mappings :: Map.Map { from :: BaseUnit, to :: BaseUnit } BigNumber
-    mappings = Map.fromFoldable (ratios <> inverses)
+    bfs :: BaseUnit -> BigNumber -> Set BaseUnit -> Maybe BigNumber
+    bfs cur acc visited
+      | cur == b = Just acc
+
+    bfs cur acc visited =
+      let
+        neighbors :: Array (Tuple BaseUnit BigNumber)
+        neighbors =
+          []
+            <> ((\i -> Tuple i.to i.ratio) <$> Array.filter (\{ from, to, ratio } -> from == cur) ratios)
+            <> ((\i -> Tuple i.from (DivisionRing.recip i.ratio)) <$> Array.filter (\{ from, to, ratio } -> to == cur) ratios)
+
+        unvisitedNeighbors = Array.filter (\(Tuple neighbor ratio) -> not (Set.member neighbor visited)) neighbors
+
+        visited' = Set.insert cur visited
+      in
+        first $ Lazy.defer <$> (\(Tuple to ratio) _ -> bfs to (acc * ratio) visited') <$> unvisitedNeighbors
   in
-    Map.lookup { from: a, to: b } mappings
+    bfs a (bigNum "1.0") (Set.empty)
 
 -- | Represents a complex unit composed of product/quotient of multiple `BaseUnit`s.
 newtype CompUnit

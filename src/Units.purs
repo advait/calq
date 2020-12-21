@@ -21,8 +21,18 @@ import Data.Tuple (Tuple(..))
 
 data DistanceUnit
   = Meters
+  | Centimeters
+  | Millimeters
+  | Micrometers
+  | Nanometers
   | Kilometers
   | Feet
+  | Inches
+  | Yards
+  | Miles
+  | Lightyears
+  | AstronomicalUnits
+  | Parsecs
 
 derive instance eqDistanceUnit :: Eq DistanceUnit
 
@@ -30,12 +40,27 @@ derive instance ordDistanceUnit :: Ord DistanceUnit
 
 instance showDistanceUnit :: Show DistanceUnit where
   show Meters = "m"
+  -- TODO(advait): Consider represinting SI prefixes separately from the underlying unit
+  show Centimeters = "cm"
+  show Millimeters = "mm"
+  show Micrometers = "μm"
+  show Nanometers = "nm"
   show Kilometers = "km"
   show Feet = "ft"
+  show Inches = "in"
+  show Yards = "yd"
+  show Miles = "mi"
+  show Lightyears = "lightyear"
+  show AstronomicalUnits = "au"
+  show Parsecs = "parsecs"
 
 data TimeUnit
   = Seconds
+  | Minutes
   | Hours
+  | Days
+  | Months
+  | Years
 
 derive instance eqTimeUnit :: Eq TimeUnit
 
@@ -43,7 +68,11 @@ derive instance ordTimeUnit :: Ord TimeUnit
 
 instance showTimeUnit :: Show TimeUnit where
   show Seconds = "s"
-  show Hours = "h"
+  show Minutes = "min"
+  show Hours = "hr"
+  show Days = "day"
+  show Months = "months"
+  show Years = "year"
 
 -- | Represents a simple base unit with one dimension.
 data BaseUnit
@@ -62,6 +91,27 @@ instance showBaseUnit :: Show BaseUnit where
 bigNum :: String -> BigNumber
 bigNum = Generic.to <<< Constructor <<< Argument
 
+-- | Definitional ratios between units. We use BFS to search this graph to determine arbitrary conversions.
+ratios :: Array { from :: BaseUnit, to :: BaseUnit, ratio :: BigNumber }
+ratios =
+  [ { from: Distance Meters, to: Distance Centimeters, ratio: bigNum "100" }
+  , { from: Distance Meters, to: Distance Millimeters, ratio: bigNum "1000" }
+  , { from: Distance Meters, to: Distance Micrometers, ratio: bigNum "1e6" }
+  , { from: Distance Meters, to: Distance Nanometers, ratio: bigNum "1e9" }
+  , { from: Distance Kilometers, to: Distance Meters, ratio: bigNum "1000" }
+  , { from: Distance Meters, to: Distance Feet, ratio: bigNum "3.28084" }
+  , { from: Distance Feet, to: Distance Inches, ratio: bigNum "12" }
+  , { from: Distance Yards, to: Distance Feet, ratio: bigNum "3" }
+  , { from: Distance Miles, to: Distance Feet, ratio: bigNum "5280" }
+  , { from: Distance Lightyears, to: Distance Meters, ratio: bigNum "9460730472580800" }
+  , { from: Distance AstronomicalUnits, to: Distance Meters, ratio: bigNum "149597870700" }
+  , { from: Distance Parsecs, to: Distance Lightyears, ratio: bigNum "3.261563777" }
+  , { from: Time Minutes, to: Time Seconds, ratio: bigNum "60" }
+  , { from: Time Hours, to: Time Minutes, ratio: bigNum "60" }
+  , { from: Time Years, to: Time Hours, ratio: bigNum "365" }
+  , { from: Time Months, to: Time Days, ratio: bigNum "30" }
+  ]
+
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
 convertBaseUnit :: BaseUnit -> BaseUnit -> Maybe BigNumber
@@ -70,13 +120,6 @@ convertBaseUnit a b
 
 convertBaseUnit a b =
   let
-    ratios :: Array { from :: BaseUnit, to :: BaseUnit, ratio :: BigNumber }
-    ratios =
-      [ { from: Distance Meters, to: Distance Feet, ratio: bigNum "3.28084" }
-      , { from: Distance Kilometers, to: Distance Meters, ratio: bigNum "1000" }
-      , { from: Time Hours, to: Time Seconds, ratio: bigNum "3600" }
-      ]
-
     first :: forall a. Array (Lazy (Maybe a)) -> Maybe a
     first a' = do
       { head, tail } <- Array.uncons a'

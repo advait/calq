@@ -24,6 +24,8 @@ spec = do
       (convertBaseUnit (Distance Meters) (Time Seconds)) `shouldEqual` Nothing
     it "Converts km to ft (bfs)" do
       (convertBaseUnit (Distance Kilometers) (Distance Feet)) `shouldApproxEqual` (Just (bigNum "3280.84"))
+    it "Converts tons to nanograms (bfs)" do
+      (convertBaseUnit (Mass Tons) (Mass Nanograms)) `shouldApproxEqual` (Just (bigNum "907184740000000"))
   describe "convertCompositeUnit" do
     let
       scalarCompUnit = compUnit [] []

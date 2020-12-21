@@ -10,7 +10,7 @@ import Text.Parsing.Parser.Combinators (choice)
 import Text.Parsing.Parser.Language (haskellDef)
 import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.Token as Token
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), div, pow, times)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), MassUnit(..), div, pow, times)
 
 tokenParser :: Token.TokenParser
 tokenParser = Token.makeTokenParser haskellDef
@@ -45,10 +45,21 @@ baseUnitParser =
         , (choice $ string <$> [ "months", "month" ]) *> pure (Time Months)
         , (choice $ string <$> [ "years", "year" ]) *> pure (Time Years)
         ]
+
+    massParser :: Parser String BaseUnit
+    massParser =
+      choice
+        [ (choice $ string <$> [ "grams", "gram", "g" ]) *> pure (Mass Grams)
+        , (choice $ string <$> [ "milligrams", "milligram", "mg" ]) *> pure (Mass Milligrams)
+        , (choice $ string <$> [ "micrograms", "microgram", "μg", "ug" ]) *> pure (Mass Micrograms)
+        , (choice $ string <$> [ "nanograms", "nanogram", "ng" ]) *> pure (Mass Nanograms)
+        , (choice $ string <$> [ "kilograms", "kilogram", "kg" ]) *> pure (Mass Kilograms)
+        , (choice $ string <$> [ "pounds", "pound", "lbs", "lb" ]) *> pure (Mass Pounds)
+        , (choice $ string <$> [ "tons", "ton" ]) *> pure (Mass Tons)
+        , (choice $ string <$> [ "ounces", "ounce", "oz" ]) *> pure (Mass Ounces)
+        ]
   in
-    choice
-      [ distanceParser, timeParser
-      ]
+    choice [ distanceParser, timeParser, massParser ]
 
 compUnitParser :: Parser String CompUnit
 compUnitParser =

@@ -19,6 +19,21 @@ import Data.SortedArray (SortedArray)
 import Data.SortedArray as SortedArray
 import Data.Tuple (Tuple(..))
 
+-- | Represents a simple base unit with one dimension.
+data BaseUnit
+  = Distance DistanceUnit
+  | Time TimeUnit
+  | Mass MassUnit
+
+derive instance eqBaseUnit :: Eq BaseUnit
+
+derive instance ordBaseUnit :: Ord BaseUnit
+
+instance showBaseUnit :: Show BaseUnit where
+  show (Distance d) = show d
+  show (Time t) = show t
+  show (Mass m) = show m
+
 data DistanceUnit
   = Meters
   | Centimeters
@@ -74,18 +89,30 @@ instance showTimeUnit :: Show TimeUnit where
   show Months = "months"
   show Years = "year"
 
--- | Represents a simple base unit with one dimension.
-data BaseUnit
-  = Distance DistanceUnit
-  | Time TimeUnit
+data MassUnit
+  = Grams
+  -- TODO(advait): Consider represinting SI prefixes separately from the underlying unit
+  | Milligrams
+  | Micrograms
+  | Nanograms
+  | Kilograms
+  | Pounds
+  | Tons
+  | Ounces
 
-derive instance eqBaseUnit :: Eq BaseUnit
+derive instance eqMassUnit :: Eq MassUnit
 
-derive instance ordBaseUnit :: Ord BaseUnit
+derive instance ordMassUnit :: Ord MassUnit
 
-instance showBaseUnit :: Show BaseUnit where
-  show (Distance d) = show d
-  show (Time t) = show t
+instance showMassUnit :: Show MassUnit where
+  show Grams = "g"
+  show Milligrams = "mg"
+  show Micrograms = "μg"
+  show Nanograms = "ng"
+  show Kilograms = "kg"
+  show Pounds = "lb"
+  show Tons = "tons"
+  show Ounces = "oz"
 
 -- | Create a constant `BigNumber` from a `String`
 bigNum :: String -> BigNumber
@@ -110,6 +137,13 @@ ratios =
   , { from: Time Hours, to: Time Minutes, ratio: bigNum "60" }
   , { from: Time Years, to: Time Hours, ratio: bigNum "365" }
   , { from: Time Months, to: Time Days, ratio: bigNum "30" }
+  , { from: Mass Grams, to: Mass Milligrams, ratio: bigNum "1000" }
+  , { from: Mass Grams, to: Mass Micrograms, ratio: bigNum "1e6" }
+  , { from: Mass Grams, to: Mass Nanograms, ratio: bigNum "1e9" }
+  , { from: Mass Kilograms, to: Mass Grams, ratio: bigNum "1000" }
+  , { from: Mass Pounds, to: Mass Kilograms, ratio: bigNum "0.45359237" }
+  , { from: Mass Tons, to: Mass Pounds, ratio: bigNum "2000" }
+  , { from: Mass Pounds, to: Mass Ounces, ratio: bigNum "16" }
   ]
 
 -- | Given a number with the first unit, return what you need to multiply that number by to

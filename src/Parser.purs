@@ -4,6 +4,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Data.SortedArray as SortedArray
+import Data.String.CodeUnits as String
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (choice)
 import Text.Parsing.Parser.Language (haskellDef)
@@ -21,15 +22,28 @@ baseUnitParser =
     distanceParser =
       choice
         [ (choice $ string <$> [ "meters", "meter", "m" ]) *> pure (Distance Meters)
+        , (choice $ string <$> [ "centimeters", "centimeter", "cm" ]) *> pure (Distance Centimeters)
+        , (choice $ string <$> [ "millimeters", "millimeter", "mm" ]) *> pure (Distance Millimeters)
+        , (choice $ string <$> [ "micrometers", "micrometer", "μm", "um" ]) *> pure (Distance Micrometers)
+        , (choice $ string <$> [ "nanometers", "nanometer", "nm" ]) *> pure (Distance Nanometers)
         , (choice $ string <$> [ "kilometers", "kilometer", "km" ]) *> pure (Distance Kilometers)
-        , (choice $ string <$> [ "ft", "feet", "foot" ]) *> pure (Distance Feet)
+        , (choice $ string <$> [ "feet", "foot", "ft", "'" ]) *> pure (Distance Feet)
+        , (choice $ string <$> [ "inches", "inch", "in", String.fromCharArray [ '"' ] ]) *> pure (Distance Inches)
+        , (choice $ string <$> [ "yards", "yard", "yd" ]) *> pure (Distance Yards)
+        , (choice $ string <$> [ "miles", "mile", "mi" ]) *> pure (Distance Miles)
+        , (choice $ string <$> [ "lightyears", "lightyear" ]) *> pure (Distance Lightyears)
+        , (choice $ string <$> [ "parsecs", "parsec" ]) *> pure (Distance Parsecs)
         ]
 
     timeParser :: Parser String BaseUnit
     timeParser =
       choice
         [ (choice $ string <$> [ "seconds", "second", "s" ]) *> pure (Time Seconds)
+        , (choice $ string <$> [ "minutes", "minute", "min" ]) *> pure (Time Minutes)
         , (choice $ string <$> [ "hours", "hour", "hr", "h" ]) *> pure (Time Hours)
+        , (choice $ string <$> [ "days", "day" ]) *> pure (Time Days)
+        , (choice $ string <$> [ "months", "month" ]) *> pure (Time Months)
+        , (choice $ string <$> [ "years", "year" ]) *> pure (Time Years)
         ]
   in
     choice

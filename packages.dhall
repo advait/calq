@@ -120,9 +120,11 @@ in  upstream
           , "partial"
           ]
       , repo =
-          "https://github.com/vladciobanu/purescript-sorted-arrays.git"
+          "https://github.com/advait/purescript-sorted-arrays.git"
       , version =
-          "v0.2.0"
+          -- Use custom version until changes get merged upstream
+          -- https://github.com/vladciobanu/purescript-sorted-arrays/pull/2
+          "cfc532deedafa8b594f6edf715bdaf63417dbada"
       }
   with bignumber =
       { dependencies =

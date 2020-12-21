@@ -1,7 +1,6 @@
 module Test.Units where
 
 import Prelude
-import Units
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.BigNumber (BigNumber)
 import Data.Maybe (Maybe(..))
@@ -10,6 +9,7 @@ import Data.SortedArray as SortedArray
 import Effect.Exception (Error)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), bigNum, convertBaseUnit, convertCompUnit)
 
 spec :: Spec Unit
 spec = do

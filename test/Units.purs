@@ -3,7 +3,7 @@ module Test.Units where
 import Prelude
 import Control.Monad.Error.Class (class MonadThrow)
 import Data.BigNumber (BigNumber)
-import Data.Maybe (Maybe(..))
+import Data.Either (Either(..))
 import Data.Ord (abs)
 import Data.SortedArray as SortedArray
 import Effect.Exception (Error)
@@ -15,52 +15,52 @@ spec :: Spec Unit
 spec = do
   describe "convertBaseUnit" do
     it "Converts m to m with 1.0" do
-      (convertBaseUnit (Distance Meters) (Distance Meters)) `shouldEqual` (Just (bigNum "1.0"))
+      convertBaseUnit (Distance Meters) (Distance Meters) `shouldApproxEqual` (Right $ bigNum "1.0")
     it "Converts m to feet" do
-      (convertBaseUnit (Distance Meters) (Distance Feet)) `shouldApproxEqual` (Just (bigNum "3.28084"))
+      convertBaseUnit (Distance Meters) (Distance Feet) `shouldApproxEqual` (Right $ bigNum "3.28084")
     it "Converts feet to m" do
-      (convertBaseUnit (Distance Feet) (Distance Meters)) `shouldApproxEqual` (Just (bigNum "0.3048"))
+      convertBaseUnit (Distance Feet) (Distance Meters) `shouldApproxEqual` (Right $ bigNum "0.3048")
     it "Fails to convert length to time" do
-      (convertBaseUnit (Distance Meters) (Time Seconds)) `shouldEqual` Nothing
+      convertBaseUnit (Distance Meters) (Time Seconds) `shouldApproxEqual` Left ""
     it "Converts km to ft (bfs)" do
-      (convertBaseUnit (Distance Kilometers) (Distance Feet)) `shouldApproxEqual` (Just (bigNum "3280.84"))
+      convertBaseUnit (Distance Kilometers) (Distance Feet) `shouldApproxEqual` (Right $ bigNum "3280.84")
     it "Converts tons to nanograms (bfs)" do
-      (convertBaseUnit (Mass Tons) (Mass Nanograms)) `shouldApproxEqual` (Just (bigNum "907184740000000"))
+      convertBaseUnit (Mass Tons) (Mass Nanograms) `shouldApproxEqual` (Right $ bigNum "907184740000000")
   describe "convertCompositeUnit" do
     let
       scalarCompUnit = compUnit [] []
     it "Converts scalars with 1.0" do
-      convertCompUnit scalarCompUnit scalarCompUnit `shouldEqual` (Just (bigNum "1.0"))
+      convertCompUnit scalarCompUnit scalarCompUnit `shouldEqual` (Right $ bigNum "1.0")
     let
       mps = compUnit [ Distance Meters ] [ Time Seconds ]
 
       fph = compUnit [ Distance Feet ] [ Time Hours ]
     it "Converts mps to fph" do
-      convertCompUnit mps fph `shouldApproxEqual` (Just (bigNum "11811"))
+      convertCompUnit mps fph `shouldApproxEqual` (Right $ bigNum "11811")
     let
       m2 = compUnit [ Distance Meters, Distance Meters ] []
 
       ft2 = compUnit [ Distance Feet, Distance Feet ] []
     it "Converts m^2 to f^2" do
-      convertCompUnit m2 ft2 `shouldApproxEqual` (Just (bigNum "10.7639"))
+      convertCompUnit m2 ft2 `shouldApproxEqual` (Right $ bigNum "10.7639")
     let
       s2 = compUnit [] [ Time Seconds, Time Seconds ]
 
       hr2 = compUnit [] [ Time Hours, Time Hours ]
     it "Converts 1/s^2 to 1/hr^2" do
-      convertCompUnit s2 hr2 `shouldApproxEqual` (Just (bigNum "12960000.0"))
+      convertCompUnit s2 hr2 `shouldApproxEqual` (Right $ bigNum "12960000.0")
     it "Fails to convert incompatible units" do
-      convertCompUnit mps m2 `shouldEqual` Nothing
-      convertCompUnit scalarCompUnit m2 `shouldEqual` Nothing
+      convertCompUnit mps m2 `shouldApproxEqual` (Left "")
+      convertCompUnit scalarCompUnit m2 `shouldApproxEqual` (Left "")
 
 -- | Succeeds when the quantities are within .001% of each other.
 shouldApproxEqual ::
   forall m.
   MonadThrow Error m =>
-  Maybe BigNumber -> Maybe BigNumber -> m Unit
-shouldApproxEqual Nothing Nothing = pure unit
+  Either String BigNumber -> Either String BigNumber -> m Unit
+shouldApproxEqual (Left _) (Left _) = pure unit
 
-shouldApproxEqual (Just v1) (Just v2) =
+shouldApproxEqual (Right v1) (Right v2) =
   when (abs (v1 - v2) / v2 > (bigNum "1e-5"))
     $ fail
     $ show v1

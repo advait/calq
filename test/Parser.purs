@@ -33,6 +33,8 @@ spec = do
         expected = compUnit [ Distance Meters ] []
       parseTest "m" expected compUnitParser
       parseTest "(m)" expected compUnitParser
+      parseTest "m^1" expected compUnitParser
+      parseTest "(m)^1" expected compUnitParser
     it "parses m*ft" do
       let
         expected = compUnit [ Distance Meters, Distance Feet ] []
@@ -50,10 +52,14 @@ spec = do
       parseTest "m/s^2" expected compUnitParser
       parseTest "(m)/(s)^2" expected compUnitParser
       let
-        expected' = compUnit [ Distance Meters, Distance Meters ] [ Time Seconds, Time Seconds ]
-      parseTest "(m/s)^2" expected' compUnitParser
-      parseTest "((m)/s)^2" expected' compUnitParser
-      parseTest "((m)/(s))^2" expected' compUnitParser
+        expected' = compUnit [ Distance Meters, Distance Meters ] []
+      parseTest "m^2" expected' compUnitParser
+      parseTest "m*m" expected' compUnitParser
+      let
+        expected'' = compUnit [ Distance Meters, Distance Meters ] [ Time Seconds, Time Seconds ]
+      parseTest "(m/s)^2" expected'' compUnitParser
+      parseTest "((m)/s)^2" expected'' compUnitParser
+      parseTest "((m)/(s))^2" expected'' compUnitParser
 
 parseTest ::
   forall a m.
@@ -62,9 +68,9 @@ parseTest ::
   MonadThrow Error m =>
   String -> a -> Parser String a -> m Unit
 parseTest input expected p = case runParser input (p <* eof) of
+  Left err -> fail ("error: " <> show err)
   Right actual -> do
     when (expected /= actual) $ fail $ show actual <> " ≠ " <> show expected
-  Left err -> fail ("error: " <> show err)
 
 compUnit :: Array BaseUnit -> Array BaseUnit -> CompUnit
 compUnit num den = CompUnit { num: SortedArray.sort num, den: SortedArray.sort den }

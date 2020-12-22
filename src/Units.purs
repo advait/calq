@@ -5,6 +5,7 @@ import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.DivisionRing as DivisionRing
+import Data.Either (Either(..), note)
 import Data.Foldable (class Foldable)
 import Data.Generic.Rep (Argument(..), Constructor(..))
 import Data.Generic.Rep as Generic
@@ -135,8 +136,9 @@ ratios =
   , { from: Distance Parsecs, to: Distance Lightyears, ratio: bigNum "3.261563777" }
   , { from: Time Minutes, to: Time Seconds, ratio: bigNum "60" }
   , { from: Time Hours, to: Time Minutes, ratio: bigNum "60" }
-  , { from: Time Years, to: Time Hours, ratio: bigNum "365" }
+  , { from: Time Days, to: Time Hours, ratio: bigNum "24" }
   , { from: Time Months, to: Time Days, ratio: bigNum "30" }
+  , { from: Time Years, to: Time Days, ratio: bigNum "365" }
   , { from: Mass Grams, to: Mass Milligrams, ratio: bigNum "1000" }
   , { from: Mass Grams, to: Mass Micrograms, ratio: bigNum "1e6" }
   , { from: Mass Grams, to: Mass Nanograms, ratio: bigNum "1e9" }
@@ -148,9 +150,9 @@ ratios =
 
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
-convertBaseUnit :: BaseUnit -> BaseUnit -> Maybe BigNumber
+convertBaseUnit :: BaseUnit -> BaseUnit -> Either String BigNumber
 convertBaseUnit a b
-  | a == b = Just (bigNum "1.0")
+  | a == b = Right $ bigNum "1.0"
 
 convertBaseUnit a b =
   let
@@ -177,7 +179,7 @@ convertBaseUnit a b =
       in
         first $ Lazy.defer <$> (\(Tuple to ratio) _ -> bfs to (acc * ratio) visited') <$> unvisitedNeighbors
   in
-    bfs a (bigNum "1.0") (Set.empty)
+    (note $ "Cannot convert " <> show a <> " to " <> show b) $ bfs a (bigNum "1.0") (Set.empty)
 
 -- | Represents a complex unit composed of product/quotient of multiple `BaseUnit`s.
 newtype CompUnit
@@ -233,15 +235,15 @@ inverse (CompUnit { num, den }) = CompUnit { num: den, den: num }
 
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
-convertCompUnit :: CompUnit -> CompUnit -> Maybe BigNumber
-convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) =
+convertCompUnit :: CompUnit -> CompUnit -> Either String BigNumber
+convertCompUnit c1@(CompUnit { num: n1, den: d1 }) c2@(CompUnit { num: n2, den: d2 }) =
   let
-    convertList :: List BaseUnit -> List BaseUnit -> Maybe BigNumber
-    convertList Nil Nil = Just (bigNum "1.0")
+    convertList :: List BaseUnit -> List BaseUnit -> Either String BigNumber
+    convertList Nil Nil = Right $ bigNum "1.0"
 
     convertList (Cons from tail1) (Cons to tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
 
-    convertList _ _ = Nothing
+    convertList _ _ = Left $ "Cannot convert " <> show c1 <> " to " <> show c2
   in
     do
       numeratorRatio <- convertList (List.fromFoldable n1) (List.fromFoldable n2)
@@ -250,7 +252,3 @@ convertCompUnit (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) 
 
 instance showCompUnit :: Show CompUnit where
   show (CompUnit { num, den }) = show num <> "/" <> show den
-
--- | Represents a Dimenseioned value - a number and a corresponding unit.
-newtype DValue
-  = DValue { scalar :: Number, unit :: CompUnit }

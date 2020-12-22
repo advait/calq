@@ -16,7 +16,7 @@ import Units (bigNum)
 
 spec :: Spec Unit
 spec = do
-  describe "interpreter" do
+  describe "full form constant values" do
     interpreterTest "1 m in m" "1 m"
     interpreterTest "1 m in ft" "3.28084 ft"
     interpreterTest "4.0 m*m in ft^2" "43.0556 ft^2"
@@ -27,6 +27,12 @@ spec = do
     interpreterTest "1.0 mi in ft" "5280 feet"
     interpreterTest "2 days in minutes" "2880 minutes"
     interpreterTest "65 miles/hour in km/h" "104.607356652 kilometers/hour"
+  describe "omitted values" do
+    interpreterTest "42" "42"
+    interpreterTest "42 inches" "42 inch"
+  describe "strange whitespace" do
+    interpreterTest "42   \t" "42"
+    interpreterTest "1  \t  m in \t m" "1 m"
 
 interpreterTest :: String -> String -> Spec Unit
 interpreterTest input expected =

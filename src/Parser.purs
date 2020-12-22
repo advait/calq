@@ -14,7 +14,7 @@ import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (choice, try, (<?>))
 import Text.Parsing.Parser.Language (haskellDef)
-import Text.Parsing.Parser.String (satisfy, string)
+import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.Token (space)
 import Text.Parsing.Parser.Token as Token
 import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), div, pow, times)

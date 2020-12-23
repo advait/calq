@@ -20,8 +20,8 @@ import Data.String.CodeUnits (fromCharArray)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import Parser (bigNum, bigNumParser, compUnitParser, lexeme)
-import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (choice, sepBy, try)
+import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
+import Text.Parsing.Parser.Combinators (choice, sepBy, try, (<?>))
 import Text.Parsing.Parser.String (eof, satisfy, string)
 import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertCompUnit)
 
@@ -40,11 +40,25 @@ data Expr
   = Constant Value CompUnit
   | Bind String Expr
   | Ref String
-  | AssertEqual Expr Expr
+  | Fn2 String Expr Expr
 
 exprParser :: Parser String Expr
-exprParser = choice $ try <$> [ assertEqualParser, constantParser, bindParser, refParser ]
+exprParser =
+  choice $ try
+    <$> [ parenParser
+      , fn2Parser
+      , constantParser
+      , bindParser
+      , refParser
+      ]
   where
+  parenParser :: Parser String Expr
+  parenParser = do
+    _ <- lexeme $ string "("
+    expr <- lexeme $ exprParser
+    _ <- lexeme $ string ")"
+    pure expr
+
   constantParser :: Parser String Expr
   constantParser = do
     value@(Tuple _ unit) <- valueParser
@@ -69,14 +83,16 @@ exprParser = choice $ try <$> [ assertEqualParser, constantParser, bindParser, r
   refParser :: Parser String Expr
   refParser = Ref <$> nameParser
 
-  assertEqualParser :: Parser String Expr
-  assertEqualParser = do
-    _ <- lexeme $ string "assertEqual("
-    e1 <- lexeme $ exprParser
-    _ <- lexeme $ string ","
-    e2 <- lexeme $ exprParser
-    _ <- lexeme $ string ")"
-    pure $ AssertEqual e1 e2
+  fn2Parser :: Parser String Expr
+  fn2Parser =
+    try
+      $ do
+          fnName <- lexeme $ (nameParser <* string "(")
+          e1 <- lexeme $ exprParser
+          _ <- lexeme $ string ","
+          e2 <- lexeme $ exprParser
+          _ <- lexeme $ string ")"
+          pure $ Fn2 fnName e1 e2
 
 programParser :: Parser String (Array Expr)
 programParser = (fromFoldable <$> (exprParser `sepBy` (lexeme $ string "\n"))) <* eof
@@ -110,16 +126,19 @@ eval (Ref name) = do
   state :: InterpreterState <- State.get
   case Map.lookup name state of
     Nothing -> lift $ Left ("Undefined variable " <> (show name))
-    Just value -> pure $ value
+    Just value -> pure value
 
 -- | Asserts that the two expressions are the same.
-eval (AssertEqual e1 e2) = do
+eval (Fn2 "assertEqual" e1 e2) = do
   value1 <- eval e1
   value2 <- eval e2
   if value1 `approxEqual` value2 then
     pure $ value1
   else
     lift $ Left (show value1 <> " ≠ " <> show value2)
+
+-- | Unknown functions
+eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))
 
 -- | Returns whether the values are within .001% of each other.
 approxEqual :: Value -> Value -> Boolean

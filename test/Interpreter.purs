@@ -5,11 +5,12 @@ import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (evalStateT)
 import Data.Either (Either(..))
 import Data.Ord (abs)
+import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
 import Effect.Exception (Error, error)
-import Interpreter (Value, eval, exprParser, initState, valueParser)
+import Interpreter (Value, eval, evalProgram, evalProgram', exprParser, initState, programParser, valueParser)
 import Test.Spec (Spec, describe, it)
-import Test.Spec.Assertions (fail)
+import Test.Spec.Assertions (fail, shouldEqual)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (eof)
 import Units (bigNum)
@@ -36,6 +37,10 @@ spec = do
   describe "derefernces predefined variables" do
     interpreterTest "c" "299792458 m/s"
     interpreterTest "pi" "3.14159265354"
+  describe "full programs" do
+    programTest "assertEqual(1, 1.0)"
+    programTest "assertEqual(1 m in ft, 3.28084 ft)"
+    programTest "d = 1 cm in ft\nassertEqual(d, 0.0328084 ft)"
 
 interpreterTest :: String -> String -> Spec Unit
 interpreterTest input expected =
@@ -45,6 +50,13 @@ interpreterTest input expected =
     case evalStateT (eval input') initState of
       Left err -> fail err
       Right actual -> unless (expected' `approxEqual` actual) $ fail $ show actual <> " ≠ " <> show expected'
+
+programTest :: String -> Spec Unit
+programTest input =
+  it ("runs: " <> (replaceAll (Pattern "\n") (Replacement "\\n") input)) do
+    case evalProgram' input of
+      Left err -> throwError $ error err
+      Right _ -> 1 `shouldEqual` 1
 
 approxEqual :: Value -> Value -> Boolean
 approxEqual (Tuple v1 u1) (Tuple v2 u2) = (u1 == u2) && (abs (v1 - v2) / v1) < (bigNum "1e-5")

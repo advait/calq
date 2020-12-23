@@ -254,7 +254,7 @@ convertCompUnit c1@(CompUnit { num: n1, den: d1 }) c2@(CompUnit { num: n2, den: 
     convertList :: List BaseUnit -> List BaseUnit -> Either String BigNumber
     convertList Nil Nil = Right $ bigNum "1.0"
 
-    convertList (Cons from tail1) (Cons to tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
+    convertList (from : tail1) (to : tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
 
     convertList _ _ = Left $ "Cannot convert " <> show c1 <> " to " <> show c2
   in

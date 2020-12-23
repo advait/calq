@@ -1,13 +1,11 @@
 module Parser where
 
-import Prelude
+import Prelude hiding (div)
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
 import Data.Array (many)
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
-import Data.Generic.Rep (Argument(..), Constructor(..))
-import Data.Generic.Rep as Generic
 import Data.SortedArray as SortedArray
 import Data.String (length)
 import Data.Tuple (Tuple(..))
@@ -19,6 +17,7 @@ import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.Token (space)
 import Text.Parsing.Parser.Token as Token
 import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), div, pow, times)
+import Utils (bigNum)
 
 tokenParser :: Token.TokenParser
 tokenParser = Token.makeTokenParser haskellDef
@@ -34,10 +33,6 @@ tokenParser = Token.makeTokenParser haskellDef
 -- | any leading white space.
 lexeme :: forall a. Parser String a -> Parser String a
 lexeme p = p <* spaces
-
--- | Create a constant `BigNumber` from a `String`
-bigNum :: String -> BigNumber
-bigNum = Generic.to <<< Constructor <<< Argument
 
 -- | Parses a `BigNumber`
 bigNumParser :: Parser String BigNumber

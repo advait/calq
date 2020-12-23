@@ -1,8 +1,7 @@
 module Interpreter where
 
-import Prelude
+import Prelude hiding (div)
 import Control.Alt ((<|>))
-import Control.Lazy (fix)
 import Control.Monad.State (StateT, evalStateT)
 import Control.Monad.State.Trans as State
 import Control.Monad.Trans.Class (lift)
@@ -20,12 +19,13 @@ import Data.String (Pattern(..), split)
 import Data.String.CodeUnits (fromCharArray)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
-import Parser (bigNum, bigNumParser, compUnitParser, lexeme)
+import Parser (bigNumParser, compUnitParser, lexeme)
 import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (choice, sepBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertCompUnit, times)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertCompUnit, div, simplify, times)
+import Utils (bigNum)
 
 -- | A value is the final/reduced form of an expression.
 type Value
@@ -100,7 +100,10 @@ exprParser = compoundExprParser
 
   compoundExprParser =
     ( buildExprParser
-        [ [ Infix (Fn2 <$> (lexeme $ string "*")) AssocLeft ] ]
+        [ [ Infix (Fn2 <$> (lexeme $ string "*")) AssocLeft
+          , Infix (Fn2 <$> (lexeme $ string "/")) AssocLeft
+          ]
+        ]
         (lexeme singleExprParser)
     )
 
@@ -151,7 +154,13 @@ eval (Fn2 "assertEqual" e1 e2) = do
 eval (Fn2 "*" e1 e2) = do
   (Tuple v1 u1) <- eval e1
   (Tuple v2 u2) <- eval e2
-  pure $ Tuple (v1 * v2) (u1 `times` u2)
+  pure $ simplify $ Tuple (v1 * v2) (u1 `times` u2)
+
+-- | Division
+eval (Fn2 "/" e1 e2) = do
+  (Tuple v1 u1) <- eval e1
+  (Tuple v2 u2) <- eval e2
+  pure $ simplify $ Tuple (v1 / v2) (u1 `div` u2)
 
 -- | Unknown functions
 eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))

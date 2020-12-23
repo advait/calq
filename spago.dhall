@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "console"
   , "effect"
   , "errors"
+  , "halogen"
   , "maybe"
   , "newtype"
   , "ordered-collections"

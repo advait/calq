@@ -33,6 +33,9 @@ spec = do
   describe "strange whitespace" do
     interpreterTest "42   \t" "42"
     interpreterTest "1  \t  m in \t m" "1 m"
+  describe "derefernces predefined variables" do
+    interpreterTest "c" "299792458 m/s"
+    interpreterTest "pi" "3.14159265354"
 
 interpreterTest :: String -> String -> Spec Unit
 interpreterTest input expected =

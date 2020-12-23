@@ -8,6 +8,7 @@ You can edit this file as you like.
   , "bignumber"
   , "console"
   , "effect"
+  , "errors"
   , "maybe"
   , "newtype"
   , "ordered-collections"

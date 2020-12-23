@@ -13,6 +13,7 @@ import Data.String (length)
 import Data.Tuple (Tuple(..))
 import Text.Parsing.Parser (Parser)
 import Text.Parsing.Parser.Combinators (choice, try, (<?>))
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef)
 import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.Token (space)
@@ -165,23 +166,13 @@ compUnitParser =
           ]
           >>= powOrIdentity
 
-      operators :: Parser String (CompUnit -> CompUnit)
-      operators =
-        choice
-          [ (flip times) <$> (lexeme $ string "*" *> item)
-          , (flip div) <$> (lexeme $ string "/" *> item)
-          ]
-
-      -- | Attempt to repeatedly apply operators left to right
-      chainOperators :: CompUnit -> Parser String CompUnit
-      chainOperators acc =
-        ( do
-            op <- operators
-            chainOperators (op acc)
+      compoundParser =
+        ( buildExprParser
+            [ [ Infix (times <$ (string "*")) AssocLeft
+              , Infix (div <$ (string "/")) AssocLeft
+              ]
+            ]
+            item
         )
-          <|> pure acc -- If we can't apply additional operators, fall back to acc
     in
-      lexeme
-        $ do
-            start <- item <|> pure mempty
-            chainOperators start
+      lexeme $ compoundParser

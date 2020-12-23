@@ -7,11 +7,9 @@ import Data.BigNumber (BigNumber)
 import Data.DivisionRing as DivisionRing
 import Data.Either (Either(..), note)
 import Data.Foldable (class Foldable)
-import Data.Generic.Rep (Argument(..), Constructor(..))
-import Data.Generic.Rep as Generic
 import Data.Lazy (Lazy)
 import Data.Lazy as Lazy
-import Data.List (List(..))
+import Data.List (List(..), (:))
 import Data.List as List
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
@@ -19,6 +17,7 @@ import Data.Set as Set
 import Data.SortedArray (SortedArray)
 import Data.SortedArray as SortedArray
 import Data.Tuple (Tuple(..))
+import Utils (bigNum)
 
 -- | Represents a simple base unit with one dimension.
 data BaseUnit
@@ -115,10 +114,6 @@ instance showMassUnit :: Show MassUnit where
   show Tons = "tons"
   show Ounces = "oz"
 
--- | Create a constant `BigNumber` from a `String`
-bigNum :: String -> BigNumber
-bigNum = Generic.to <<< Constructor <<< Argument
-
 -- | Definitional ratios between units. We use BFS to search this graph to determine arbitrary conversions.
 ratios :: Array { from :: BaseUnit, to :: BaseUnit, ratio :: BigNumber }
 ratios =
@@ -199,10 +194,6 @@ instance semigroupCompUnit :: Semigroup CompUnit where
 instance monoidCompUnit :: Monoid CompUnit where
   mempty = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
 
--- | A `CompUnit` with no numerator or denominator indicating a scalar quantity.
-scalarCompUnit :: CompUnit
-scalarCompUnit = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
-
 -- | Multiplies the given `CompUnit`s together.
 times :: CompUnit -> CompUnit -> CompUnit
 times (CompUnit { num: n1, den: d1 }) (CompUnit { num: n2, den: d2 }) = CompUnit { num: n1 <> n2, den: d1 <> d2 }
@@ -233,6 +224,28 @@ pow c1 n =
 inverse :: CompUnit -> CompUnit
 inverse (CompUnit { num, den }) = CompUnit { num: den, den: num }
 
+-- | Attempts to simplify (cancel out) units, preferring the units of the numerator
+simplify :: Tuple BigNumber CompUnit -> Tuple BigNumber CompUnit
+simplify value'@(Tuple value (CompUnit { num, den })) =
+  let
+    pairwise :: forall a b. Array a -> Array b -> List (Tuple a b)
+    pairwise a b =
+      List.fromFoldable
+        $ ( do
+              a' <- a
+              b' <- b
+              pure $ Tuple a' b'
+          )
+
+    reducePairs :: List (Tuple BaseUnit BaseUnit) -> Tuple BigNumber CompUnit
+    reducePairs Nil = value'
+
+    reducePairs (Tuple a b : tail) = case convertBaseUnit a b of
+      Left _ -> reducePairs tail
+      Right ratio -> Tuple (value * ratio) (CompUnit { num: SortedArray.delete a num, den: SortedArray.delete b den })
+  in
+    reducePairs $ pairwise (SortedArray.unSortedArray num) (SortedArray.unSortedArray den)
+
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
 convertCompUnit :: CompUnit -> CompUnit -> Either String BigNumber
@@ -241,7 +254,7 @@ convertCompUnit c1@(CompUnit { num: n1, den: d1 }) c2@(CompUnit { num: n2, den: 
     convertList :: List BaseUnit -> List BaseUnit -> Either String BigNumber
     convertList Nil Nil = Right $ bigNum "1.0"
 
-    convertList (Cons from tail1) (Cons to tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
+    convertList (from : tail1) (to : tail2) = (*) <$> (convertBaseUnit from to) <*> (convertList tail1 tail2)
 
     convertList _ _ = Left $ "Cannot convert " <> show c1 <> " to " <> show c2
   in

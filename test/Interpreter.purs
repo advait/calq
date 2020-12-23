@@ -44,6 +44,14 @@ spec = do
     interpreterTest "2*2" "4"
     interpreterTest "2*2ft" "4ft"
     interpreterTest "2 ft * 2" "4ft"
+    describe "simplification" do
+      interpreterTest "2 ft *  2 hours/feet" "4 hours"
+      interpreterTest "200 m/s * 3 hours" "2160000 meters"
+  describe "division" do
+    interpreterTest "2ft /2" "1ft"
+    programTest "a = 2 ft\nb = 2\nassertEqual(a/b, 1 ft)"
+    describe "simplification" do
+      interpreterTest "c * 1 minute / 4 lightyears " "4.75320942159e-7"
 
 -- TODO(advait): Move this to its own file BasicTest.calq
 basicTest :: String
@@ -67,6 +75,7 @@ assertEqual(b, 4 ft^2)
 c = 2ft * 2ft
 assertEqual(c, 4ft^2)
 assertEqual(2ft * 2ft, 4ft^2)
+assertEqual(4 / 2, 2)
 """
 
 interpreterTest :: String -> String -> Spec Unit

@@ -9,7 +9,8 @@ import Data.SortedArray as SortedArray
 import Effect.Exception (Error)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual)
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), bigNum, convertBaseUnit, convertCompUnit)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), convertBaseUnit, convertCompUnit)
+import Utils (bigNum)
 
 spec :: Spec Unit
 spec = do

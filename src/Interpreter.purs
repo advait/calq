@@ -2,6 +2,7 @@ module Interpreter where
 
 import Prelude
 import Control.Alt ((<|>))
+import Control.Lazy (fix)
 import Control.Monad.State (StateT, evalStateT)
 import Control.Monad.State.Trans as State
 import Control.Monad.Trans.Class (lift)
@@ -20,10 +21,11 @@ import Data.String.CodeUnits (fromCharArray)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
 import Parser (bigNum, bigNumParser, compUnitParser, lexeme)
-import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (choice, sepBy, try, (<?>))
+import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
+import Text.Parsing.Parser.Combinators (choice, sepBy, try)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertCompUnit)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertCompUnit, times)
 
 -- | A value is the final/reduced form of an expression.
 type Value
@@ -43,15 +45,17 @@ data Expr
   | Fn2 String Expr Expr
 
 exprParser :: Parser String Expr
-exprParser =
-  choice $ try
-    <$> [ parenParser
-      , fn2Parser
-      , constantParser
-      , bindParser
-      , refParser
-      ]
+exprParser = compoundExprParser
   where
+  singleExprParser =
+    choice $ try
+      <$> [ parenParser
+        , fn2Parser
+        , bindParser
+        , constantParser
+        , refParser
+        ]
+
   parenParser :: Parser String Expr
   parenParser = do
     _ <- lexeme $ string "("
@@ -93,6 +97,12 @@ exprParser =
           e2 <- lexeme $ exprParser
           _ <- lexeme $ string ")"
           pure $ Fn2 fnName e1 e2
+
+  compoundExprParser =
+    ( buildExprParser
+        [ [ Infix (Fn2 <$> (lexeme $ string "*")) AssocLeft ] ]
+        (lexeme singleExprParser)
+    )
 
 programParser :: Parser String (Array Expr)
 programParser = (fromFoldable <$> (exprParser `sepBy` (lexeme $ string "\n"))) <* eof
@@ -137,6 +147,12 @@ eval (Fn2 "assertEqual" e1 e2) = do
   else
     lift $ Left (show value1 <> " ≠ " <> show value2)
 
+-- | Multiplication
+eval (Fn2 "*" e1 e2) = do
+  (Tuple v1 u1) <- eval e1
+  (Tuple v2 u2) <- eval e2
+  pure $ Tuple (v1 * v2) (u1 `times` u2)
+
 -- | Unknown functions
 eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))
 
@@ -159,6 +175,6 @@ evalProgram' input = do
   program :: Array Expr <-
     fmapL parseErrorMessage
       $ sequence
-      $ ((flip runParser) exprParser)
+      $ (flip runParser $ exprParser <* eof)
       <$> split (Pattern "\n") input
   evalProgram program

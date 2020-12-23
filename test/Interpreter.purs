@@ -40,6 +40,10 @@ spec = do
     programTest "assertEqual(1 m in ft, 3.28084 ft)"
     programTest "d = 1 cm in ft\nassertEqual(d, 0.0328084 ft)"
     programTest basicTest
+  describe "multiplication" do
+    interpreterTest "2*2" "4"
+    interpreterTest "2*2ft" "4ft"
+    interpreterTest "2 ft * 2" "4ft"
 
 -- TODO(advait): Move this to its own file BasicTest.calq
 basicTest :: String
@@ -50,11 +54,19 @@ c
 1
 assertEqual(1, 1)
 assertEqual(1 ft, 1 ft)
+assertEqual(1ft, 1 ft)
+assertEqual(1ft, 1ft)
 d = 1
 assertEqual(d, 1.0)
 hello = 1e7 feet
 assertEqual(hello, 1e+7 ft)
 assertEqual(1e7 feet in lightyears, 3.222e-10 lightyears)
+assertEqual(2*2,4)
+b = 2 ft * 2 ft
+assertEqual(b, 4 ft^2)
+c = 2ft * 2ft
+assertEqual(c, 4ft^2)
+assertEqual(2ft * 2ft, 4ft^2)
 """
 
 interpreterTest :: String -> String -> Spec Unit

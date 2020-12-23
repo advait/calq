@@ -5,7 +5,7 @@ import Control.Alt ((<|>))
 import Control.Monad.State (StateT, evalStateT)
 import Control.Monad.State.Trans as State
 import Control.Monad.Trans.Class (lift)
-import Data.Array (cons, foldM, fromFoldable, last, many)
+import Data.Array (cons, foldM, fromFoldable, many)
 import Data.BigNumber (BigNumber)
 import Data.Char.Unicode (isAlpha, isAlphaNum)
 import Data.Either (Either(..))
@@ -13,6 +13,7 @@ import Data.EitherR (fmapL)
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Ord (abs)
 import Data.SortedArray as SortedArray
 import Data.String (Pattern(..), split)
 import Data.String.CodeUnits (fromCharArray)
@@ -113,19 +114,27 @@ eval (Ref name) = do
 
 -- | Asserts that the two expressions are the same.
 eval (AssertEqual e1 e2) = do
-  value1@(Tuple v1 u1) <- eval e1
-  value2@(Tuple v2 u2) <- eval e2
-  if v1 == v2 && u1 == u2 then
-    pure $ Tuple v1 u1
+  value1 <- eval e1
+  value2 <- eval e2
+  if value1 `approxEqual` value2 then
+    pure $ value1
   else
     lift $ Left (show value1 <> " ≠ " <> show value2)
 
--- Evaluates an entire program.
+-- | Returns whether the values are within .001% of each other.
+approxEqual :: Value -> Value -> Boolean
+approxEqual (Tuple v1 u1) (Tuple v2 u2) = (u1 == u2) && (abs (v1 - v2) / v1) < (bigNum "1e-5")
+
+-- | Evaluates an entire program.
 evalProgram :: Array Expr -> Either String Value
 evalProgram exprs = evalStateT stateT initState
   where
   stateT = foldM (const eval) (Tuple (bigNum "1.0") mempty) exprs
 
+-- TODO(advait): This is function exists because `lexeme` consums newline whitspace.
+-- as a reuslt we have to manually split the program by newlines, parse each line,
+-- and execute it. We need to rewrite lexeme and the corresponding integer/float parsers
+-- to avoid chomping newlines.
 evalProgram' :: String -> Either String Value
 evalProgram' input = do
   program :: Array Expr <-

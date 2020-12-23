@@ -4,16 +4,14 @@ import Prelude
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (evalStateT)
 import Data.Either (Either(..))
-import Data.Ord (abs)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
-import Data.Tuple (Tuple(..))
+import Data.String as String
 import Effect.Exception (Error, error)
-import Interpreter (Value, eval, evalProgram, evalProgram', exprParser, initState, programParser, valueParser)
+import Interpreter (approxEqual, eval, evalProgram', exprParser, initState, valueParser)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (eof)
-import Units (bigNum)
 
 spec :: Spec Unit
 spec = do
@@ -41,6 +39,23 @@ spec = do
     programTest "assertEqual(1, 1.0)"
     programTest "assertEqual(1 m in ft, 3.28084 ft)"
     programTest "d = 1 cm in ft\nassertEqual(d, 0.0328084 ft)"
+    programTest basicTest
+
+-- TODO(advait): Move this to its own file BasicTest.calq
+basicTest :: String
+basicTest =
+  String.trim
+    """
+c
+1
+assertEqual(1, 1)
+assertEqual(1 ft, 1 ft)
+d = 1
+assertEqual(d, 1.0)
+hello = 1e7 feet
+assertEqual(hello, 1e+7 ft)
+assertEqual(1e7 feet in lightyears, 3.222e-10 lightyears)
+"""
 
 interpreterTest :: String -> String -> Spec Unit
 interpreterTest input expected =
@@ -57,9 +72,6 @@ programTest input =
     case evalProgram' input of
       Left err -> throwError $ error err
       Right _ -> 1 `shouldEqual` 1
-
-approxEqual :: Value -> Value -> Boolean
-approxEqual (Tuple v1 u1) (Tuple v2 u2) = (u1 == u2) && (abs (v1 - v2) / v1) < (bigNum "1e-5")
 
 runParserOrFail ::
   forall a m.

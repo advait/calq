@@ -11,13 +11,32 @@ $body-font-size: 1.1em;
 // Import bulma (this belongs after the variable overrides)
 @import "../node_modules/bulma/bulma.sass";
 
-#editor-container {
-  max-width: 800px;
+.primary {
+  position: relative;
+
+  .background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+  }
+
+  .container {
+    max-width: 800px !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+  }
 }
 
 $editor-top-padding: 5em;
 
-#editor-left {
+.editor-left {
   padding-top: $editor-top-padding;
   min-height: 100vh;
   
@@ -26,8 +45,9 @@ $editor-top-padding: 5em;
   }
 }
 
-#results {
-  background-color: darken($body-background-color, 0.5);
+.editor-right {
+  background-color: $white-bis;
+  color: $body-background-color;
   padding-top: $editor-top-padding;
   padding-left: 2em;
   min-height: 100vh;

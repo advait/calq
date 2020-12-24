@@ -6,11 +6,21 @@ React.createClass = createReactClass;
 var App = require('../output/Editor');
 
 function main() {
-  const myComponent = (
-    <App.counter label="hello world" />
+  const mainComponent = (
+    <div className="primary">
+      <div className="container">
+        <App.counter initialValue="1 m/s * 3 years" />
+      </div>
+      <div className="background">
+        <div className="columns">
+          <div className="column editor-left is-two-thirds" />
+          <div className="column editor-right" />
+        </div>
+      </div>
+    </div>
   );
 
-  ReactDOM.render(myComponent, document.getElementById('react-container'));
+  ReactDOM.render(mainComponent, document.getElementById('react-container'));
 }
 
 // HMR stuff

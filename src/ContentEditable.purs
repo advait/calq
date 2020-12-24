@@ -13,6 +13,7 @@ contentEditableComponent = React.createComponent "ContentEditable"
 type Props
   = { html :: String
     , onChange :: Maybe String -> Effect Unit
+    , className :: String
     }
 
 component :: Props -> React.JSX
@@ -28,11 +29,13 @@ render self@{ state, props } =
   contentEditableInternal
     { html: props.html
     , onChange: handler Events.targetValue props.onChange
+    , className: props.className
     }
 
 type ContentEditableInternalProps
   = { html :: String
     , onChange :: EventHandler
+    , className :: String
     }
 
 foreign import contentEditableInternal :: ContentEditableInternalProps -> React.JSX

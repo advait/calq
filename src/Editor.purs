@@ -4,7 +4,7 @@ import Prelude
 import ContentEditable as ContentEditable
 import Data.Either (Either(..))
 import Data.Maybe (fromMaybe, Maybe(..))
-import Interpreter (evalProgram')
+import Interpreter (evalProgram', showPretty)
 import React.Basic.Classic as React
 import React.Basic.DOM as R
 import React.Basic.DOM.Events as Events
@@ -28,7 +28,7 @@ editor =
 
             output = case evalProgram' program of
               Left err -> show err
-              Right val -> show val
+              Right val -> showPretty val
           in
             R.div
               { className: "editor " <> self.props.className
@@ -43,7 +43,7 @@ editor =
                               }
                           , R.div
                               { onClick: Events.capture_ $ self.setState (\s -> s { counter = s.counter + 1 })
-                              , children: [ R.text (show output) ]
+                              , children: [ R.text output ]
                               , className: "editor-right column"
                               }
                           ]

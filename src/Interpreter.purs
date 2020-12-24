@@ -7,9 +7,12 @@ import Control.Monad.State.Trans as State
 import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, foldM, fromFoldable, many)
 import Data.BigNumber (BigNumber)
+import Data.BigNumber as BigNumber
 import Data.Char.Unicode (isAlpha, isAlphaNum)
 import Data.Either (Either(..))
 import Data.EitherR (fmapL)
+import Data.List (List(..), (:))
+import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
@@ -24,18 +27,24 @@ import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (choice, sepBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertCompUnit, div, simplify, times)
+import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertBaseUnit, convertCompUnit, div, times)
 import Utils (bigNum)
 
 -- | A value is the final/reduced form of an expression.
-type Value
-  = Tuple BigNumber CompUnit
+data Value
+  = UnitValue BigNumber CompUnit
+
+instance showValue :: Show Value where
+  show (UnitValue num unit) = show num <> " " <> show unit
+
+showPretty :: Value -> String
+showPretty (UnitValue num unit) = BigNumber.toFormat num <> " " <> show unit
 
 valueParser :: Parser String Value
 valueParser = do
   num <- bigNumParser
   unit <- (try compUnitParser) <|> (pure mempty)
-  pure $ Tuple num unit
+  pure $ UnitValue num unit
 
 -- | An `Expr` is an expression that can be evaluated into a value.
 data Expr
@@ -65,7 +74,7 @@ exprParser = compoundExprParser
 
   constantParser :: Parser String Expr
   constantParser = do
-    value@(Tuple _ unit) <- valueParser
+    value@(UnitValue _ unit) <- valueParser
     showUnit <- (try $ Just <$> ((lexeme $ string "in") *> compUnitParser)) <|> (pure Nothing)
     pure $ Constant value (fromMaybe unit showUnit)
 
@@ -116,17 +125,17 @@ type InterpreterState
 initState :: InterpreterState
 initState =
   Map.fromFoldable
-    [ Tuple "pi" (Tuple (bigNum "3.14159265359") mempty)
-    , Tuple "π" (Tuple (bigNum "3.14159265359") mempty)
-    , Tuple "c" (Tuple (bigNum "299792458") (CompUnit { num: SortedArray.fromFoldable [ Distance Meters ], den: SortedArray.fromFoldable [ Time Seconds ] }))
+    [ Tuple "pi" (UnitValue (bigNum "3.14159265359") mempty)
+    , Tuple "π" (UnitValue (bigNum "3.14159265359") mempty)
+    , Tuple "c" (UnitValue (bigNum "299792458") (CompUnit { num: SortedArray.fromFoldable [ Distance Meters ], den: SortedArray.fromFoldable [ Time Seconds ] }))
     ]
 
 -- | Evaluates an expression.
 eval :: Expr -> StateT InterpreterState (Either String) Value
 -- | A constant expression evaluates to itself.
-eval (Constant (Tuple value fromUnit) toUnit) = do
+eval (Constant (UnitValue value fromUnit) toUnit) = do
   ratio <- lift $ convertCompUnit fromUnit toUnit
-  pure (Tuple (value * ratio) toUnit)
+  pure (UnitValue (value * ratio) toUnit)
 
 -- | Binds a name to its evaluated value.
 eval (Bind name expr) = do
@@ -152,28 +161,50 @@ eval (Fn2 "assertEqual" e1 e2) = do
 
 -- | Multiplication
 eval (Fn2 "*" e1 e2) = do
-  (Tuple v1 u1) <- eval e1
-  (Tuple v2 u2) <- eval e2
-  pure $ simplify $ Tuple (v1 * v2) (u1 `times` u2)
+  (UnitValue v1 u1) <- eval e1
+  (UnitValue v2 u2) <- eval e2
+  pure $ simplify $ UnitValue (v1 * v2) (u1 `times` u2)
 
 -- | Division
 eval (Fn2 "/" e1 e2) = do
-  (Tuple v1 u1) <- eval e1
-  (Tuple v2 u2) <- eval e2
-  pure $ simplify $ Tuple (v1 / v2) (u1 `div` u2)
+  (UnitValue v1 u1) <- eval e1
+  (UnitValue v2 u2) <- eval e2
+  pure $ simplify $ UnitValue (v1 / v2) (u1 `div` u2)
 
 -- | Unknown functions
 eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))
 
 -- | Returns whether the values are within .001% of each other.
 approxEqual :: Value -> Value -> Boolean
-approxEqual (Tuple v1 u1) (Tuple v2 u2) = (u1 == u2) && (abs (v1 - v2) / v1) < (bigNum "1e-5")
+approxEqual (UnitValue v1 u1) (UnitValue v2 u2) = (u1 == u2) && (abs (v1 - v2) / v1) < (bigNum "1e-5")
+
+-- | Attempts to simplify (cancel out) units, preferring the units of the numerator
+simplify :: Value -> Value
+simplify value'@(UnitValue value (CompUnit { num, den })) =
+  let
+    pairwise :: forall a b. Array a -> Array b -> List (Tuple a b)
+    pairwise a b =
+      List.fromFoldable
+        $ ( do
+              a' <- a
+              b' <- b
+              pure $ Tuple a' b'
+          )
+
+    reducePairs :: List (Tuple BaseUnit BaseUnit) -> Value
+    reducePairs Nil = value'
+
+    reducePairs (Tuple a b : tail) = case convertBaseUnit a b of
+      Left _ -> reducePairs tail
+      Right ratio -> UnitValue (value * ratio) (CompUnit { num: SortedArray.delete a num, den: SortedArray.delete b den })
+  in
+    reducePairs $ pairwise (SortedArray.unSortedArray num) (SortedArray.unSortedArray den)
 
 -- | Evaluates an entire program.
 evalProgram :: Array Expr -> Either String Value
 evalProgram exprs = evalStateT stateT initState
   where
-  stateT = foldM (const eval) (Tuple (bigNum "1.0") mempty) exprs
+  stateT = foldM (const eval) (UnitValue (bigNum "1.0") mempty) exprs
 
 -- TODO(advait): This is function exists because `lexeme` consums newline whitspace.
 -- as a reuslt we have to manually split the program by newlines, parse each line,

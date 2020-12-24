@@ -16,6 +16,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.SortedArray (SortedArray)
 import Data.SortedArray as SortedArray
+import Data.String as String
 import Data.Tuple (Tuple(..))
 import Utils (bigNum)
 
@@ -185,6 +186,13 @@ newtype CompUnit
 
 derive instance eqCompUnit :: Eq CompUnit
 
+instance showCompUnit :: Show CompUnit where
+  show (CompUnit { num, den }) = case Tuple (SortedArray.unSortedArray num) (SortedArray.unSortedArray den) of
+    Tuple [] [] -> ""
+    Tuple [] den' -> "1/" <> (String.joinWith "/" $ show <$> den')
+    Tuple num' [] -> (String.joinWith "*" $ show <$> num')
+    Tuple num' den' -> (String.joinWith "*" $ show <$> num') <> "/" <> (String.joinWith "/" $ show <$> den')
+
 -- | A `CompUnit` is a `Semigroup` where we simply merge the numerators and merge the denominators.
 instance semigroupCompUnit :: Semigroup CompUnit where
   append :: CompUnit -> CompUnit -> CompUnit
@@ -224,28 +232,6 @@ pow c1 n =
 inverse :: CompUnit -> CompUnit
 inverse (CompUnit { num, den }) = CompUnit { num: den, den: num }
 
--- | Attempts to simplify (cancel out) units, preferring the units of the numerator
-simplify :: Tuple BigNumber CompUnit -> Tuple BigNumber CompUnit
-simplify value'@(Tuple value (CompUnit { num, den })) =
-  let
-    pairwise :: forall a b. Array a -> Array b -> List (Tuple a b)
-    pairwise a b =
-      List.fromFoldable
-        $ ( do
-              a' <- a
-              b' <- b
-              pure $ Tuple a' b'
-          )
-
-    reducePairs :: List (Tuple BaseUnit BaseUnit) -> Tuple BigNumber CompUnit
-    reducePairs Nil = value'
-
-    reducePairs (Tuple a b : tail) = case convertBaseUnit a b of
-      Left _ -> reducePairs tail
-      Right ratio -> Tuple (value * ratio) (CompUnit { num: SortedArray.delete a num, den: SortedArray.delete b den })
-  in
-    reducePairs $ pairwise (SortedArray.unSortedArray num) (SortedArray.unSortedArray den)
-
 -- | Given a number with the first unit, return what you need to multiply that number by to
 -- | produce a quantity in the second unit.
 convertCompUnit :: CompUnit -> CompUnit -> Either String BigNumber
@@ -262,6 +248,3 @@ convertCompUnit c1@(CompUnit { num: n1, den: d1 }) c2@(CompUnit { num: n2, den: 
       numeratorRatio <- convertList (List.fromFoldable n1) (List.fromFoldable n2)
       denominatorRatio <- convertList (List.fromFoldable d1) (List.fromFoldable d2)
       pure $ numeratorRatio / denominatorRatio
-
-instance showCompUnit :: Show CompUnit where
-  show (CompUnit { num, den }) = show num <> "/" <> show den

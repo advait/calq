@@ -15,8 +15,8 @@ type Props
     , className :: String
     }
 
-counter :: Props -> React.JSX
-counter =
+editor :: Props -> React.JSX
+editor =
   React.make component
     { initialState: { counter: 0, html: Nothing }
     , render:

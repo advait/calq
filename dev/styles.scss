@@ -35,10 +35,13 @@ $body-font-size: 1.1em;
 }
 
 $editor-top-padding: 5em;
+$editor-line-height: 2.5;
 
 .editor-left {
   padding-top: $editor-top-padding;
   min-height: 100vh;
+
+  line-height: $editor-line-height;
   
   &:focus {
     outline: 0;
@@ -48,7 +51,10 @@ $editor-top-padding: 5em;
 .editor-right {
   background-color: $white-bis;
   color: $body-background-color;
+
   padding-top: $editor-top-padding;
   padding-left: 2em;
   min-height: 100vh;
+
+  line-height: $editor-line-height;
 }

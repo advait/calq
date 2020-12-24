@@ -1,4 +1,4 @@
-module ContentEditable where
+module ContentEditable (component, Props) where
 
 import Prelude
 import Data.Maybe (Maybe)

@@ -3,13 +3,13 @@ import ReactDOM from 'react-dom';
 
 import createReactClass from 'create-react-class';
 React.createClass = createReactClass;
-var App = require('../output/Editor');
+var Editor = require('../output/Editor');
 
 function main() {
   const mainComponent = (
     <div className="primary">
       <div className="container">
-        <App.counter initialValue="1 m/s * 3 years" />
+        <Editor.editor initialValue="1 m/s * 3 years" />
       </div>
       <div className="background">
         <div className="columns">

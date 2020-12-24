@@ -39,7 +39,7 @@ render state =
             , bulmaClasses [ Columns.column, Columns.Size.isPercentSize TwoThirds ]
             , HP.attr (AttrName "contenteditable") "true"
             ]
-            [ HH.text "Hello world" ]
+            [ HH.text "100 m/s * 3 days" ]
         , HH.div
             [ HP.id_ "results", bulmaClasses [ Columns.column ] ]
             [ HH.p_

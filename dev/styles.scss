@@ -20,10 +20,10 @@ $editor-top-padding: 5em;
 #editor-left {
   padding-top: $editor-top-padding;
   min-height: 100vh;
-}
-
-#editor-left:focus {
-  outline: 0;
+  
+  &:focus {
+    outline: 0;
+  }
 }
 
 #results {

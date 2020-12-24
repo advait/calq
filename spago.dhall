@@ -7,8 +7,6 @@ You can edit this file as you like.
   [ "arrays"
   , "bignumber"
   , "console"
-  , "debug"
-  , "debuggest"
   , "effect"
   , "errors"
   , "maybe"

@@ -136,3 +136,12 @@ in  upstream
       , version =
           "v1.0.1"
       }
+  with bulma =
+      { dependencies =
+          [ "generics-rep"
+          ]
+      , repo =
+          "https://github.com/sectore/purescript-bulma.git"
+      , version =
+          "v2.0.0"
+      }

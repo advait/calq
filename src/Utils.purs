@@ -8,3 +8,5 @@ import Data.Generic.Rep as Generic
 -- | Create a constant `BigNumber` from a `String`
 bigNum :: String -> BigNumber
 bigNum = Generic.to <<< Constructor <<< Argument
+
+foreign import debugLogAlt :: forall a b. a -> b -> b

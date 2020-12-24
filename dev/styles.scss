@@ -1,0 +1,60 @@
+@charset "utf-8";
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+
+$family-primary: "Roboto Mono", monospace;
+
+$body-background-color: #222226;
+$text: #E3E7E9;
+$body-font-size: 1.1em;
+
+// Import bulma (this belongs after the variable overrides)
+@import "../node_modules/bulma/bulma.sass";
+
+.primary {
+  position: relative;
+
+  .background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+  }
+
+  .container {
+    max-width: 800px !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+  }
+}
+
+$editor-top-padding: 5em;
+$editor-line-height: 2.5;
+
+.editor-left {
+  padding-top: $editor-top-padding;
+  min-height: 100vh;
+
+  line-height: $editor-line-height;
+  
+  &:focus {
+    outline: 0;
+  }
+}
+
+.editor-right {
+  background-color: $white-bis;
+  color: $body-background-color;
+
+  padding-top: $editor-top-padding;
+  padding-left: 2em;
+  min-height: 100vh;
+
+  line-height: $editor-line-height;
+}

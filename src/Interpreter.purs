@@ -8,6 +8,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, foldM, fromFoldable, many)
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
+import Data.BigNumber as BigNumber
 import Data.Char.Unicode (isAlpha, isAlphaNum)
 import Data.Either (Either(..))
 import Data.EitherR (fmapL)
@@ -58,6 +59,7 @@ data Expr
   = Constant Value CompUnit
   | Bind String Expr
   | Ref String
+  | Fn1 String Expr
   | Fn2 String Expr Expr
 
 exprParser :: Parser String Expr
@@ -67,6 +69,7 @@ exprParser = compoundExprParser
     choice $ try
       <$> [ parenParser
         , fn2Parser
+        , fn1Parser
         , bindParser
         , constantParser
         , refParser
@@ -113,6 +116,15 @@ exprParser = compoundExprParser
           e2 <- lexeme $ exprParser
           _ <- lexeme $ string ")"
           pure $ Fn2 fnName e1 e2
+
+  fn1Parser :: Parser String Expr
+  fn1Parser =
+    try
+      $ do
+          fnName <- lexeme $ (nameParser <* string "(")
+          e1 <- lexeme $ exprParser
+          _ <- lexeme $ string ")"
+          pure $ Fn1 fnName e1
 
   compoundExprParser =
     ( buildExprParser
@@ -163,6 +175,14 @@ eval (Ref name) = do
     Nothing -> lift $ Left ("Undefined variable " <> (show name))
     Just value -> pure value
 
+-- | Sqrt
+eval (Fn1 "sqrt" e1) = do
+  (UnitValue v u) <- eval e1
+  if u == mempty then
+    pure (UnitValue (BigNumber.sqrt v) u)
+  else
+    lift $ Left "Cannot sqrt values with units"
+
 -- | Asserts that the two expressions are the same.
 eval (Fn2 "assertEqual" e1 e2) = do
   value1 <- eval e1
@@ -198,6 +218,8 @@ eval (Fn2 "-" e1 e2) = do
   eval (Fn2 "+" e1 (Constant (UnitValue (-v2) u2) u2))
 
 -- | Unknown functions
+eval (Fn1 name _) = lift $ Left ("Unkown function name " <> (show name))
+
 eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))
 
 -- | Returns whether the values are within .001% of each other.

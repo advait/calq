@@ -100,6 +100,9 @@ baseUnitParser =
           , Tuple "seconds" $ Time Seconds
           , Tuple "second" $ Time Seconds
           , Tuple "s" $ Time Seconds
+          , Tuple "milliseconds" $ Time Milliseconds
+          , Tuple "millisecond" $ Time Milliseconds
+          , Tuple "ms" $ Time Milliseconds
           , Tuple "minutes" $ Time Minutes
           , Tuple "minute" $ Time Minutes
           , Tuple "min" $ Time Minutes

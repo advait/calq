@@ -8,7 +8,6 @@ import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, foldM, fromFoldable, many)
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
-import Data.BigNumber as BigNumber
 import Data.Char.Unicode (isAlpha, isAlphaNum)
 import Data.Either (Either(..))
 import Data.EitherR (fmapL)
@@ -29,7 +28,7 @@ import Text.Parsing.Parser.Combinators (choice, sepBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
 import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertBaseUnit, convertCompUnit, div, times)
-import Utils (bigNum)
+import Utils (bigNum, bigNumberFixed, bigNumberFormatFixed)
 
 -- | A value is the final/reduced form of an expression.
 data Value
@@ -39,7 +38,14 @@ instance showValue :: Show Value where
   show (UnitValue num unit) = show num <> " " <> show unit
 
 showPretty :: Value -> String
-showPretty (UnitValue num unit) = BigNumber.toFormat num <> " " <> show unit
+showPretty (UnitValue num unit) = prettyBigNum num <> " " <> show unit
+  where
+  prettyBigNum :: BigNumber -> String
+  prettyBigNum n
+    -- TODO(advait): max decimal places should be configurable
+    | n - (bigNumberFixed 0 n) < bigNum ".01" = bigNumberFormatFixed 0 n
+    | n - (bigNumberFixed 1 n) < bigNum ".01" = bigNumberFormatFixed 1 n
+    | otherwise = bigNumberFormatFixed 2 n
 
 valueParser :: Parser String Value
 valueParser = do

@@ -10,7 +10,8 @@
     "build": "./node_modules/.bin/spago build",
     "test": "./node_modules/.bin/spago test",
     "serve": "./node_modules/.bin/parcel dev/index.html --open",
-    "build-prod": "mkdir -p prod && cp dev/index.html prod/ && rm -rf dist && ./node_modules/.bin/spago bundle-app --to prod/index.js && ./node_modules/.bin/parcel build prod/index.html"
+    "build-prod": "mkdir -p prod && cp dev/index.html prod/ && rm -rf dist && ./node_modules/.bin/spago bundle-app --to prod/index.js && ./node_modules/.bin/parcel build prod/index.html",
+    "gh-pages": "./node_modules/.bin/gh-pages -d dist/"
   },
   "dependencies": {
     "bignumber.js": "^9.0.1",

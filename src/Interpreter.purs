@@ -2,10 +2,11 @@ module Interpreter where
 
 import Prelude hiding (div)
 import Control.Alt ((<|>))
-import Control.Monad.State (StateT, evalStateT)
+import Control.Monad.State (StateT, evalStateT, runStateT)
 import Control.Monad.State.Trans as State
 import Control.Monad.Trans.Class (lift)
 import Data.Array (cons, foldM, fromFoldable, many)
+import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.BigNumber as BigNumber
 import Data.Char.Unicode (isAlpha, isAlphaNum)
@@ -130,6 +131,9 @@ initState =
     , Tuple "c" (UnitValue (bigNum "299792458") (CompUnit { num: SortedArray.fromFoldable [ Distance Meters ], den: SortedArray.fromFoldable [ Time Seconds ] }))
     ]
 
+initValue :: Value
+initValue = UnitValue (bigNum "1.0") mempty
+
 -- | Evaluates an expression.
 eval :: Expr -> StateT InterpreterState (Either String) Value
 -- | A constant expression evaluates to itself.
@@ -204,7 +208,7 @@ simplify value'@(UnitValue value (CompUnit { num, den })) =
 evalProgram :: Array Expr -> Either String Value
 evalProgram exprs = evalStateT stateT initState
   where
-  stateT = foldM (const eval) (UnitValue (bigNum "1.0") mempty) exprs
+  stateT = foldM (const eval) initValue exprs
 
 -- TODO(advait): This is function exists because `lexeme` consums newline whitspace.
 -- as a reuslt we have to manually split the program by newlines, parse each line,
@@ -218,3 +222,21 @@ evalProgram' input = do
       $ (flip runParser $ exprParser <* eof)
       <$> split (Pattern "\n") input
   evalProgram program
+
+evalProgramAll' :: String -> Array (Either String Value)
+evalProgramAll' input = Array.fromFoldable $ rec (List.fromFoldable exprs) initState
+  where
+  exprs :: Array (Either String Expr)
+  exprs =
+    fmapL parseErrorMessage
+      <$> (flip runParser $ exprParser <* eof)
+      <$> split (Pattern "\n") input
+
+  rec :: List (Either String Expr) -> InterpreterState -> List (Either String Value)
+  rec Nil _ = Nil
+
+  rec ((Left err) : tail) state = (Left err) : (rec tail state)
+
+  rec ((Right head) : tail) state = case runStateT (eval head) state of
+    Left e -> (Left e) : (rec tail state)
+    Right (Tuple v state') -> (Right v) : (rec tail state')

@@ -9,7 +9,7 @@ function main() {
   const mainComponent = (
     <div className="primary">
       <div className="container">
-        <Editor.editor initialValue="1 m/s * 3 years" />
+        <Editor.editor initialValue="1 m/s * 3 years<br>2 * 2" />
       </div>
       <div className="background">
         <div className="columns">

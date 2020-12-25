@@ -28,7 +28,7 @@ render :: React.Self Props Unit -> React.JSX
 render self@{ state, props } =
   contentEditableInternal
     { html: props.html
-    , onChange: handler Events.targetValue props.onChange
+    , onChange: handler Events.targetValue (\m -> props.onChange $ htmlToTextContent <$> m)
     , className: props.className
     }
 
@@ -39,3 +39,5 @@ type ContentEditableInternalProps
     }
 
 foreign import contentEditableInternal :: ContentEditableInternalProps -> React.JSX
+
+foreign import htmlToTextContent :: String -> String

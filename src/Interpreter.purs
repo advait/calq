@@ -223,8 +223,8 @@ evalProgram' input = do
       <$> split (Pattern "\n") input
   evalProgram program
 
-evalProgramAll' :: String -> Array (Either String Value)
-evalProgramAll' input = Array.fromFoldable $ rec (List.fromFoldable exprs) initState
+evalProgramAll :: String -> Array (Either String Value)
+evalProgramAll input = Array.fromFoldable $ rec (List.fromFoldable exprs) initState
   where
   exprs :: Array (Either String Expr)
   exprs =
@@ -240,3 +240,10 @@ evalProgramAll' input = Array.fromFoldable $ rec (List.fromFoldable exprs) initS
   rec ((Right head) : tail) state = case runStateT (eval head) state of
     Left e -> (Left e) : (rec tail state)
     Right (Tuple v state') -> (Right v) : (rec tail state')
+
+evalProgramAllShow :: String -> Array String
+evalProgramAllShow input = showOut <$> evalProgramAll input
+  where
+  showOut (Left err) = err
+
+  showOut (Right val) = showPretty val

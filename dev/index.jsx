@@ -1,15 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-
-import createReactClass from 'create-react-class';
-React.createClass = createReactClass;
-var Editor = require('../output/Editor');
+import Editor from './editor';
 
 function main() {
   const mainComponent = (
     <div className="primary">
       <div className="container">
-        <Editor.editor initialValue="1 m/s * 3 years" />
+        <Editor initialValue={"1 m/s * 3 years\n2 * 2"} />
       </div>
       <div className="background">
         <div className="columns">

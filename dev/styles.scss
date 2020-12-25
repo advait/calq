@@ -46,8 +46,8 @@ $editor-line-height: 2.5;
   min-height: 100vh;
 
   line-height: $editor-line-height;
-  
-  &:focus {
+
+  textarea:focus {
     outline: 0;
   }
 }

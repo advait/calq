@@ -3,10 +3,12 @@ import ReactDOM from 'react-dom';
 import Editor from './editor';
 
 function main() {
+  const initialValue = localStorage.getItem("value") || "1 m/s * 3 years\n2 * 2";
+
   const mainComponent = (
     <div className="primary">
       <div className="container">
-        <Editor initialValue={"1 m/s * 3 years\n2 * 2"} />
+        <Editor initialValue={initialValue} />
       </div>
       <div className="background">
         <div className="columns">

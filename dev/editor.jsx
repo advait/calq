@@ -7,12 +7,17 @@ export default function (props) {
   const [value, setValue] = useState(props.initialValue || "");
   const results = Interpreter.evalProgramAllShow(value);
 
+  const setValueLS = (v) => {
+    localStorage.setItem("value", v);
+    setValue(v);
+  };
+
   return (
     <div className="editor columns">
       <div className="column editor-left is-two-thirds">
         <Editor
           value={value}
-          onValueChange={setValue}
+          onValueChange={setValueLS}
           highlight={code => code}
         />
       </div>

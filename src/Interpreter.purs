@@ -119,6 +119,9 @@ exprParser = compoundExprParser
         [ [ Infix (Fn2 <$> (lexeme $ string "*")) AssocLeft
           , Infix (Fn2 <$> (lexeme $ string "/")) AssocLeft
           ]
+        , [ Infix (Fn2 <$> (lexeme $ string "+")) AssocLeft
+          , Infix (Fn2 <$> (lexeme $ string "-")) AssocLeft
+          ]
         ]
         (lexeme singleExprParser)
     )
@@ -180,6 +183,19 @@ eval (Fn2 "/" e1 e2) = do
   (UnitValue v1 u1) <- eval e1
   (UnitValue v2 u2) <- eval e2
   pure $ simplify $ UnitValue (v1 / v2) (u1 `div` u2)
+
+-- | Addition
+eval (Fn2 "+" e1 e2) = do
+  (UnitValue v1 u1) <- eval e1
+  (UnitValue v2 u2) <- eval e2
+  case convertCompUnit u2 u1 of
+    Left err -> lift $ Left err
+    Right ratio -> pure $ UnitValue (v1 + (v2 * ratio)) (u1)
+
+-- | Subtraction
+eval (Fn2 "-" e1 e2) = do
+  (UnitValue v2 u2) <- eval e2
+  eval (Fn2 "+" e1 (Constant (UnitValue (-v2) u2) u2))
 
 -- | Unknown functions
 eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))

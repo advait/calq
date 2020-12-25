@@ -76,6 +76,9 @@ c = 2ft * 2ft
 assertEqual(c, 4ft^2)
 assertEqual(2ft * 2ft, 4ft^2)
 assertEqual(4 / 2, 2)
+assertEqual(1ft + 6inch, 1.5ft)
+assertEqual(1ft - 6inch, 0.5ft)
+assertEqual(3+5*3, 18)
 """
 
 interpreterTest :: String -> String -> Spec Unit

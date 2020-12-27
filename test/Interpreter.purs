@@ -80,6 +80,7 @@ assertEqual(1ft + 6inch, 1.5ft)
 assertEqual(1ft - 6inch, 0.5ft)
 assertEqual(3+5*3, 18)
 assertEqual(sqrt(2), 1.4142135623730950488)
+assertEqual (c in m^2, 0.37161213621 m^2)
 """
 
 interpreterTest :: String -> String -> Spec Unit

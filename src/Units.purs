@@ -73,6 +73,8 @@ instance showDistanceUnit :: Show DistanceUnit where
 data TimeUnit
   = Seconds
   | Milliseconds
+  | Microseconds
+  | Nanoseconds
   | Minutes
   | Hours
   | Days
@@ -86,6 +88,8 @@ derive instance ordTimeUnit :: Ord TimeUnit
 instance showTimeUnit :: Show TimeUnit where
   show Seconds = "s"
   show Milliseconds = "ms"
+  show Microseconds = "μs"
+  show Nanoseconds = "ns"
   show Minutes = "min"
   show Hours = "hr"
   show Days = "day"
@@ -133,6 +137,8 @@ ratios =
   , { from: Distance AstronomicalUnits, to: Distance Meters, ratio: bigNum "149597870700" }
   , { from: Distance Parsecs, to: Distance Lightyears, ratio: bigNum "3.261563777" }
   , { from: Time Seconds, to: Time Milliseconds, ratio: bigNum "1000" }
+  , { from: Time Seconds, to: Time Microseconds, ratio: bigNum "1e6" }
+  , { from: Time Seconds, to: Time Nanoseconds, ratio: bigNum "1e9" }
   , { from: Time Minutes, to: Time Seconds, ratio: bigNum "60" }
   , { from: Time Hours, to: Time Minutes, ratio: bigNum "60" }
   , { from: Time Days, to: Time Hours, ratio: bigNum "24" }

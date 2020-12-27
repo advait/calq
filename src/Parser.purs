@@ -103,11 +103,19 @@ baseUnitParser =
           , Tuple "milliseconds" $ Time Milliseconds
           , Tuple "millisecond" $ Time Milliseconds
           , Tuple "ms" $ Time Milliseconds
+          , Tuple "microseconds" $ Time Microseconds
+          , Tuple "microsecond" $ Time Microseconds
+          , Tuple "μs" $ Time Microseconds
+          , Tuple "us" $ Time Microseconds
+          , Tuple "nanoseconds" $ Time Nanoseconds
+          , Tuple "nanosecond" $ Time Nanoseconds
+          , Tuple "ns" $ Time Nanoseconds
           , Tuple "minutes" $ Time Minutes
           , Tuple "minute" $ Time Minutes
           , Tuple "min" $ Time Minutes
           , Tuple "hours" $ Time Hours
           , Tuple "hour" $ Time Hours
+          , Tuple "hrs" $ Time Hours
           , Tuple "hr" $ Time Hours
           , Tuple "h" $ Time Hours
           , Tuple "days" $ Time Days

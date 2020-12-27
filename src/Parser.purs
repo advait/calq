@@ -16,7 +16,7 @@ import Text.Parsing.Parser.Language (haskellDef)
 import Text.Parsing.Parser.String (string)
 import Text.Parsing.Parser.Token (space)
 import Text.Parsing.Parser.Token as Token
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), div, pow, times)
+import Units (BaseUnit(..), CompUnit(..), CurrencyUnit(..), DistanceUnit(..), MassUnit(..), TimeUnit(..), div, pow, times)
 import Utils (bigNum)
 
 tokenParser :: Token.TokenParser
@@ -149,6 +149,17 @@ baseUnitParser =
           , Tuple "ounces" $ Mass Ounces
           , Tuple "ounce" $ Mass Ounces
           , Tuple "oz" $ Mass Ounces
+          , Tuple "USD" $ Currency USD
+          , Tuple "dollars" $ Currency USD
+          , Tuple "$" $ Currency USD
+          , Tuple "EUR" $ Currency EUR
+          , Tuple "euros" $ Currency EUR
+          , Tuple "euro" $ Currency EUR
+          , Tuple "€" $ Currency EUR
+          , Tuple "GBP" $ Currency GBP
+          , Tuple "pound sterling" $ Currency GBP
+          , Tuple "sterling" $ Currency GBP
+          , Tuple "£" $ Currency GBP
           ]
   in
     choice

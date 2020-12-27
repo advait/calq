@@ -52,6 +52,12 @@ spec = do
     programTest "a = 2 ft\nb = 2\nassertEqual(a/b, 1 ft)"
     describe "simplification" do
       interpreterTest "c * 1 minute / 4 lightyears " "4.75320942159e-7"
+  describe "currency" do
+    interpreterTest "$1" "1 USD"
+    interpreterTest "$1 in EUR" "0.819789 €"
+    -- TODO(advait): the commented test below should pass. Consider representing parsed units as Values of 1.0 instead of CompUnits.
+    -- interpreterTest "$1/hr" "1 USD/hr"
+    interpreterTest "$1m/hr" "1 USD*m/hr"
 
 -- TODO(advait): Move this to its own file BasicTest.calq
 basicTest :: String
@@ -80,7 +86,8 @@ assertEqual(1ft + 6inch, 1.5ft)
 assertEqual(1ft - 6inch, 0.5ft)
 assertEqual(3+5*3, 18)
 assertEqual(sqrt(2), 1.4142135623730950488)
-assertEqual (c in m^2, 0.37161213621 m^2)
+assertEqual(c in m^2, 0.37161213621 m^2)
+assertEqual($1, 1 USD)
 """
 
 interpreterTest :: String -> String -> Spec Unit

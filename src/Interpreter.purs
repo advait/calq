@@ -28,8 +28,9 @@ import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (choice, sepBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertBaseUnit, convertCompUnit, div, times)
-import Utils (bigNum, bigNumberFixed, bigNumberFormatFixed)
+import Units (BaseUnit(..), CompUnit(..), CurrencyUnit(..), DistanceUnit(..), TimeUnit(..), convertBaseUnit, convertCompUnit, div, times)
+import Units as Units
+import Utils (bigNum, bigNumberFixed, bigNumberPretty)
 
 -- | A value is the final/reduced form of an expression.
 data Value
@@ -39,20 +40,25 @@ instance showValue :: Show Value where
   show (UnitValue num unit) = show num <> " " <> show unit
 
 showPretty :: Value -> String
-showPretty (UnitValue num unit) = prettyBigNum num <> " " <> show unit
-  where
-  prettyBigNum :: BigNumber -> String
-  prettyBigNum n
-    -- TODO(advait): max decimal places should be configurable
-    | n - (bigNumberFixed 0 n) < bigNum ".01" = bigNumberFormatFixed 0 n
-    | n - (bigNumberFixed 1 n) < bigNum ".01" = bigNumberFormatFixed 1 n
-    | otherwise = bigNumberFormatFixed 2 n
+showPretty (UnitValue num unit)
+  | unit == (Units.singleton $ Currency USD) = "$" <> (show $ bigNumberFixed 2 num)
+  | unit == (Units.singleton $ Currency GBP) = "£" <> (show $ bigNumberFixed 2 num)
+  | unit == (Units.singleton $ Currency EUR) = "€" <> (show $ bigNumberFixed 2 num)
+
+showPretty (UnitValue num unit) = bigNumberPretty num <> " " <> show unit
 
 valueParser :: Parser String Value
 valueParser = do
+  prefixCurrency <-
+    choice
+      [ ((lexeme $ string "$") *> pure (Units.singleton $ Currency USD))
+      , ((lexeme $ string "€") *> pure (Units.singleton $ Currency EUR))
+      , ((lexeme $ string "£") *> pure (Units.singleton $ Currency GBP))
+      , pure mempty
+      ]
   num <- bigNumParser
-  unit <- (try compUnitParser) <|> (pure mempty)
-  pure $ UnitValue num unit
+  suffixUnit <- (try compUnitParser) <|> (pure mempty)
+  pure $ UnitValue num (prefixCurrency `times` suffixUnit)
 
 -- | An `Expr` is an expression that can be evaluated into a value.
 data Expr

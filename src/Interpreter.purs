@@ -16,7 +16,7 @@ import Data.List (List(..), (:))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Maybe (Maybe(..), fromMaybe)
+import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
 import Data.SortedArray as SortedArray
 import Data.String (Pattern(..), split)
@@ -56,11 +56,11 @@ valueParser = do
 
 -- | An `Expr` is an expression that can be evaluated into a value.
 data Expr
-  = Constant Value CompUnit
-  | Bind String Expr
-  | Ref String
-  | Fn1 String Expr
-  | Fn2 String Expr Expr
+  = Constant { value :: Value, cast :: Maybe CompUnit }
+  | Bind { name :: String, expr :: Expr }
+  | Ref { name :: String, cast :: Maybe CompUnit }
+  | Fn1 { name :: String, p1 :: Expr }
+  | Fn2 { name :: String, p1 :: Expr, p2 :: Expr }
 
 exprParser :: Parser String Expr
 exprParser = compoundExprParser
@@ -75,6 +75,9 @@ exprParser = compoundExprParser
         , refParser
         ]
 
+  castParser :: Parser String (Maybe CompUnit)
+  castParser = (try $ Just <$> ((lexeme $ string "in") *> compUnitParser)) <|> (pure Nothing)
+
   parenParser :: Parser String Expr
   parenParser = do
     _ <- lexeme $ string "("
@@ -84,9 +87,9 @@ exprParser = compoundExprParser
 
   constantParser :: Parser String Expr
   constantParser = do
-    value@(UnitValue _ unit) <- valueParser
-    showUnit <- (try $ Just <$> ((lexeme $ string "in") *> compUnitParser)) <|> (pure Nothing)
-    pure $ Constant value (fromMaybe unit showUnit)
+    value <- valueParser
+    cast <- castParser
+    pure $ Constant { value, cast }
 
   nameParser :: Parser String String
   nameParser =
@@ -101,42 +104,49 @@ exprParser = compoundExprParser
     name <- nameParser
     _ <- lexeme $ (string "=" <|> string ":=" <|> string ":")
     expr <- exprParser
-    pure $ Bind name expr
+    pure $ Bind { name, expr }
 
   refParser :: Parser String Expr
-  refParser = Ref <$> nameParser
+  refParser = do
+    name <- nameParser
+    cast <- castParser
+    pure $ Ref { name, cast }
 
   fn2Parser :: Parser String Expr
   fn2Parser =
     try
       $ do
-          fnName <- lexeme $ (nameParser <* string "(")
-          e1 <- lexeme $ exprParser
+          name <- lexeme $ (nameParser <* string "(")
+          p1 <- lexeme $ exprParser
           _ <- lexeme $ string ","
-          e2 <- lexeme $ exprParser
+          p2 <- lexeme $ exprParser
           _ <- lexeme $ string ")"
-          pure $ Fn2 fnName e1 e2
+          pure $ Fn2 { name, p1, p2 }
 
   fn1Parser :: Parser String Expr
   fn1Parser =
     try
       $ do
-          fnName <- lexeme $ (nameParser <* string "(")
-          e1 <- lexeme $ exprParser
+          name <- lexeme $ (nameParser <* string "(")
+          p1 <- lexeme $ exprParser
           _ <- lexeme $ string ")"
-          pure $ Fn1 fnName e1
+          pure $ Fn1 { name, p1 }
 
   compoundExprParser =
-    ( buildExprParser
-        [ [ Infix (Fn2 <$> (lexeme $ string "*")) AssocLeft
-          , Infix (Fn2 <$> (lexeme $ string "/")) AssocLeft
+    let
+      buildFn2 :: String -> Expr -> Expr -> Expr
+      buildFn2 name p1 p2 = Fn2 { name, p1, p2 }
+    in
+      ( buildExprParser
+          [ [ Infix (buildFn2 <$> (lexeme $ string "*")) AssocLeft
+            , Infix (buildFn2 <$> (lexeme $ string "/")) AssocLeft
+            ]
+          , [ Infix (buildFn2 <$> (lexeme $ string "+")) AssocLeft
+            , Infix (buildFn2 <$> (lexeme $ string "-")) AssocLeft
+            ]
           ]
-        , [ Infix (Fn2 <$> (lexeme $ string "+")) AssocLeft
-          , Infix (Fn2 <$> (lexeme $ string "-")) AssocLeft
-          ]
-        ]
-        (lexeme singleExprParser)
-    )
+          (lexeme singleExprParser)
+      )
 
 programParser :: Parser String (Array Expr)
 programParser = (fromFoldable <$> (exprParser `sepBy` (lexeme $ string "\n"))) <* eof
@@ -155,72 +165,79 @@ initState =
 initValue :: Value
 initValue = UnitValue (bigNum "1.0") mempty
 
+-- | Casts the given value to the given unit.
+castValue :: Value -> Maybe CompUnit -> Either String Value
+castValue value Nothing = Right value
+
+castValue (UnitValue value fromUnit) (Just toUnit) = do
+  ratio <- convertCompUnit fromUnit toUnit
+  pure (UnitValue (value * ratio) toUnit)
+
 -- | Evaluates an expression.
 eval :: Expr -> StateT InterpreterState (Either String) Value
 -- | A constant expression evaluates to itself.
-eval (Constant (UnitValue value fromUnit) toUnit) = do
-  ratio <- lift $ convertCompUnit fromUnit toUnit
-  pure (UnitValue (value * ratio) toUnit)
+eval (Constant { value, cast }) = do
+  lift $ castValue value cast
 
 -- | Binds a name to its evaluated value.
-eval (Bind name expr) = do
+eval (Bind { name, expr }) = do
   value <- eval expr
   _ <- State.modify (\state -> Map.insert name value state)
   pure value
 
 -- | Dereferences a name to its previously evaluated value.
-eval (Ref name) = do
+eval (Ref { name, cast }) = do
   state :: InterpreterState <- State.get
   case Map.lookup name state of
     Nothing -> lift $ Left ("Undefined variable " <> (show name))
-    Just value -> pure value
+    Just value -> lift $ castValue value cast
 
 -- | Sqrt
-eval (Fn1 "sqrt" e1) = do
-  (UnitValue v u) <- eval e1
+eval (Fn1 { name: "sqrt", p1 }) = do
+  (UnitValue v u) <- eval p1
   if u == mempty then
     pure (UnitValue (BigNumber.sqrt v) u)
   else
     lift $ Left "Cannot sqrt values with units"
 
 -- | Asserts that the two expressions are the same.
-eval (Fn2 "assertEqual" e1 e2) = do
-  value1 <- eval e1
-  value2 <- eval e2
+eval (Fn2 { name: "assertEqual", p1, p2 }) = do
+  value1 <- eval p1
+  value2 <- eval p2
   if value1 `approxEqual` value2 then
     pure $ value1
   else
     lift $ Left (show value1 <> " ≠ " <> show value2)
 
 -- | Multiplication
-eval (Fn2 "*" e1 e2) = do
-  (UnitValue v1 u1) <- eval e1
-  (UnitValue v2 u2) <- eval e2
+eval (Fn2 { name: "*", p1, p2 }) = do
+  (UnitValue v1 u1) <- eval p1
+  (UnitValue v2 u2) <- eval p2
   pure $ simplify $ UnitValue (v1 * v2) (u1 `times` u2)
 
 -- | Division
-eval (Fn2 "/" e1 e2) = do
-  (UnitValue v1 u1) <- eval e1
-  (UnitValue v2 u2) <- eval e2
+eval (Fn2 { name: "/", p1, p2 }) = do
+  (UnitValue v1 u1) <- eval p1
+  (UnitValue v2 u2) <- eval p2
   pure $ simplify $ UnitValue (v1 / v2) (u1 `div` u2)
 
 -- | Addition
-eval (Fn2 "+" e1 e2) = do
-  (UnitValue v1 u1) <- eval e1
-  (UnitValue v2 u2) <- eval e2
+eval (Fn2 { name: "+", p1, p2 }) = do
+  (UnitValue v1 u1) <- eval p1
+  (UnitValue v2 u2) <- eval p2
   case convertCompUnit u2 u1 of
     Left err -> lift $ Left err
     Right ratio -> pure $ UnitValue (v1 + (v2 * ratio)) (u1)
 
 -- | Subtraction
-eval (Fn2 "-" e1 e2) = do
-  (UnitValue v2 u2) <- eval e2
-  eval (Fn2 "+" e1 (Constant (UnitValue (-v2) u2) u2))
+eval (Fn2 { name: "-", p1, p2 }) = do
+  (UnitValue v2 u2) <- eval p2
+  eval (Fn2 { name: "+", p1, p2: (Constant { value: UnitValue (-v2) u2, cast: Nothing }) })
 
 -- | Unknown functions
-eval (Fn1 name _) = lift $ Left ("Unkown function name " <> (show name))
+eval (Fn1 { name, p1 }) = lift $ Left ("Unkown function name " <> (show name))
 
-eval (Fn2 name _ _) = lift $ Left ("Unkown function name " <> (show name))
+eval (Fn2 { name, p1, p2 }) = lift $ Left ("Unkown function name " <> (show name))
 
 -- | Returns whether the values are within .001% of each other.
 approxEqual :: Value -> Value -> Boolean

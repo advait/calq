@@ -25,6 +25,7 @@ data BaseUnit
   = Distance DistanceUnit
   | Time TimeUnit
   | Mass MassUnit
+  | Currency CurrencyUnit
 
 derive instance eqBaseUnit :: Eq BaseUnit
 
@@ -34,6 +35,7 @@ instance showBaseUnit :: Show BaseUnit where
   show (Distance d) = show d
   show (Time t) = show t
   show (Mass m) = show m
+  show (Currency c) = show c
 
 data DistanceUnit
   = Meters
@@ -121,6 +123,20 @@ instance showMassUnit :: Show MassUnit where
   show Tons = "tons"
   show Ounces = "oz"
 
+data CurrencyUnit
+  = USD
+  | EUR
+  | GBP
+
+derive instance eqCurrencyUnit :: Eq CurrencyUnit
+
+derive instance ordCurrencyUnit :: Ord CurrencyUnit
+
+instance showCurrencyUnit :: Show CurrencyUnit where
+  show USD = "$"
+  show EUR = "€"
+  show GBP = "£"
+
 -- | Definitional ratios between units. We use BFS to search this graph to determine arbitrary conversions.
 ratios :: Array { from :: BaseUnit, to :: BaseUnit, ratio :: BigNumber }
 ratios =
@@ -151,6 +167,9 @@ ratios =
   , { from: Mass Pounds, to: Mass Kilograms, ratio: bigNum "0.45359237" }
   , { from: Mass Tons, to: Mass Pounds, ratio: bigNum "2000" }
   , { from: Mass Pounds, to: Mass Ounces, ratio: bigNum "16" }
+  -- TODO(advait): Dynamically fetch currency conversion ratios
+  , { from: Currency USD, to: Currency EUR, ratio: bigNum "0.819789" }
+  , { from: Currency USD, to: Currency GBP, ratio: bigNum "0.747957" }
   ]
 
 -- | Given a number with the first unit, return what you need to multiply that number by to
@@ -210,6 +229,10 @@ instance semigroupCompUnit :: Semigroup CompUnit where
 -- | An empty `CompUnit` represents no units (i.e. a scalar quantity).
 instance monoidCompUnit :: Monoid CompUnit where
   mempty = CompUnit { num: SortedArray.sort [], den: SortedArray.sort [] }
+
+-- | Returns a `CompUnit` with a single provided `BaseUnit` in the numerator.
+singleton :: BaseUnit -> CompUnit
+singleton unit = CompUnit { num: SortedArray.singleton unit, den: mempty }
 
 -- | Multiplies the given `CompUnit`s together.
 times :: CompUnit -> CompUnit -> CompUnit

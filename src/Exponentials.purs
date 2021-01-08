@@ -1,7 +1,6 @@
 module Exponentials where
 
 import Prelude
-import Data.Foldable (class Foldable, foldMap, foldl, foldr)
 import Data.Foldable as Foldable
 import Data.Group (class Group, ginverse)
 import Data.Map (Map)
@@ -14,6 +13,19 @@ newtype Exponentials a
   = Exponentials (Map a Int)
 
 derive instance newtypeExponentials :: Newtype (Exponentials a) _
+
+instance showExponentials :: (Ord a, Show a) => Show (Exponentials a) where
+  show (Exponentials m) =
+    let
+      num = Map.toUnfoldableUnordered $ Map.filter (\n -> n > 0) m
+
+      den = Map.toUnfoldableUnordered $ negate <$> Map.filter (\n -> n < 0) m
+    in
+      case Tuple num den of
+        Tuple [] [] -> ""
+        Tuple [] den' -> "1/" <> show den'
+        Tuple num' [] -> show num'
+        Tuple num' den' -> show num' <> "/" <> show den'
 
 -- | "Cancel out" values with exponent of zero.
 cancel :: forall a. Ord a => Exponentials a -> Exponentials a
@@ -39,7 +51,7 @@ fold f init e =
   let
     items = Map.toUnfoldableUnordered $ Newtype.unwrap e :: Array (Tuple a Int)
   in
-    foldl f init items
+    Foldable.foldl f init items
 
 -- | Similar to 'foldl', but the result is encapsulated in a monad.
 foldM :: forall a b m. Monad m => (b -> Tuple a Int -> m b) -> b -> Exponentials a -> m b
@@ -66,6 +78,6 @@ singleton a = Exponentials $ Map.singleton a 1
 quotient :: forall a. Ord a => Array a -> Array a -> Exponentials a
 quotient num den =
   let
-    foldProduct p = foldl (<>) mempty $ singleton <$> p
+    foldProduct p = Foldable.foldl (<>) mempty $ singleton <$> p
   in
     (foldProduct num) <> (ginverse $ foldProduct den)

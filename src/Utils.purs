@@ -18,3 +18,5 @@ foreign import bigNumberFixed :: Int -> BigNumber -> BigNumber
 foreign import debugLog :: forall a. a -> a
 
 foreign import debugLogAlt :: forall a b. a -> b -> b
+
+foreign import undefinedLog :: forall a. String -> a

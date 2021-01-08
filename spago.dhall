@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "console"
   , "effect"
   , "errors"
+  , "group"
   , "maybe"
   , "newtype"
   , "ordered-collections"

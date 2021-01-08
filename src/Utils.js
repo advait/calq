@@ -12,6 +12,10 @@ exports.debugLogAlt = function (a) {
   };
 };
 
+exports.undefinedLog = function (message) {
+  throw new Error(message);
+}
+
 exports.bigNumberFormatFixed = function (n) {
   return function (b) {
     return b.toFormat(n);

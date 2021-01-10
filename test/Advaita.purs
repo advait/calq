@@ -33,12 +33,19 @@ spec = do
       interpreterTest "reduce(ft / m)" "0.3048"
       interpreterTest "reduce(1 / ft)" "3.28084 / m"
       interpreterTest "reduce(m / ft)" "3.28084"
-  describe "convertible units are automatically merged together" do
-    interpreterTest "m * ft" "0.3048 * m * m"
-    interpreterTest "m / ft" "3.28084"
+    describe "convertible units are automatically merged together" do
+      interpreterTest "m * ft" "0.3048 * m * m"
+      interpreterTest "m / ft" "3.28084"
+    describe "implicit multiplciation" do
+      interpreterTest "1m" "1*m"
+      interpreterTest "(4*4)m" "16m"
+    describe "order of operations" do
+      interpreterTest "3m/3m" "1"
+      interpreterTest "3m/3*m" "m*m"
+    describe "casting" do
+      interpreterTest "1 m in ft" "3.28084 ft"
+      interpreterTest "4.0 m*m in ft*ft" "43.0556 ft*ft"
 
---   interpreterTest "1 m in ft" "3.28084 ft"
---   interpreterTest "4.0 m*m in ft^2" "43.0556 ft^2"
 --   interpreterTest "4.0 m^2 in ft^2" "43.0556 ft^2"
 --   interpreterTest "4.0 ft*ft in ft^2" "4.0 ft^2"
 --   interpreterTest "3.8 lightyears in parsecs" "1.165085 parsecs"

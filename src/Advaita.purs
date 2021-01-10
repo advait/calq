@@ -42,6 +42,9 @@ data Binding a
 type InterpreterState
   = Map String (Binding EvalValue)
 
+type Interpreter a
+  = StateT InterpreterState (Either String) a
+
 initState :: InterpreterState
 initState =
   Map.fromFoldable
@@ -52,14 +55,14 @@ initState =
     , Tuple "ft" (DerivedUnit { scalar: bigNum "0.3048", units: Exponentials.singleton "m" })
     ]
 
-lookupName :: String -> StateT InterpreterState (Either String) (Binding EvalValue)
+lookupName :: String -> Interpreter (Binding EvalValue)
 lookupName name = do
   state <- State.get
   case Map.lookup name state of
     Nothing -> lift $ Left ("Undefined variable " <> (show name))
     Just b -> pure b
 
-eval :: ParsedExpr -> StateT InterpreterState (Either String) EvalValue
+eval :: ParsedExpr -> Interpreter EvalValue
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
 eval (CreateCannonicalUnit name) = do
@@ -76,8 +79,8 @@ eval (BindAlias { name, target }) = do
   _ <- State.modify (\state -> Map.insert name (Alias target) state)
   pure value
 
--- | When evaluating a name, we are content with the result in terms of. CannonicalUnits
--- | as well as DerivedUnits. See `reduce` for a full reduction to CannonicalUnits.
+-- | When evaluating a name, we are content with the result in terms of. CannonicalUnits as well as
+-- | DerivedUnits. See `reduc` for a full reduction to CannonicalUnits.
 eval (Name name) = do
   value <- lookupName name
   case value of
@@ -118,20 +121,26 @@ times :: EvalValue -> EvalValue -> EvalValue
 times { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 * s2, units: u1 <> u2 }
 
 dividedBy :: EvalValue -> EvalValue -> EvalValue
-dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 / s2, units: u1 <> (Group.ginverse u2) }
+dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } =
+  { scalar: s1 / s2
+  , units: u1 <> (Group.ginverse u2)
+  }
 
 power :: EvalValue -> Int -> EvalValue
-power { scalar, units } n = { scalar: scalar `BigNumber.pow` (bigNum $ show n), units: Group.power units n }
+power { scalar, units } n =
+  { scalar: scalar `BigNumber.pow` (bigNum $ show n)
+  , units: Group.power units n
+  }
 
 -- | Returns whether the values are within .001% of each other.
 approxEqual :: EvalValue -> EvalValue -> Boolean
 approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 } = (u1 == u2) && (abs (s1 - s2) / s1) < (bigNum "1e-5")
 
 -- | Reduces a value such that units are all CannonicalUnits.
-reduce :: EvalValue -> StateT InterpreterState (Either String) EvalValue
+reduce :: EvalValue -> Interpreter EvalValue
 reduce { scalar: startScalar, units: startUnits } =
   let
-    foldFn :: EvalValue -> Tuple Unit Int -> StateT InterpreterState (Either String) EvalValue
+    foldFn :: EvalValue -> Tuple Unit Int -> Interpreter EvalValue
     foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
       value <- lookupName newUnit
       case value of
@@ -147,7 +156,7 @@ reduce { scalar: startScalar, units: startUnits } =
     Exponentials.foldM foldFn { scalar: startScalar, units: mempty } startUnits
 
 -- | Determines whether the units can convert between each other.
-convertible :: Unit -> Unit -> StateT InterpreterState (Either String) Boolean
+convertible :: Unit -> Unit -> Interpreter Boolean
 convertible u1 u2 = do
   { scalar, units } <- reduce $ ((singletonUnit u1) `dividedBy` (singletonUnit u2))
   let
@@ -155,14 +164,14 @@ convertible u1 u2 = do
   pure $ units == mempty
 
 -- | Merge convertible units together (e.g. 1 ft*m will be merged to 0.3048 m^2).
-mergeConvertible :: EvalValue -> StateT InterpreterState (Either String) EvalValue
+mergeConvertible :: EvalValue -> Interpreter EvalValue
 mergeConvertible ev@{ scalar: _, units } =
   let
     pairs :: List (Tuple (Tuple Unit Int) (Tuple Unit Int))
     pairs = List.fromFoldable $ Utils.nonrepeatedCombinations $ Exponentials.toArray units
 
     -- | Iterate through pairs. If we find a convertible pair, merge them and restart process.
-    rec :: List (Tuple (Tuple Unit Int) (Tuple Unit Int)) -> StateT InterpreterState (Either String) EvalValue
+    rec :: List (Tuple (Tuple Unit Int) (Tuple Unit Int)) -> Interpreter EvalValue
     rec Nil = pure ev
 
     rec ((Tuple (Tuple u1 p1) (Tuple u2 p2)) : tail) = do

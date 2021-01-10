@@ -1,7 +1,8 @@
 module Test.Advaita where
 
 import Prelude
-import Advaita (approxEqual, eval, exprParser, initState)
+import Advaita (approxEqual, eval, initState)
+import Expressions (exprParser)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (evalStateT)
 import Data.Either (Either(..))

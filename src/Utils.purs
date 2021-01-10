@@ -7,8 +7,6 @@ import Data.BigNumber (BigNumber)
 import Data.Generic.Rep (Argument(..), Constructor(..))
 import Data.Generic.Rep as Generic
 import Data.Tuple (Tuple(..))
--- import Data.Tuple as Tuple
-import Data.Unfoldable (class Unfoldable)
 
 -- | Create a constant `BigNumber` from a `String`
 bigNum :: String -> BigNumber

@@ -5,10 +5,12 @@ import Control.Monad.State (StateT, lift, runStateT)
 import Control.Monad.State as State
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
+import Data.BigNumber as BigNumber
 import Data.Char.Unicode (isAlpha, isAlphaNum)
 import Data.Either (Either(..))
 import Data.EitherR (fmapL)
-import Data.Group (ginverse)
+import Data.Group (class Group)
+import Data.Group as Group
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.Map (Map)
@@ -26,6 +28,7 @@ import Text.Parsing.Parser.Combinators (choice, notFollowedBy, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
 import Utils (bigNum, undefinedLog)
+import Utils as Utils
 
 data ParsedExpr
   = Scalar BigNumber
@@ -196,18 +199,20 @@ eval (Name name) = do
     -- Recursively dereference aliases until we get to a CannonicalUnit or DerivedUnit.
     Alias name' -> eval (Name name')
 
+eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce
+
 eval (Fn1 { name, p1 }) = do
   lift $ Left $ "Unknown function: " <> show name
 
 eval (Fn2 { name: "*", p1, p2 }) = do
   e1 <- eval p1
   e2 <- eval p2
-  pure $ e1 `times` e2
+  mergeConvertible $ e1 `times` e2
 
 eval (Fn2 { name: "/", p1, p2 }) = do
   e1 <- eval p1
   e2 <- eval p2
-  pure $ e1 `dividedBy` e2
+  mergeConvertible $ e1 `dividedBy` e2
 
 eval (Fn2 { name: "in", p1, p2 }) = do
   e1 <- eval p1 >>= reduce
@@ -226,7 +231,10 @@ times :: EvalValue -> EvalValue -> EvalValue
 times { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 * s2, units: u1 <> u2 }
 
 dividedBy :: EvalValue -> EvalValue -> EvalValue
-dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 / s2, units: u1 <> (ginverse u2) }
+dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 / s2, units: u1 <> (Group.ginverse u2) }
+
+power :: EvalValue -> Int -> EvalValue
+power { scalar, units } n = { scalar: scalar `BigNumber.pow` (bigNum $ show n), units: Group.power units n }
 
 -- | Returns whether the values are within .001% of each other.
 approxEqual :: EvalValue -> EvalValue -> Boolean
@@ -237,16 +245,50 @@ reduce :: EvalValue -> StateT InterpreterState (Either String) EvalValue
 reduce { scalar: startScalar, units: startUnits } =
   let
     foldFn :: EvalValue -> Tuple Unit Int -> StateT InterpreterState (Either String) EvalValue
-    foldFn acc@{ scalar, units } (Tuple newUnit power) = do
+    foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
       value <- lookupName newUnit
       case value of
-        CannonicalUnit -> pure { scalar, units: units <> (Exponentials.singleton newUnit) }
+        -- For a CannonicalUnit, we are done - simply return the unit with the appropriate power
+        CannonicalUnit -> pure { scalar, units: units <> (Exponentials.power newUnit newPower) }
+        -- DerivedUnits must be reduced further
         DerivedUnit value' -> do
-          reducedValue <- reduce value'
+          reducedValue <- reduce $ value' `power` newPower
           pure $ acc `times` reducedValue
-        Alias name -> undefinedLog "Do we really need to implement Alias here?"
+        -- We should not see aliases when we are reducing as they should already be evaluated
+        Alias name -> undefinedLog "We should not see Aliases when reducing"
   in
     Exponentials.foldM foldFn { scalar: startScalar, units: mempty } startUnits
+
+-- | Determines whether the units can convert between each other.
+convertible :: Unit -> Unit -> StateT InterpreterState (Either String) Boolean
+convertible u1 u2 = do
+  { scalar, units } <- reduce $ ((singletonUnit u1) `dividedBy` (singletonUnit u2))
+  let
+    ret = units == mempty
+  pure $ units == mempty
+
+-- | Merge convertible units together (e.g. 1 ft*m will be merged to 0.3048 m^2).
+mergeConvertible :: EvalValue -> StateT InterpreterState (Either String) EvalValue
+mergeConvertible ev@{ scalar: _, units } =
+  let
+    pairs :: List (Tuple (Tuple Unit Int) (Tuple Unit Int))
+    pairs = List.fromFoldable $ Utils.nonrepeatedCombinations $ Exponentials.toArray units
+
+    -- | Iterate through pairs. If we find a convertible pair, merge them and restart process.
+    rec :: List (Tuple (Tuple Unit Int) (Tuple Unit Int)) -> StateT InterpreterState (Either String) EvalValue
+    rec Nil = pure ev
+
+    rec ((Tuple (Tuple u1 p1) (Tuple u2 p2)) : tail) = do
+      isConvertible <- convertible u1 u2
+      if isConvertible then do
+        let
+          unitsToMerge = { scalar: bigNum "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
+        conversionFactor <- reduce $ unitsToMerge
+        mergeConvertible $ ev `dividedBy` unitsToMerge `times` conversionFactor
+      else
+        rec tail
+  in
+    rec pairs
 
 evalProgramAll :: String -> Array (Either String EvalValue)
 evalProgramAll input = Array.fromFoldable $ rec (List.fromFoldable exprs) initState

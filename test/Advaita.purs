@@ -14,13 +14,27 @@ import Text.Parsing.Parser.String (eof)
 
 spec :: Spec Unit
 spec = do
-  describe "full form constant values" do
-    interpreterTest "1" "1"
-    interpreterTest "c" "c"
-    interpreterTest "1 * m" "m"
-    interpreterTest "1*m/m" "1"
-    interpreterTest "ft" "1*ft"
-    interpreterTest "m in ft" "3.280839895*ft"
+  describe "Interpreter" do
+    describe "full form constant values" do
+      interpreterTest "1" "1"
+      interpreterTest "c" "c"
+    describe "multiplication and division" do
+      interpreterTest "1 * m" "m"
+      interpreterTest "21 * 2 * m" " 42 * m"
+      interpreterTest "1*m/m" "1"
+      interpreterTest "ft" "1*ft"
+    describe "basic unit conversions" do
+      interpreterTest "m in ft" "3.280839895*ft"
+    describe "reduce" do
+      interpreterTest "reduce(1)" "1"
+      interpreterTest "reduce(ft)" "0.3048 * m"
+      interpreterTest "reduce(ft * m)" "0.3048 * m * m"
+      interpreterTest "reduce(ft / m)" "0.3048"
+      interpreterTest "reduce(1 / ft)" "3.28084 / m"
+      interpreterTest "reduce(m / ft)" "3.28084"
+  describe "convertible units are automatically merged together" do
+    interpreterTest "m * ft" "0.3048 * m * m"
+    interpreterTest "m / ft" "3.28084"
 
 --   interpreterTest "1 m in ft" "3.28084 ft"
 --   interpreterTest "4.0 m*m in ft^2" "43.0556 ft^2"

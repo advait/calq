@@ -1,4 +1,4 @@
-module Expressions where
+module Expression where
 
 import Prelude
 import Control.Alt ((<|>))
@@ -55,7 +55,7 @@ bigNumParser =
         ]
     <?> "number"
 
--- | Represents an expression that can be evaluated. 
+-- | Represents an expression that can be evaluated.
 data ParsedExpr
   = Scalar BigNumber
   | Name String

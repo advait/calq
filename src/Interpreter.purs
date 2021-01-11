@@ -18,7 +18,7 @@ import Data.Ord (abs)
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expressions (ParsedExpr(..), Line, parseLines)
+import Expression (ParsedExpr(..), Line, parseLines)
 import Math as Math
 import Utils (bigNum, undefinedLog)
 import Utils as Utils

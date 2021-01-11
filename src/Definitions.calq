@@ -36,3 +36,120 @@ pi = 3.14159265359
 # Speed
 # ---------------------------------------------------------------
 c = 299792458 m/s
+
+# $ [ Tuple "meters" $ Distance Meters
+# , Tuple "meter" $ Distance Meters
+# , Tuple "m" $ Distance Meters
+# , Tuple "centimeters" $ Distance Centimeters
+# , Tuple "centimeter" $ Distance Centimeters
+# , Tuple "cm" $ Distance Centimeters
+# , Tuple "millimeters" $ Distance Millimeters
+# , Tuple "millimeter" $ Distance Millimeters
+# , Tuple "mm" $ Distance Millimeters
+# , Tuple "micrometers" $ Distance Micrometers
+# , Tuple "micrometer" $ Distance Micrometers
+# , Tuple "μm" $ Distance Micrometers
+# , Tuple "um" $ Distance Micrometers
+# , Tuple "nanometers" $ Distance Nanometers
+# , Tuple "nanometer" $ Distance Nanometers
+# , Tuple "nm" $ Distance Nanometers
+# , Tuple "kilometers" $ Distance Kilometers
+# , Tuple "kilometer" $ Distance Kilometers
+# , Tuple "km" $ Distance Kilometers
+# , Tuple "feet" $ Distance Feet
+# , Tuple "foot" $ Distance Feet
+# , Tuple "ft" $ Distance Feet
+# , Tuple "'" $ Distance Feet
+# , Tuple "inches" $ Distance Inches
+# , Tuple "inch" $ Distance Inches
+# , Tuple "\"" $ Distance Inches
+# , Tuple "yards" $ Distance Yards
+# , Tuple "yard" $ Distance Yards
+# , Tuple "yd" $ Distance Yards
+# , Tuple "miles" $ Distance Miles
+# , Tuple "mile" $ Distance Miles
+# , Tuple "mi" $ Distance Miles
+# , Tuple "lightyears" $ Distance Lightyears
+# , Tuple "lightyear" $ Distance Lightyears
+# , Tuple "parsecs" $ Distance Parsecs
+# , Tuple "parsec" $ Distance Parsecs
+# , Tuple "seconds" $ Time Seconds
+# , Tuple "second" $ Time Seconds
+# , Tuple "s" $ Time Seconds
+# , Tuple "milliseconds" $ Time Milliseconds
+# , Tuple "millisecond" $ Time Milliseconds
+# , Tuple "ms" $ Time Milliseconds
+# , Tuple "microseconds" $ Time Microseconds
+# , Tuple "microsecond" $ Time Microseconds
+# , Tuple "μs" $ Time Microseconds
+# , Tuple "us" $ Time Microseconds
+# , Tuple "nanoseconds" $ Time Nanoseconds
+# , Tuple "nanosecond" $ Time Nanoseconds
+# , Tuple "ns" $ Time Nanoseconds
+# , Tuple "minutes" $ Time Minutes
+# , Tuple "minute" $ Time Minutes
+# , Tuple "min" $ Time Minutes
+# , Tuple "hours" $ Time Hours
+# , Tuple "hour" $ Time Hours
+# , Tuple "hrs" $ Time Hours
+# , Tuple "hr" $ Time Hours
+# , Tuple "h" $ Time Hours
+# , Tuple "days" $ Time Days
+# , Tuple "day" $ Time Days
+# , Tuple "months" $ Time Months
+# , Tuple "month" $ Time Months
+# , Tuple "years" $ Time Years
+# , Tuple "year" $ Time Years
+# , Tuple "grams" $ Mass Grams
+# , Tuple "gram" $ Mass Grams
+# , Tuple "g" $ Mass Grams
+# , Tuple "milligrams" $ Mass Milligrams
+# , Tuple "milligram" $ Mass Milligrams
+# , Tuple "mg" $ Mass Milligrams
+# , Tuple "micrograms" $ Mass Micrograms
+# , Tuple "microgram" $ Mass Micrograms
+# , Tuple "μg" $ Mass Micrograms
+# , Tuple "ug" $ Mass Micrograms
+# , Tuple "nanograms" $ Mass Nanograms
+# , Tuple "nanogram" $ Mass Nanograms
+# , Tuple "ng" $ Mass Nanograms
+# , Tuple "kilograms" $ Mass Kilograms
+# , Tuple "kilogram" $ Mass Kilograms
+# , Tuple "kg" $ Mass Kilograms
+# , Tuple "pounds" $ Mass Pounds
+# , Tuple "pound" $ Mass Pounds
+# , Tuple "lbs" $ Mass Pounds
+# , Tuple "lb" $ Mass Pounds
+# , Tuple "tons" $ Mass Tons
+# , Tuple "ton" $ Mass Tons
+# , Tuple "ounces" $ Mass Ounces
+# , Tuple "ounce" $ Mass Ounces
+# , Tuple "oz" $ Mass Ounces
+
+#[ { from: Distance Meters, to: Distance Centimeters, ratio: bigNum "100" }
+#, { from: Distance Meters, to: Distance Millimeters, ratio: bigNum "1000" }
+#, { from: Distance Meters, to: Distance Micrometers, ratio: bigNum "1e6" }
+#, { from: Distance Meters, to: Distance Nanometers, ratio: bigNum "1e9" }
+#, { from: Distance Kilometers, to: Distance Meters, ratio: bigNum "1000" }
+#, { from: Distance Meters, to: Distance Feet, ratio: bigNum "3.28084" }
+#, { from: Distance Feet, to: Distance Inches, ratio: bigNum "12" }
+#, { from: Distance Yards, to: Distance Feet, ratio: bigNum "3" }
+#, { from: Distance Miles, to: Distance Feet, ratio: bigNum "5280" }
+#, { from: Distance Lightyears, to: Distance Meters, ratio: bigNum "9460730472580800" }
+#, { from: Distance AstronomicalUnits, to: Distance Meters, ratio: bigNum "149597870700" }
+#, { from: Distance Parsecs, to: Distance Lightyears, ratio: bigNum "3.261563777" }
+#, { from: Time Seconds, to: Time Milliseconds, ratio: bigNum "1000" }
+#, { from: Time Seconds, to: Time Microseconds, ratio: bigNum "1e6" }
+#, { from: Time Seconds, to: Time Nanoseconds, ratio: bigNum "1e9" }
+#, { from: Time Minutes, to: Time Seconds, ratio: bigNum "60" }
+#, { from: Time Hours, to: Time Minutes, ratio: bigNum "60" }
+#, { from: Time Days, to: Time Hours, ratio: bigNum "24" }
+#, { from: Time Months, to: Time Days, ratio: bigNum "30" }
+#, { from: Time Years, to: Time Days, ratio: bigNum "365" }
+#, { from: Mass Grams, to: Mass Milligrams, ratio: bigNum "1000" }
+#, { from: Mass Grams, to: Mass Micrograms, ratio: bigNum "1e6" }
+#, { from: Mass Grams, to: Mass Nanograms, ratio: bigNum "1e9" }
+#, { from: Mass Kilograms, to: Mass Grams, ratio: bigNum "1000" }
+#, { from: Mass Pounds, to: Mass Kilograms, ratio: bigNum "0.45359237" }
+#, { from: Mass Tons, to: Mass Pounds, ratio: bigNum "2000" }
+#, { from: Mass Pounds, to: Mass Ounces, ratio: bigNum "16" }

@@ -1,17 +1,24 @@
 module Test.Advaita where
 
 import Prelude
-import Advaita (approxEqual, eval, initState)
-import Expressions (exprParser)
+import Advaita (EvalValue, approxEqual, eval, evalProgramAll, initState)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (evalStateT)
+import Data.Array (foldM)
 import Data.Either (Either(..))
+import Data.List (List(..), (:))
+import Data.List as List
+import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
+import Effect.Aff (Aff)
 import Effect.Exception (Error, error)
+import Expressions (exprParser)
+import Prim.RowList (Nil)
 import Test.Spec (Spec, describe, it)
-import Test.Spec.Assertions (fail)
+import Test.Spec.Assertions (fail, shouldEqual)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (eof)
+import Utils (bigNum)
 
 spec :: Spec Unit
 spec = do
@@ -24,6 +31,11 @@ spec = do
       interpreterTest "21 * 2 * m" " 42 * m"
       interpreterTest "1*m/m" "1"
       interpreterTest "ft" "1*ft"
+      interpreterTest "2*2ft" "4ft"
+      interpreterTest "2 ft * 2" "4ft"
+    describe "strange whitespace" do
+      interpreterTest "42   \t" "42"
+      interpreterTest "1  \t  m in \t m" "1 m"
     describe "basic unit conversions" do
       interpreterTest "m in ft" "3.280839895*ft"
     describe "reduce" do
@@ -45,6 +57,18 @@ spec = do
     describe "casting" do
       interpreterTest "1 m in ft" "3.28084 ft"
       interpreterTest "4.0 m*m in ft*ft" "43.0556 ft*ft"
+    describe "exponentials" do
+      interpreterTest "2^2" "4"
+      interpreterTest "4.0 m*m in ft^2" "43.0556 ft^2"
+      interpreterTest "1 m^2*m^-2" "1"
+      interpreterTest "1 m^2/m^2" "1"
+    describe "derefernces predefined variables" do
+      -- interpreterTest "c" "299792458 m/s"
+      interpreterTest "reduce(c)" "299792458 m/s"
+      -- interpreterTest "pi" "3.14159265354"
+      interpreterTest "reduce(pi)" "3.14159265354"
+    describe "full programs" do
+      programTest "assertEqual(1, 1)"
 
 --   interpreterTest "4.0 m^2 in ft^2" "43.0556 ft^2"
 --   interpreterTest "4.0 ft*ft in ft^2" "4.0 ft^2"
@@ -53,19 +77,7 @@ spec = do
 --   interpreterTest "1.0 mi in ft" "5280 feet"
 --   interpreterTest "2 days in minutes" "2880 minutes"
 --   interpreterTest "65 miles/hour in km/h" "104.607356652 kilometers/hour"
--- describe "omitted values" do
---   interpreterTest "42" "42"
---   interpreterTest "42 inches" "42 inch"
--- describe "strange whitespace" do
---   interpreterTest "42   \t" "42"
---   interpreterTest "1  \t  m in \t m" "1 m"
--- describe "derefernces predefined variables" do
---   interpreterTest "c" "299792458 m/s"
---   interpreterTest "pi" "3.14159265354"
 -- describe "multiplication" do
---   interpreterTest "2*2" "4"
---   interpreterTest "2*2ft" "4ft"
---   interpreterTest "2 ft * 2" "4ft"
 --   describe "simplification" do
 --     interpreterTest "2 ft *  2 hours/feet" "4 hours"
 --     interpreterTest "200 m/s * 3 hours" "2160000 meters"
@@ -92,9 +104,19 @@ runParserOrFail input p = case runParser input p of
   Right res -> pure res
   Left err -> throwError $ error ("Failed to parse " <> show input <> ": " <> show err)
 
--- programTest :: String -> Spec Unit
--- programTest input =
---   it ("runs: " <> (replaceAll (Pattern "\n") (Replacement "\\n") input)) do
---     case evalProgram' input of
---       Left err -> throwError $ error err
---       Right _ -> 1 `shouldEqual` 1
+programTest :: String -> Spec Unit
+programTest input =
+  let
+    results = List.fromFoldable $ evalProgramAll input
+
+    assertResults :: List (Either String EvalValue) -> Aff Unit
+    assertResults Nil = mempty
+
+    assertResults ((Left "") : tail) = assertResults tail
+
+    assertResults ((Left err) : _) = throwError $ error err
+
+    assertResults ((Right _) : tail) = assertResults tail
+  in
+    it ("runs: " <> (replaceAll (Pattern "\n") (Replacement "\\n") input)) do
+      assertResults results

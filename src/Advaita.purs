@@ -9,6 +9,7 @@ import Data.BigNumber as BigNumber
 import Data.Either (Either(..))
 import Data.EitherR (fmapL)
 import Data.Group as Group
+import Data.Int as Int
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.Map (Map)
@@ -19,7 +20,8 @@ import Data.String (Pattern(..), split)
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expressions (ParsedExpr(..), exprParser)
+import Expressions (ParsedExpr(..), Line, exprParser, parseLines)
+import Math as Math
 import Text.Parsing.Parser (parseErrorMessage, runParser)
 import Text.Parsing.Parser.String (eof)
 import Utils (bigNum, undefinedLog)
@@ -48,10 +50,11 @@ type Interpreter a
 initState :: InterpreterState
 initState =
   Map.fromFoldable
-    [ Tuple "pi" (DerivedUnit { scalar: bigNum "3.14159265359", units: mempty })
+    [ Tuple "m" CannonicalUnit
+    , Tuple "s" CannonicalUnit
+    , Tuple "pi" (DerivedUnit { scalar: bigNum "3.14159265359", units: mempty })
     , Tuple "π" (Alias "pi")
     , Tuple "c" (DerivedUnit { scalar: bigNum "299792458", units: Exponentials.quotient [ "m" ] [ "s" ] })
-    , Tuple "m" CannonicalUnit
     , Tuple "ft" (DerivedUnit { scalar: bigNum "0.3048", units: Exponentials.singleton "m" })
     ]
 
@@ -93,6 +96,29 @@ eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce
 
 eval (Fn1 { name, p1 }) = do
   lift $ Left $ "Unknown function: " <> show name
+
+-- | Asserts that the two expressions are the same.
+eval (Fn2 { name: "assertEqual", p1, p2 }) = do
+  value1 <- eval p1
+  value2 <- eval p2
+  if value1 `approxEqual` value2 then
+    pure $ value1
+  else
+    lift $ Left (show value1 <> " ≠ " <> show value2)
+
+eval (Fn2 { name: "^", p1, p2 }) = do
+  e1 <- eval p1
+  e2@{ scalar, units } <- eval p2
+  let
+    scalar' = BigNumber.toNumber scalar
+
+    pow = Math.floor $ BigNumber.toNumber scalar
+  if units /= mempty then
+    lift $ Left ("Cannot raise powers with units: " <> show e2)
+  else if pow < scalar' then
+    lift $ Left ("Cannot raise non-integer powers" <> show e2)
+  else
+    pure $ power e1 (Int.floor pow)
 
 eval (Fn2 { name: "*", p1, p2 }) = do
   e1 <- eval p1
@@ -187,19 +213,18 @@ mergeConvertible ev@{ scalar: _, units } =
     rec pairs
 
 evalProgramAll :: String -> Array (Either String EvalValue)
-evalProgramAll input = Array.fromFoldable $ rec (List.fromFoldable exprs) initState
+evalProgramAll input = Array.fromFoldable $ rec (List.fromFoldable lines) initState
   where
-  exprs :: Array (Either String ParsedExpr)
-  exprs =
-    fmapL parseErrorMessage
-      <$> (flip runParser $ exprParser <* eof)
-      <$> split (Pattern "\n") input
+  lines = parseLines input
 
-  rec :: List (Either String ParsedExpr) -> InterpreterState -> List (Either String EvalValue)
+  rec :: List (Either String Line) -> InterpreterState -> List (Either String EvalValue)
   rec Nil _ = Nil
 
   rec ((Left err) : tail) state = (Left err) : (rec tail state)
 
-  rec ((Right head) : tail) state = case runStateT (eval head) state of
+  -- TODO(advait): Find a better representation of Noops than `Left ""`.
+  rec ((Right Nothing) : tail) state = (Left "") : (rec tail state)
+
+  rec ((Right (Just head)) : tail) state = case runStateT (eval head) state of
     Left e -> (Left e) : (rec tail state)
     Right (Tuple v state') -> (Right v) : (rec tail state')

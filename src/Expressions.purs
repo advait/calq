@@ -1,17 +1,23 @@
 module Expressions where
 
 import Prelude
+import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.BigNumber (BigNumber)
 import Data.Char.Unicode (isAlpha, isAlphaNum)
+import Data.Either (Either)
+import Data.EitherR (fmapL)
+import Data.Maybe (Maybe(..))
 import Data.NonEmpty (foldl1)
+import Data.String (Pattern(..))
+import Data.String as String
 import Data.String.CodeUnits (fromCharArray)
-import Text.Parsing.Parser (Parser)
-import Text.Parsing.Parser.Combinators (choice, notFollowedBy, try, (<?>))
+import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
+import Text.Parsing.Parser.Combinators (choice, notFollowedBy, optional, try, (<?>))
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Language (haskellDef)
-import Text.Parsing.Parser.String (satisfy, string)
+import Text.Parsing.Parser.String (eof, satisfy, string)
 import Text.Parsing.Parser.Token as Token
 import Utils (bigNum)
 
@@ -185,3 +191,40 @@ exprParser =
       , [ Infix (buildFn2 <$> (lexeme $ string "in")) AssocLeft ]
       ]
       (lexeme exprParserImplicitTimes)
+
+-- | We attempt to parse line-by-line. There may be some empty or comment-only lines
+-- | which are represented by `Nothing`
+type Line
+  = Maybe ParsedExpr
+
+lineParser :: Parser String Line
+lineParser =
+  let
+    commentParser :: Parser String Unit
+    commentParser = do
+      _ <- string "#"
+      _ <- Array.many $ satisfy ((/=) '\n')
+      _ <- eof
+      pure unit
+
+    exprParser' :: Parser String Line
+    exprParser' = do
+      _ <- spaces
+      expr <- exprParser
+      _ <- optional commentParser
+      pure $ Just expr
+
+    noopParser :: Parser String Line
+    noopParser = do
+      _ <- spaces
+      _ <- optional commentParser
+      _ <- eof
+      pure Nothing
+  in
+    exprParser' <|> noopParser
+
+parseLines :: String -> Array (Either String Line)
+parseLines input =
+  fmapL parseErrorMessage
+    <$> (flip runParser $ lineParser <* eof)
+    <$> String.split (Pattern "\n") input

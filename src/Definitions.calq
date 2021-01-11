@@ -6,8 +6,21 @@
 # Distance
 # ---------------------------------------------------------------
 m :: CanonicalUnit
-ft :: 0.3048 m
 
+ft :: 0.3048m
+feet = ft
+foot = ft
+
+yard :: 3ft
+yards = yard
+yd = yard
+
+mile :: 5280ft
+miles = mile
+mi = mile
+
+lightyear :: 9460730472580800m
+lightyears = lightyear
 
 # Time
 # ---------------------------------------------------------------

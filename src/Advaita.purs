@@ -131,7 +131,7 @@ eval (Fn2 { name: "in", p1, p2 }) = do
   when (desiredScalar /= bigNum "1") (lift $ Left $ "Cannot cast to a numeric unit")
   let
     { scalar, units } = e1 `dividedBy` e2
-  when (units /= mempty) (lift $ Left $ "Cannot convert from TODO")
+  when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show e1 <> " to " <> show e2)
   pure { scalar, units: desiredUnits }
 
 eval (Fn2 { name, p1, p2 }) = do

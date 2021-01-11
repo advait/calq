@@ -18,6 +18,7 @@ import Test.Spec.Assertions (fail, shouldEqual)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (eof)
 import Utils (bigNum)
+import Utils as Utils
 
 spec :: Spec Unit
 spec = do
@@ -71,6 +72,8 @@ spec = do
     describe "comments" do
       programTest "# Full line comment"
       programTest "assertEqual(1, 1) # Partial line comment"
+    describe "InterpreterTest.calq" do
+      programTest $ Utils.readFileSync "test/InterpreterTest.calq"
 
 --   interpreterTest "4.0 m^2 in ft^2" "43.0556 ft^2"
 --   interpreterTest "4.0 ft*ft in ft^2" "4.0 ft^2"

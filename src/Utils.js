@@ -1,5 +1,7 @@
 "use strict";
 
+var fs = require("fs");
+
 exports.debugLog = function (a) {
   console.log(a);
   return a;
@@ -28,4 +30,8 @@ exports.bigNumberFixed = function (n) {
     console.log(n, b.toString(), ret.toString());
     return b.toFixed(n);
   }
+};
+
+exports.readFileSync = function (path) {
+  return fs.readFileSync(path, "utf-8");
 };

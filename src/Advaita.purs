@@ -1,13 +1,12 @@
 module Advaita where
 
 import Prelude hiding (Unit)
-import Control.Monad.State (StateT, lift, runStateT)
+import Control.Monad.State (StateT, execStateT, lift, runStateT)
 import Control.Monad.State as State
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.BigNumber as BigNumber
 import Data.Either (Either(..))
-import Data.EitherR (fmapL)
 import Data.Group as Group
 import Data.Int as Int
 import Data.List (List(..), (:))
@@ -16,14 +15,11 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
-import Data.String (Pattern(..), split)
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expressions (ParsedExpr(..), Line, exprParser, parseLines)
+import Expressions (ParsedExpr(..), Line, parseLines)
 import Math as Math
-import Text.Parsing.Parser (parseErrorMessage, runParser)
-import Text.Parsing.Parser.String (eof)
 import Utils (bigNum, undefinedLog)
 import Utils as Utils
 
@@ -39,7 +35,7 @@ singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
 data Binding a
   = CannonicalUnit
   | DerivedUnit a
-  | Alias String
+  | Alias a
 
 type InterpreterState
   = Map String (Binding EvalValue)
@@ -48,49 +44,47 @@ type Interpreter a
   = StateT InterpreterState (Either String) a
 
 initState :: InterpreterState
-initState =
-  Map.fromFoldable
-    [ Tuple "m" CannonicalUnit
-    , Tuple "s" CannonicalUnit
-    , Tuple "pi" (DerivedUnit { scalar: bigNum "3.14159265359", units: mempty })
-    , Tuple "π" (Alias "pi")
-    , Tuple "c" (DerivedUnit { scalar: bigNum "299792458", units: Exponentials.quotient [ "m" ] [ "s" ] })
-    , Tuple "ft" (DerivedUnit { scalar: bigNum "0.3048", units: Exponentials.singleton "m" })
-    ]
+initState = execDefinitions $ Utils.readFileSync "src/Definitions.calq"
 
-lookupName :: String -> Interpreter (Binding EvalValue)
-lookupName name = do
+getName :: String -> Interpreter (Binding EvalValue)
+getName name = do
   state <- State.get
   case Map.lookup name state of
     Nothing -> lift $ Left ("Undefined variable " <> (show name))
     Just b -> pure b
 
+setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
+setName name value = do
+  _ <- State.modify (\state -> Map.insert name value state)
+  pure value
+
+-- | Evaluate an expression, potentially updating state and returning an EvalValue.
 eval :: ParsedExpr -> Interpreter EvalValue
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
-eval (CreateCannonicalUnit name) = do
-  _ <- State.modify (\state -> Map.insert name CannonicalUnit state)
-  pure $ singletonUnit name
+eval (BindDerivedUnit { name, expr: Name "CanonicalUnit" }) = do
+  _ <- setName name $ CannonicalUnit
+  pure $ { scalar: bigNum "1", units: Exponentials.singleton name }
 
 eval (BindDerivedUnit { name, expr }) = do
   value <- eval expr
-  _ <- State.modify (\state -> Map.insert name (DerivedUnit value) state)
+  _ <- setName name $ DerivedUnit value
   pure value
 
-eval (BindAlias { name, target }) = do
-  value <- eval $ Name target
-  _ <- State.modify (\state -> Map.insert name (Alias target) state)
+eval (BindAlias { name, expr }) = do
+  value <- eval expr
+  _ <- setName name $ Alias value
   pure value
 
 -- | When evaluating a name, we are content with the result in terms of. CannonicalUnits as well as
--- | DerivedUnits. See `reduc` for a full reduction to CannonicalUnits.
-eval (Name name) = do
-  value <- lookupName name
-  case value of
-    CannonicalUnit -> pure $ singletonUnit name
-    DerivedUnit _ -> pure $ singletonUnit name
-    -- Recursively dereference aliases until we get to a CannonicalUnit or DerivedUnit.
-    Alias name' -> eval (Name name')
+-- | DerivedUnits. See `reduce` for a full reduction to CannonicalUnits.
+eval (Name name)
+  | otherwise = do
+    value <- getName name
+    case value of
+      CannonicalUnit -> pure $ singletonUnit name
+      DerivedUnit _ -> pure $ singletonUnit name
+      Alias aliasValue -> pure aliasValue
 
 eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce
 
@@ -168,7 +162,7 @@ reduce { scalar: startScalar, units: startUnits } =
   let
     foldFn :: EvalValue -> Tuple Unit Int -> Interpreter EvalValue
     foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
-      value <- lookupName newUnit
+      value <- getName newUnit
       case value of
         -- For a CannonicalUnit, we are done - simply return the unit with the appropriate power
         CannonicalUnit -> pure { scalar, units: units <> (Exponentials.power newUnit newPower) }
@@ -212,8 +206,34 @@ mergeConvertible ev@{ scalar: _, units } =
   in
     rec pairs
 
-evalProgramAll :: String -> Array (Either String EvalValue)
-evalProgramAll input = Array.fromFoldable $ rec (List.fromFoldable lines) initState
+-- | Executes a calq program returning the final state. Useful for Definitions.
+execDefinitions :: String -> InterpreterState
+execDefinitions input =
+  let
+    lines :: Array (Either String Line)
+    lines = parseLines input
+
+    finalResult = execLines $ List.fromFoldable lines
+
+    execLines :: List (Either String Line) -> Interpreter String
+    execLines Nil = pure ""
+
+    execLines ((Left err) : tail) = undefinedLog ("Error parsing Definitions.calq: " <> err)
+
+    -- TODO(advait): Find a better representation of Noops than `Left ""`.
+    execLines ((Right Nothing) : tail) = execLines tail
+
+    execLines ((Right (Just expr)) : tail) = do
+      res <- eval expr
+      execLines tail
+  in
+    case execStateT finalResult mempty of
+      Left err -> undefinedLog ("Error executing Definitions.calq: " <> err)
+      Right s -> s
+
+-- | Executes a calq program returning a list of error or result values.
+evalProgram :: String -> Array (Either String EvalValue)
+evalProgram input = Array.fromFoldable $ rec (List.fromFoldable lines) initState
   where
   lines = parseLines input
 

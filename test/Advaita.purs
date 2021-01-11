@@ -1,10 +1,9 @@
 module Test.Advaita where
 
 import Prelude
-import Advaita (EvalValue, approxEqual, eval, evalProgramAll, initState)
+import Advaita (EvalValue, approxEqual, eval, evalProgram, initState)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (evalStateT)
-import Data.Array (foldM)
 import Data.Either (Either(..))
 import Data.List (List(..), (:))
 import Data.List as List
@@ -69,6 +68,9 @@ spec = do
       interpreterTest "reduce(pi)" "3.14159265354"
     describe "full programs" do
       programTest "assertEqual(1, 1)"
+    describe "comments" do
+      programTest "# Full line comment"
+      programTest "assertEqual(1, 1) # Partial line comment"
 
 --   interpreterTest "4.0 m^2 in ft^2" "43.0556 ft^2"
 --   interpreterTest "4.0 ft*ft in ft^2" "4.0 ft^2"
@@ -107,7 +109,7 @@ runParserOrFail input p = case runParser input p of
 programTest :: String -> Spec Unit
 programTest input =
   let
-    results = List.fromFoldable $ evalProgramAll input
+    results = List.fromFoldable $ evalProgram input
 
     assertResults :: List (Either String EvalValue) -> Aff Unit
     assertResults Nil = mempty

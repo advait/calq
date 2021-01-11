@@ -61,9 +61,8 @@ data ParsedExpr
   | Name String
   | Fn1 { name :: String, p1 :: ParsedExpr }
   | Fn2 { name :: String, p1 :: ParsedExpr, p2 :: ParsedExpr }
-  | CreateCannonicalUnit String
   | BindDerivedUnit { name :: String, expr :: ParsedExpr }
-  | BindAlias { name :: String, target :: String }
+  | BindAlias { name :: String, expr :: ParsedExpr }
 
 -- | Parsing expressions is complicated and requires multiple levels of precedence. Ordinarily we
 -- | would just use the builtin buildExprParser but we run into complications because because "1 m"
@@ -90,13 +89,6 @@ exprParser =
       _ <- lexeme $ string ")"
       pure expr
 
-    createCanonicalUnitParser :: Parser String ParsedExpr
-    createCanonicalUnitParser = do
-      _ <- lexeme $ string "createCanonicalUnit("
-      name <- nameParser
-      _ <- lexeme $ string ")"
-      pure $ CreateCannonicalUnit name
-
     fn2Parser :: Parser String ParsedExpr
     fn2Parser =
       try
@@ -120,16 +112,16 @@ exprParser =
     bindDerivedUnitParser :: Parser String ParsedExpr
     bindDerivedUnitParser = do
       name <- nameParser
-      _ <- lexeme $ string "="
+      _ <- lexeme $ string "::"
       expr <- exprParser
       pure $ BindDerivedUnit { name, expr }
 
     bindAliasParser :: Parser String ParsedExpr
     bindAliasParser = do
       name <- nameParser
-      _ <- lexeme $ string "->"
-      target <- nameParser
-      pure $ BindAlias { name, target }
+      _ <- lexeme $ string "="
+      expr <- exprParser
+      pure $ BindAlias { name, expr }
 
     scalarParser :: Parser String ParsedExpr
     scalarParser = do
@@ -159,7 +151,6 @@ exprParser =
     exprParserBase =
       choice $ try
         <$> [ parenParser
-          , createCanonicalUnitParser
           , fn2Parser
           , fn1Parser
           , bindDerivedUnitParser

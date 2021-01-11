@@ -27,6 +27,8 @@ debugLogShow a = debugLogAlt (show a) a
 
 foreign import undefinedLog :: forall a. String -> a
 
+foreign import readFileSync :: String -> String
+
 -- | Returns a array of all pair combinations between the two arrays.
 combinationsWithIndex :: forall a b. Array a -> Array b -> Array (Tuple (Tuple Int a) (Tuple Int b))
 combinationsWithIndex a b = do

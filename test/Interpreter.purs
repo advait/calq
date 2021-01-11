@@ -12,12 +12,10 @@ import Effect.Aff (Aff)
 import Effect.Exception (Error, error)
 import Expressions (exprParser)
 import Interpreter (EvalValue, approxEqual, eval, evalProgram, initState)
-import Prim.RowList (Nil)
 import Test.Spec (Spec, describe, it)
-import Test.Spec.Assertions (fail, shouldEqual)
+import Test.Spec.Assertions (fail)
 import Text.Parsing.Parser (Parser, runParser)
 import Text.Parsing.Parser.String (eof)
-import Utils (bigNum)
 import Utils as Utils
 
 spec :: Spec Unit

@@ -1,4 +1,4 @@
-module Advaita where
+module Interpreter where
 
 import Prelude hiding (Unit)
 import Control.Monad.State (StateT, execStateT, lift, runStateT)

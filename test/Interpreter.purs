@@ -1,7 +1,6 @@
-module Test.Advaita where
+module Test.Interpreter where
 
 import Prelude
-import Advaita (EvalValue, approxEqual, eval, evalProgram, initState)
 import Control.Monad.Error.Class (class MonadThrow, throwError)
 import Control.Monad.State (evalStateT)
 import Data.Either (Either(..))
@@ -12,6 +11,7 @@ import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
 import Effect.Exception (Error, error)
 import Expressions (exprParser)
+import Interpreter (EvalValue, approxEqual, eval, evalProgram, initState)
 import Prim.RowList (Nil)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail, shouldEqual)

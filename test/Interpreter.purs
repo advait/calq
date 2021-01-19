@@ -44,8 +44,10 @@ spec = do
     describe "strange whitespace" do
       interpreterTest "42   \t" "42"
       interpreterTest "1  \t  m in \t m" "1 m"
+    describe "ft and inch shorthand" do
+      interpreterTest "1' + 6\"" "1.5ft"
     describe "bigints" do
-      interpreterTest "2^64 - 1" "1.8446744e+19"
+      interpreterTest "2^64 + 1" "1.8446744e+19"
       interpreterTest "2^32" "4294967296"
       interpreterTest "2^31" "2147483648"
     describe "basic unit conversions" do

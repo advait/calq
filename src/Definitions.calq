@@ -12,14 +12,11 @@ meters = m
 ft :: 0.3048 m
 feet = ft
 foot = ft
-# TODO(advait): Support ' for ft
-# ' = ft
+' = ft
 
-# TODO(advait): Handle "inch" parsing as distinct from "in"<*>"ch"
 inch :: (1/12) ft
 inches = inch
-# TODO(advait): Support " for inches
-#" = inch
+" = inch
 
 yard :: 3 ft
 yards = yard

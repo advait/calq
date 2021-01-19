@@ -16,7 +16,7 @@ import Data.String as String
 import Data.String.CodeUnits (fromCharArray)
 import Parsing (bigNumParser, lexeme, spaces)
 import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (choice, notFollowedBy, optional, try)
+import Text.Parsing.Parser.Combinators (choice, optional, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
 
@@ -99,9 +99,13 @@ exprParser =
         name =
           lexeme
             $ do
-                head <- satisfy isAlpha
-                tail <- Array.many $ satisfy isAlphaNum
+                head <- satisfy startingChar
+                tail <- Array.many $ satisfy bodyChar
                 pure $ fromCharArray $ Array.cons head tail
+
+        startingChar c = isAlpha c || c `elem` [ '\'', '"' ]
+
+        bodyChar c = isAlphaNum c || c `elem` [ '\'', '"' ]
 
         notReserved :: String -> Parser String String
         notReserved s =

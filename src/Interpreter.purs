@@ -1,204 +1,102 @@
 module Interpreter where
 
-import Prelude hiding (div)
-import Control.Alt ((<|>))
-import Control.Monad.State (StateT, evalStateT, runStateT)
-import Control.Monad.State.Trans as State
-import Control.Monad.Trans.Class (lift)
-import Data.Array (cons, foldM, fromFoldable, many)
+import Prelude hiding (Unit)
+import Control.Monad.State (StateT, execStateT, lift, runStateT)
+import Control.Monad.State as State
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.BigNumber as BigNumber
-import Data.Char.Unicode (isAlpha, isAlphaNum)
 import Data.Either (Either(..))
-import Data.EitherR (fmapL)
+import Data.Group as Group
+import Data.Int as Int
 import Data.List (List(..), (:))
 import Data.List as List
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
-import Data.SortedArray as SortedArray
-import Data.String (Pattern(..), split)
-import Data.String.CodeUnits (fromCharArray)
-import Data.Traversable (sequence)
 import Data.Tuple (Tuple(..))
-import Parser (bigNumParser, compUnitParser, lexeme)
-import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (choice, sepBy, try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
-import Text.Parsing.Parser.String (eof, satisfy, string)
-import Units (BaseUnit(..), CompUnit(..), DistanceUnit(..), TimeUnit(..), convertBaseUnit, convertCompUnit, div, times)
-import Utils (bigNum, bigNumberFixed, bigNumberFormatFixed)
+import Data.Typelevel.Bool (falseT)
+import Exponentials (Exponentials)
+import Exponentials as Exponentials
+import Expression (ParsedExpr(..), Line, parseLines)
+import Math (sqrt1_2)
+import Math as Math
+import Parsing (bigNum)
+import Utils (debugLogShow, undefinedLog)
+import Utils as Utils
 
--- | A value is the final/reduced form of an expression.
-data Value
-  = UnitValue BigNumber CompUnit
+type Unit
+  = String
 
-instance showValue :: Show Value where
-  show (UnitValue num unit) = show num <> " " <> show unit
+type EvalValue
+  = { scalar :: BigNumber, units :: Exponentials Unit }
 
-showPretty :: Value -> String
-showPretty (UnitValue num unit) = prettyBigNum num <> " " <> show unit
-  where
-  prettyBigNum :: BigNumber -> String
-  prettyBigNum n
-    -- TODO(advait): max decimal places should be configurable
-    | n - (bigNumberFixed 0 n) < bigNum ".01" = bigNumberFormatFixed 0 n
-    | n - (bigNumberFixed 1 n) < bigNum ".01" = bigNumberFormatFixed 1 n
-    | otherwise = bigNumberFormatFixed 2 n
+singletonUnit :: Unit -> EvalValue
+singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
 
-valueParser :: Parser String Value
-valueParser = do
-  num <- bigNumParser
-  unit <- (try compUnitParser) <|> (pure mempty)
-  pure $ UnitValue num unit
-
--- | An `Expr` is an expression that can be evaluated into a value.
-data Expr
-  = Constant { value :: Value, cast :: Maybe CompUnit }
-  | Bind { name :: String, expr :: Expr }
-  | Ref { name :: String, cast :: Maybe CompUnit }
-  | Fn1 { name :: String, p1 :: Expr }
-  | Fn2 { name :: String, p1 :: Expr, p2 :: Expr }
-
-exprParser :: Parser String Expr
-exprParser = compoundExprParser
-  where
-  singleExprParser =
-    choice $ try
-      <$> [ parenParser
-        , fn2Parser
-        , fn1Parser
-        , bindParser
-        , constantParser
-        , refParser
-        ]
-
-  castParser :: Parser String (Maybe CompUnit)
-  castParser = (try $ Just <$> ((lexeme $ string "in") *> compUnitParser)) <|> (pure Nothing)
-
-  parenParser :: Parser String Expr
-  parenParser = do
-    _ <- lexeme $ string "("
-    expr <- lexeme $ exprParser
-    _ <- lexeme $ string ")"
-    pure expr
-
-  constantParser :: Parser String Expr
-  constantParser = do
-    value <- valueParser
-    cast <- castParser
-    pure $ Constant { value, cast }
-
-  nameParser :: Parser String String
-  nameParser =
-    lexeme
-      $ do
-          head <- satisfy isAlpha
-          tail <- many $ satisfy isAlphaNum
-          pure $ fromCharArray $ cons head tail
-
-  bindParser :: Parser String Expr
-  bindParser = do
-    name <- nameParser
-    _ <- lexeme $ (string "=" <|> string ":=" <|> string ":")
-    expr <- exprParser
-    pure $ Bind { name, expr }
-
-  refParser :: Parser String Expr
-  refParser = do
-    name <- nameParser
-    cast <- castParser
-    pure $ Ref { name, cast }
-
-  fn2Parser :: Parser String Expr
-  fn2Parser =
-    try
-      $ do
-          name <- lexeme $ (nameParser <* string "(")
-          p1 <- lexeme $ exprParser
-          _ <- lexeme $ string ","
-          p2 <- lexeme $ exprParser
-          _ <- lexeme $ string ")"
-          pure $ Fn2 { name, p1, p2 }
-
-  fn1Parser :: Parser String Expr
-  fn1Parser =
-    try
-      $ do
-          name <- lexeme $ (nameParser <* string "(")
-          p1 <- lexeme $ exprParser
-          _ <- lexeme $ string ")"
-          pure $ Fn1 { name, p1 }
-
-  compoundExprParser =
-    let
-      buildFn2 :: String -> Expr -> Expr -> Expr
-      buildFn2 name p1 p2 = Fn2 { name, p1, p2 }
-    in
-      ( buildExprParser
-          [ [ Infix (buildFn2 <$> (lexeme $ string "*")) AssocLeft
-            , Infix (buildFn2 <$> (lexeme $ string "/")) AssocLeft
-            ]
-          , [ Infix (buildFn2 <$> (lexeme $ string "+")) AssocLeft
-            , Infix (buildFn2 <$> (lexeme $ string "-")) AssocLeft
-            ]
-          ]
-          (lexeme singleExprParser)
-      )
-
-programParser :: Parser String (Array Expr)
-programParser = (fromFoldable <$> (exprParser `sepBy` (lexeme $ string "\n"))) <* eof
+data Binding a
+  = CannonicalUnit
+  | DerivedUnit a
+  | Alias a
 
 type InterpreterState
-  = Map String Value
+  = Map String (Binding EvalValue)
+
+type Interpreter a
+  = StateT InterpreterState (Either String) a
 
 initState :: InterpreterState
-initState =
-  Map.fromFoldable
-    [ Tuple "pi" (UnitValue (bigNum "3.14159265359") mempty)
-    , Tuple "π" (UnitValue (bigNum "3.14159265359") mempty)
-    , Tuple "c" (UnitValue (bigNum "299792458") (CompUnit { num: SortedArray.fromFoldable [ Distance Meters ], den: SortedArray.fromFoldable [ Time Seconds ] }))
-    ]
+initState = execDefinitions $ Utils.readFileSync "src/Definitions.calq"
 
-initValue :: Value
-initValue = UnitValue (bigNum "1.0") mempty
+getName :: String -> Interpreter (Binding EvalValue)
+getName name = do
+  state <- State.get
+  case Map.lookup name state of
+    Nothing -> lift $ Left ("Undefined variable " <> (show name))
+    Just b -> pure b
 
--- | Casts the given value to the given unit.
-castValue :: Value -> Maybe CompUnit -> Either String Value
-castValue value Nothing = Right value
-
-castValue (UnitValue value fromUnit) (Just toUnit) = do
-  ratio <- convertCompUnit fromUnit toUnit
-  pure (UnitValue (value * ratio) toUnit)
-
--- | Evaluates an expression.
-eval :: Expr -> StateT InterpreterState (Either String) Value
--- | A constant expression evaluates to itself.
-eval (Constant { value, cast }) = do
-  lift $ castValue value cast
-
--- | Binds a name to its evaluated value.
-eval (Bind { name, expr }) = do
-  value <- eval expr
+setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
+setName name value = do
   _ <- State.modify (\state -> Map.insert name value state)
   pure value
 
--- | Dereferences a name to its previously evaluated value.
-eval (Ref { name, cast }) = do
-  state :: InterpreterState <- State.get
-  case Map.lookup name state of
-    Nothing -> lift $ Left ("Undefined variable " <> (show name))
-    Just value -> lift $ castValue value cast
+-- | Evaluate an expression, potentially updating state and returning an EvalValue.
+eval :: ParsedExpr -> Interpreter EvalValue
+eval (Scalar scalar) = pure { scalar, units: mempty }
 
--- | Sqrt
-eval (Fn1 { name: "sqrt", p1 }) = do
-  (UnitValue v u) <- eval p1
-  if u == mempty then
-    pure (UnitValue (BigNumber.sqrt v) u)
-  else
-    lift $ Left "Cannot sqrt values with units"
+eval (BindDerivedUnit { name, expr: Name "CanonicalUnit" }) = do
+  _ <- setName name $ CannonicalUnit
+  pure $ { scalar: bigNum "1", units: Exponentials.singleton name }
+
+eval (BindDerivedUnit { name, expr }) = do
+  value <- eval expr
+  _ <- setName name $ DerivedUnit value
+  pure value
+
+eval (BindAlias { name, expr }) = do
+  value <- eval expr
+  _ <- setName name $ Alias value
+  pure value
+
+-- | When evaluating a name, we are content with the result in terms of. CannonicalUnits as well as
+-- | DerivedUnits. See `reduce` for a full reduction to CannonicalUnits.
+eval (Name name)
+  | otherwise = do
+    value <- getName name
+    case value of
+      CannonicalUnit -> pure $ singletonUnit name
+      DerivedUnit _ -> pure $ singletonUnit name
+      Alias aliasValue -> pure aliasValue
+
+eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce
+
+eval (Fn1 { name: "negate", p1 }) = do
+  { scalar, units } <- eval p1
+  pure { scalar: negate scalar, units }
+
+eval (Fn1 { name, p1 }) = do
+  lift $ Left $ "Unknown function: " <> show name
 
 -- | Asserts that the two expressions are the same.
 eval (Fn2 { name: "assertEqual", p1, p2 }) = do
@@ -209,102 +107,169 @@ eval (Fn2 { name: "assertEqual", p1, p2 }) = do
   else
     lift $ Left (show value1 <> " ≠ " <> show value2)
 
--- | Multiplication
+eval (Fn2 { name: "^", p1, p2 }) = do
+  e1 <- eval p1
+  e2@{ scalar, units } <- eval p2
+  let
+    scalar' = BigNumber.toNumber scalar
+
+    pow = Math.floor $ BigNumber.toNumber scalar
+  if units /= mempty then
+    lift $ Left ("Cannot raise powers with units: " <> show e2)
+  else if pow < scalar' then
+    lift $ Left ("Cannot raise non-integer powers" <> show e2)
+  else
+    pure $ power e1 (Int.floor pow)
+
 eval (Fn2 { name: "*", p1, p2 }) = do
-  (UnitValue v1 u1) <- eval p1
-  (UnitValue v2 u2) <- eval p2
-  pure $ simplify $ UnitValue (v1 * v2) (u1 `times` u2)
+  e1 <- eval p1
+  e2 <- eval p2
+  mergeConvertible $ e1 `times` e2
 
--- | Division
 eval (Fn2 { name: "/", p1, p2 }) = do
-  (UnitValue v1 u1) <- eval p1
-  (UnitValue v2 u2) <- eval p2
-  pure $ simplify $ UnitValue (v1 / v2) (u1 `div` u2)
+  e1 <- eval p1
+  e2 <- eval p2
+  mergeConvertible $ e1 `dividedBy` e2
 
--- | Addition
+eval (Fn2 { name: "in", p1, p2 }) = do
+  e1 <- eval p1 >>= reduce
+  { scalar: desiredScalar, units: desiredUnits } <- eval p2
+  when (desiredScalar /= bigNum "1") (lift $ Left $ "Cannot cast to a numeric unit")
+  cast e1 desiredUnits
+
 eval (Fn2 { name: "+", p1, p2 }) = do
-  (UnitValue v1 u1) <- eval p1
-  (UnitValue v2 u2) <- eval p2
-  case convertCompUnit u2 u1 of
-    Left err -> lift $ Left err
-    Right ratio -> pure $ UnitValue (v1 + (v2 * ratio)) (u1)
+  e1'@{ scalar: _, units: desiredUnits } <- eval p1
+  e1''@{ scalar: s1, units: u1 } <- reduce (debugLogShow e1')
+  e2''@{ scalar: s2, units: u2 } <- eval p2 >>= reduce
+  if u1 /= u2 then
+    lift $ Left $ ("Cannot add units " <> show u1 <> " and " <> show u2)
+  else
+    cast { scalar: s1 + s2, units: u1 } desiredUnits
 
--- | Subtraction
 eval (Fn2 { name: "-", p1, p2 }) = do
-  (UnitValue v2 u2) <- eval p2
-  eval (Fn2 { name: "+", p1, p2: (Constant { value: UnitValue (-v2) u2, cast: Nothing }) })
+  eval $ Fn2 { name: "+", p1, p2: Fn1 { name: "negate", p1: p2 } }
 
--- | Unknown functions
-eval (Fn1 { name, p1 }) = lift $ Left ("Unkown function name " <> (show name))
+eval (Fn2 { name, p1, p2 }) = do
+  lift $ Left $ "Unknown function: " <> show name
 
-eval (Fn2 { name, p1, p2 }) = lift $ Left ("Unkown function name " <> (show name))
+times :: EvalValue -> EvalValue -> EvalValue
+times { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 * s2, units: u1 <> u2 }
+
+dividedBy :: EvalValue -> EvalValue -> EvalValue
+dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } =
+  { scalar: s1 / s2
+  , units: u1 <> (Group.ginverse u2)
+  }
+
+power :: EvalValue -> Int -> EvalValue
+power { scalar, units } n =
+  { scalar: scalar `BigNumber.pow` (bigNum $ show n)
+  , units: Group.power units n
+  }
 
 -- | Returns whether the values are within .001% of each other.
-approxEqual :: Value -> Value -> Boolean
-approxEqual (UnitValue v1 u1) (UnitValue v2 u2) = (u1 == u2) && (abs (v1 - v2) / v1) < (bigNum "1e-5")
+approxEqual :: EvalValue -> EvalValue -> Boolean
+approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
+  | u1 /= u2 = false
+  | s1 == (bigNum "0") = s1 == s2
+  | otherwise = (abs (s1 - s2) / s1) < (bigNum "1e-5")
 
--- | Attempts to simplify (cancel out) units, preferring the units of the numerator
-simplify :: Value -> Value
-simplify value'@(UnitValue value (CompUnit { num, den })) =
+-- | Casts the given value to the given unit.
+cast :: EvalValue -> Exponentials Unit -> Interpreter EvalValue
+cast value desiredUnits = do
+  { scalar, units } <- reduce $ value `dividedBy` { scalar: bigNum "1", units: desiredUnits }
+  when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
+  pure { scalar, units: desiredUnits }
+
+-- | Reduces a value such that units are all CannonicalUnits.
+reduce :: EvalValue -> Interpreter EvalValue
+reduce { scalar: startScalar, units: startUnits } =
   let
-    pairwise :: forall a b. Array a -> Array b -> List (Tuple a b)
-    pairwise a b =
-      List.fromFoldable
-        $ ( do
-              a' <- a
-              b' <- b
-              pure $ Tuple a' b'
-          )
-
-    reducePairs :: List (Tuple BaseUnit BaseUnit) -> Value
-    reducePairs Nil = value'
-
-    reducePairs (Tuple a b : tail) = case convertBaseUnit a b of
-      Left _ -> reducePairs tail
-      Right ratio -> UnitValue (value * ratio) (CompUnit { num: SortedArray.delete a num, den: SortedArray.delete b den })
+    foldFn :: EvalValue -> Tuple Unit Int -> Interpreter EvalValue
+    foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
+      value <- getName newUnit
+      case value of
+        -- For a CannonicalUnit, we are done - simply return the unit with the appropriate power
+        CannonicalUnit -> pure { scalar, units: units <> (Exponentials.power newUnit newPower) }
+        -- DerivedUnits must be reduced further
+        DerivedUnit value' -> do
+          reducedValue <- reduce $ value' `power` newPower
+          pure $ acc `times` reducedValue
+        -- We should not see aliases when we are reducing as they should already be evaluated
+        Alias name -> undefinedLog "We should not see Aliases when reducing"
   in
-    reducePairs $ pairwise (SortedArray.unSortedArray num) (SortedArray.unSortedArray den)
+    Exponentials.foldM foldFn { scalar: startScalar, units: mempty } startUnits
 
--- | Evaluates an entire program.
-evalProgram :: Array Expr -> Either String Value
-evalProgram exprs = evalStateT stateT initState
+-- | Determines whether the units can convert between each other.
+convertible :: Unit -> Unit -> Interpreter Boolean
+convertible u1 u2 = do
+  { scalar, units } <- reduce $ ((singletonUnit u1) `dividedBy` (singletonUnit u2))
+  let
+    ret = units == mempty
+  pure $ units == mempty
+
+-- | Merge convertible units together (e.g. 1 ft*m will be merged to 0.3048 m^2).
+mergeConvertible :: EvalValue -> Interpreter EvalValue
+mergeConvertible ev@{ scalar: _, units } =
+  let
+    pairs :: List (Tuple (Tuple Unit Int) (Tuple Unit Int))
+    pairs = List.fromFoldable $ Utils.nonrepeatedCombinations $ Exponentials.toArray units
+
+    -- | Iterate through pairs. If we find a convertible pair, merge them and restart process.
+    rec :: List (Tuple (Tuple Unit Int) (Tuple Unit Int)) -> Interpreter EvalValue
+    rec Nil = pure ev
+
+    rec ((Tuple (Tuple u1 p1) (Tuple u2 p2)) : tail) = do
+      isConvertible <- convertible u1 u2
+      if isConvertible then do
+        let
+          unitsToMerge = { scalar: bigNum "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
+        conversionFactor <- reduce $ unitsToMerge
+        mergeConvertible $ ev `dividedBy` unitsToMerge `times` conversionFactor
+      else
+        rec tail
+  in
+    rec pairs
+
+-- | Executes a calq program returning the final state. Useful for Definitions.
+execDefinitions :: String -> InterpreterState
+execDefinitions input =
+  let
+    lines :: Array (Either String Line)
+    lines = parseLines input
+
+    finalResult = execLines $ List.fromFoldable lines
+
+    execLines :: List (Either String Line) -> Interpreter String
+    execLines Nil = pure ""
+
+    execLines ((Left err) : tail) = undefinedLog ("Error parsing Definitions.calq: " <> err)
+
+    -- TODO(advait): Find a better representation of Noops than `Left ""`.
+    execLines ((Right Nothing) : tail) = execLines tail
+
+    execLines ((Right (Just expr)) : tail) = do
+      res <- eval expr
+      execLines tail
+  in
+    case execStateT finalResult mempty of
+      Left err -> undefinedLog ("Error executing Definitions.calq: " <> err)
+      Right s -> s
+
+-- | Executes a calq program returning a list of error or result values.
+evalProgram :: String -> Array (Either String EvalValue)
+evalProgram input = Array.fromFoldable $ rec (List.fromFoldable lines) initState
   where
-  stateT = foldM (const eval) initValue exprs
+  lines = parseLines input
 
--- TODO(advait): This is function exists because `lexeme` consums newline whitspace.
--- as a reuslt we have to manually split the program by newlines, parse each line,
--- and execute it. We need to rewrite lexeme and the corresponding integer/float parsers
--- to avoid chomping newlines.
-evalProgram' :: String -> Either String Value
-evalProgram' input = do
-  program :: Array Expr <-
-    fmapL parseErrorMessage
-      $ sequence
-      $ (flip runParser $ exprParser <* eof)
-      <$> split (Pattern "\n") input
-  evalProgram program
-
-evalProgramAll :: String -> Array (Either String Value)
-evalProgramAll input = Array.fromFoldable $ rec (List.fromFoldable exprs) initState
-  where
-  exprs :: Array (Either String Expr)
-  exprs =
-    fmapL parseErrorMessage
-      <$> (flip runParser $ exprParser <* eof)
-      <$> split (Pattern "\n") input
-
-  rec :: List (Either String Expr) -> InterpreterState -> List (Either String Value)
+  rec :: List (Either String Line) -> InterpreterState -> List (Either String EvalValue)
   rec Nil _ = Nil
 
   rec ((Left err) : tail) state = (Left err) : (rec tail state)
 
-  rec ((Right head) : tail) state = case runStateT (eval head) state of
+  -- TODO(advait): Find a better representation of Noops than `Left ""`.
+  rec ((Right Nothing) : tail) state = (Left "") : (rec tail state)
+
+  rec ((Right (Just head)) : tail) state = case runStateT (eval head) state of
     Left e -> (Left e) : (rec tail state)
     Right (Tuple v state') -> (Right v) : (rec tail state')
-
-evalProgramAllShow :: String -> Array String
-evalProgramAllShow input = showOut <$> evalProgramAll input
-  where
-  showOut (Left err) = err
-
-  showOut (Right val) = showPretty val

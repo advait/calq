@@ -1,0 +1,94 @@
+# Calq unit definitions
+# =====================
+
+# Note that this file is simply a calq program.
+
+# Distance
+# ---------------------------------------------------------------
+m :: CanonicalUnit
+meter = m
+meters = m
+
+ft :: 0.3048 m
+feet = ft
+foot = ft
+# TODO(advait): Support ' for ft
+# ' = ft
+
+# TODO(advait): Handle "inch" parsing as distinct from "in"<*>"ch"
+#inch :: (1/12) ft
+#inches = inch
+# TODO(advait): Support " for inches
+#" = inch
+
+yard :: 3 ft
+yards = yard
+yd = yard
+
+mi :: 5280 ft
+mile = mi
+miles = mi
+
+lightyear :: 9460730472580800 m
+lightyears = lightyear
+
+au :: 149597870700 m
+aus = au
+
+parsec :: 3.261563777 lightyears
+parsecs = parsec
+
+# Time
+# ---------------------------------------------------------------
+s :: CanonicalUnit
+second = s
+seconds = s
+
+min :: 60s
+minute = min
+minutes = min
+
+hr :: 60min
+hrs = hr
+hour = hr
+hours = hr
+
+day :: 24hr
+days = day
+
+month :: 30 days
+months = month
+
+year :: 365 days
+years = year
+
+fortnight :: 14 days
+fortnights = fortnight
+
+
+# Mass
+# ---------------------------------------------------------------
+kg :: CanonicalUnit
+kilogram = kg
+kilograms = kg
+
+lbs :: 0.45359237kg
+lb = lbs
+pound = lbs
+pounds = lbs
+
+ton :: 2000 lbs
+
+ounces :: (1/16) lb
+ounce = ounces
+
+
+# Scalar constants
+# ---------------------------------------------------------------
+pi = 3.14159265359
+π = pi
+
+
+# Speed
+# ---------------------------------------------------------------
+c = 299792458 m/s

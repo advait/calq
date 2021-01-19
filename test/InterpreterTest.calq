@@ -1,0 +1,46 @@
+# Tests for calq in the calq language
+
+# Simple expressions
+c
+1
+assertEqual(1, 1)
+
+# Whitespace
+assertEqual(1 ft, 1 ft)
+assertEqual(1ft, 1 ft)
+assertEqual(1ft, 1ft)
+
+# Variables
+d = 1
+assertEqual(d, 1.0)
+
+# Exponents
+hello = 1e7 feet
+assertEqual(hello, 1e+7 ft)
+assertEqual(ft*feet, foot^2)
+
+# Casting
+assertEqual(1e7 ft in lightyears, 3.221736e-10 lightyears)
+
+# Multiplication
+assertEqual(2*2,4)
+b = 2 ft * 2 ft
+assertEqual(b, 4 ft^2)
+c = 2ft * 2ft
+assertEqual(c, 4ft^2)
+assertEqual(2ft * 2ft, 4ft^2)
+
+# Division
+assertEqual(4 / 2, 2)
+
+# Addition/Subtraction
+assertEqual(reduce(2+2), 4)
+assertEqual(1 + 1, 2)
+assertEqual(1ft + 1m, 4.28083989ft)
+assertEqual(1m + 1ft, 1.3048m)
+#assertEqual(1ft + 6inch, 1.5ft)
+#assertEqual(1ft - 6inch, 0.5ft)
+#assertEqual(3+5*3, 18)
+
+# Functions
+#assertEqual(sqrt(2), 1.4142135623730950488)

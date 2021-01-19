@@ -4,13 +4,7 @@ import Prelude
 import Data.Array (mapWithIndex)
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
-import Data.Generic.Rep (Argument(..), Constructor(..))
-import Data.Generic.Rep as Generic
 import Data.Tuple (Tuple(..))
-
--- | Create a constant `BigNumber` from a `String`
-bigNum :: String -> BigNumber
-bigNum = Generic.to <<< Constructor <<< Argument
 
 -- | Format `BigNumber with a fixed number of decial places`
 foreign import bigNumberFormatFixed :: Int -> BigNumber -> String
@@ -27,6 +21,7 @@ debugLogShow a = debugLogAlt (show a) a
 
 foreign import undefinedLog :: forall a. String -> a
 
+-- | Wrapper around Node's fs.readFileSync. Note that Parcel will inline the underlying file.
 foreign import readFileSync :: String -> String
 
 -- | Returns a array of all pair combinations between the two arrays.

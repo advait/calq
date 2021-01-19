@@ -20,7 +20,7 @@ assertEqual(hello, 1e+7 ft)
 assertEqual(ft*feet, foot^2)
 
 # Casting
-assertEqual(1e7 ft in lightyears, 3.222e-10 lightyears)
+assertEqual(1e7 ft in lightyears, 3.221736e-10 lightyears)
 
 # Multiplication
 assertEqual(2*2,4)
@@ -34,6 +34,10 @@ assertEqual(2ft * 2ft, 4ft^2)
 assertEqual(4 / 2, 2)
 
 # Addition/Subtraction
+assertEqual(reduce(2+2), 4)
+assertEqual(1 + 1, 2)
+assertEqual(1ft + 1m, 4.28083989ft)
+assertEqual(1m + 1ft, 1.3048m)
 #assertEqual(1ft + 6inch, 1.5ft)
 #assertEqual(1ft - 6inch, 0.5ft)
 #assertEqual(3+5*3, 18)

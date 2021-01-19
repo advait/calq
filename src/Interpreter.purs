@@ -16,11 +16,14 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
 import Data.Tuple (Tuple(..))
+import Data.Typelevel.Bool (falseT)
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Expression (ParsedExpr(..), Line, parseLines)
+import Math (sqrt1_2)
 import Math as Math
-import Utils (bigNum, undefinedLog)
+import Parsing (bigNum)
+import Utils (debugLogShow, undefinedLog)
 import Utils as Utils
 
 type Unit
@@ -88,6 +91,10 @@ eval (Name name)
 
 eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce
 
+eval (Fn1 { name: "negate", p1 }) = do
+  { scalar, units } <- eval p1
+  pure { scalar: negate scalar, units }
+
 eval (Fn1 { name, p1 }) = do
   lift $ Left $ "Unknown function: " <> show name
 
@@ -126,13 +133,21 @@ eval (Fn2 { name: "/", p1, p2 }) = do
 
 eval (Fn2 { name: "in", p1, p2 }) = do
   e1 <- eval p1 >>= reduce
-  e2'@{ scalar: desiredScalar, units: desiredUnits } <- eval p2
-  e2 <- reduce e2'
+  { scalar: desiredScalar, units: desiredUnits } <- eval p2
   when (desiredScalar /= bigNum "1") (lift $ Left $ "Cannot cast to a numeric unit")
-  let
-    { scalar, units } = e1 `dividedBy` e2
-  when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show e1 <> " to " <> show e2)
-  pure { scalar, units: desiredUnits }
+  cast e1 desiredUnits
+
+eval (Fn2 { name: "+", p1, p2 }) = do
+  e1'@{ scalar: _, units: desiredUnits } <- eval p1
+  e1''@{ scalar: s1, units: u1 } <- reduce (debugLogShow e1')
+  e2''@{ scalar: s2, units: u2 } <- eval p2 >>= reduce
+  if u1 /= u2 then
+    lift $ Left $ ("Cannot add units " <> show u1 <> " and " <> show u2)
+  else
+    cast { scalar: s1 + s2, units: u1 } desiredUnits
+
+eval (Fn2 { name: "-", p1, p2 }) = do
+  eval $ Fn2 { name: "+", p1, p2: Fn1 { name: "negate", p1: p2 } }
 
 eval (Fn2 { name, p1, p2 }) = do
   lift $ Left $ "Unknown function: " <> show name
@@ -154,7 +169,17 @@ power { scalar, units } n =
 
 -- | Returns whether the values are within .001% of each other.
 approxEqual :: EvalValue -> EvalValue -> Boolean
-approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 } = (u1 == u2) && (abs (s1 - s2) / s1) < (bigNum "1e-5")
+approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
+  | u1 /= u2 = false
+  | s1 == (bigNum "0") = s1 == s2
+  | otherwise = (abs (s1 - s2) / s1) < (bigNum "1e-5")
+
+-- | Casts the given value to the given unit.
+cast :: EvalValue -> Exponentials Unit -> Interpreter EvalValue
+cast value desiredUnits = do
+  { scalar, units } <- reduce $ value `dividedBy` { scalar: bigNum "1", units: desiredUnits }
+  when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
+  pure { scalar, units: desiredUnits }
 
 -- | Reduces a value such that units are all CannonicalUnits.
 reduce :: EvalValue -> Interpreter EvalValue

@@ -13,47 +13,11 @@ import Data.NonEmpty (foldl1)
 import Data.String (Pattern(..))
 import Data.String as String
 import Data.String.CodeUnits (fromCharArray)
+import Parsing (bigNumParser, lexeme, spaces)
 import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
-import Text.Parsing.Parser.Combinators (choice, notFollowedBy, optional, try, (<?>))
+import Text.Parsing.Parser.Combinators (choice, notFollowedBy, optional, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
-import Text.Parsing.Parser.Language (haskellDef)
 import Text.Parsing.Parser.String (eof, satisfy, string)
-import Text.Parsing.Parser.Token as Token
-import Utils (bigNum)
-
--- | We make of pre-existing parsers to make our lives easier.
-tokenParser :: Token.TokenParser
-tokenParser = Token.makeTokenParser haskellDef
-
-isSpace :: Char -> Boolean
-isSpace c
-  | c == ' ' = true
-  | c == '\t' = true
-  | otherwise = false
-
--- | Consumes zero or more spaces and tabs.
-spaces :: Parser String Unit
-spaces = void $ Array.many $ satisfy isSpace
-
--- | `lexeme p` first applies parser `p` and than the `whiteSpace` parser, returning the value of
--- | `p`. Every lexical token (lexeme) is defined using `lexeme`, this way every parse starts at a
--- | point without white space. Parsers that use `lexeme` are called *lexeme* parsers in this
--- | document.
--- |
--- | The only point where the `whiteSpace` parser should be called explicitly is the start of the
--- | main parser in order to skip any leading white space.
-lexeme :: forall a. Parser String a -> Parser String a
-lexeme p = p <* spaces
-
--- | Parses a `BigNumber`
-bigNumParser :: Parser String BigNumber
-bigNumParser =
-  lexeme
-    $ choice
-        [ try $ bigNum <$> show <$> (tokenParser.float)
-        , bigNum <$> show <$> (tokenParser.integer)
-        ]
-    <?> "number"
 
 -- | Represents an expression that can be evaluated.
 data ParsedExpr
@@ -172,16 +136,18 @@ exprParser =
       exprs <- NonEmptyArray.some exprParserExponents
       pure $ foldl1 (buildFn2 "*") $ NonEmptyArray.toNonEmpty exprs
   in
-    buildExprParser
-      [ [ Infix (buildFn2 <$> (lexeme $ string "*")) AssocLeft
-        , Infix (buildFn2 <$> (lexeme $ string "/")) AssocLeft
+    do
+      _ <- spaces
+      buildExprParser
+        [ [ Infix (buildFn2 <$> (lexeme $ string "*")) AssocLeft
+          , Infix (buildFn2 <$> (lexeme $ string "/")) AssocLeft
+          ]
+        , [ Infix (buildFn2 <$> (lexeme $ string "+")) AssocLeft
+          , Infix (buildFn2 <$> (lexeme $ string "-")) AssocLeft
+          ]
+        , [ Infix (buildFn2 <$> (lexeme $ string "in")) AssocLeft ]
         ]
-      , [ Infix (buildFn2 <$> (lexeme $ string "+")) AssocLeft
-        , Infix (buildFn2 <$> (lexeme $ string "-")) AssocLeft
-        ]
-      , [ Infix (buildFn2 <$> (lexeme $ string "in")) AssocLeft ]
-      ]
-      (lexeme exprParserImplicitTimes)
+        (lexeme exprParserImplicitTimes)
 
 -- | We attempt to parse line-by-line. There may be some empty or comment-only lines
 -- | which are represented by `Nothing`

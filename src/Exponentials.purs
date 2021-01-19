@@ -11,6 +11,8 @@ import Data.Newtype as Newtype
 import Data.String as String
 import Data.Tuple (Tuple(..))
 
+-- | Represents a collection of values that are raised to positive or negative integer exponents.
+-- | Transparently handles eliminating zero-power values.
 newtype Exponentials a
   = Exponentials (Map a Int)
 
@@ -72,9 +74,11 @@ map f e =
     $ (\(Tuple k v) -> Tuple (f k) v)
     <$> (toArray e)
 
+-- | Wraps a single value a, denoting a^1.
 singleton :: forall a. a -> Exponentials a
 singleton a = Exponentials $ Map.singleton a 1
 
+-- | Given an array of numerator and denominator elements, return the corresponding Exponential.
 quotient :: forall a. Ord a => Array a -> Array a -> Exponentials a
 quotient num den =
   let
@@ -82,5 +86,6 @@ quotient num den =
   in
     (foldProduct num) <> (ginverse $ foldProduct den)
 
+-- | Raise a to the given exponent.
 power :: forall a. Ord a => a -> Int -> Exponentials a
 power a n = Group.power (singleton a) n

@@ -94,7 +94,7 @@ spec = do
       programTest "# Full line comment"
       programTest "assertEqual(1, 1) # Partial line comment"
     describe "InterpreterTest.calq" do
-      programTest $ Utils.readFileSync "test/InterpreterTest.calq"
+      programTest Utils.interpreterTestFile
 
 interpreterTest :: String -> String -> Spec Unit
 interpreterTest input expected =

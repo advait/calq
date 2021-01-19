@@ -5,7 +5,7 @@ const Interpreter = require('../output/Interpreter');
 
 export default function (props) {
   const [value, setValue] = useState(props.initialValue || "");
-  const results = Interpreter.evalProgramAllShow(value);
+  const results = Interpreter.evalProgramShow(value);
 
   const setValueLS = (v) => {
     localStorage.setItem("value", v);

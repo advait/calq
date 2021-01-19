@@ -16,11 +16,9 @@ import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
 import Data.Tuple (Tuple(..))
-import Data.Typelevel.Bool (falseT)
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Expression (ParsedExpr(..), Line, parseLines)
-import Math (sqrt1_2)
 import Math as Math
 import Parsing (bigNum)
 import Utils (debugLogShow, undefinedLog)
@@ -29,8 +27,20 @@ import Utils as Utils
 type Unit
   = String
 
+-- | Our interpreter evaluates expressions into these values.
 type EvalValue
   = { scalar :: BigNumber, units :: Exponentials Unit }
+
+prettyBigNum :: BigNumber -> String
+prettyBigNum n
+  | n - (Utils.bigNumberFixed 0 n) < bigNum ".01" = Utils.bigNumberFormatFixed 0 n
+  | n - (Utils.bigNumberFixed 1 n) < bigNum ".01" = Utils.bigNumberFormatFixed 1 n
+  | otherwise = Utils.bigNumberFormatFixed 2 n
+
+prettyEvalValue :: EvalValue -> String
+prettyEvalValue { scalar, units }
+  | units == mempty = prettyBigNum scalar
+  | otherwise = prettyBigNum scalar <> " " <> show units
 
 singletonUnit :: Unit -> EvalValue
 singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
@@ -47,7 +57,7 @@ type Interpreter a
   = StateT InterpreterState (Either String) a
 
 initState :: InterpreterState
-initState = execDefinitions $ Utils.readFileSync "src/Definitions.calq"
+initState = execDefinitions Utils.definitionsFile
 
 getName :: String -> Interpreter (Binding EvalValue)
 getName name = do
@@ -273,3 +283,11 @@ evalProgram input = Array.fromFoldable $ rec (List.fromFoldable lines) initState
   rec ((Right (Just head)) : tail) state = case runStateT (eval head) state of
     Left e -> (Left e) : (rec tail state)
     Right (Tuple v state') -> (Right v) : (rec tail state')
+
+-- | Executes the program, returning strings corresponding to the evaluation of each line.
+evalProgramShow :: String -> Array String
+evalProgramShow input = showItem <$> evalProgram input
+  where
+  showItem (Left s) = s
+
+  showItem (Right value) = prettyEvalValue value

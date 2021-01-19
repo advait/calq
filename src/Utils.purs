@@ -21,8 +21,11 @@ debugLogShow a = debugLogAlt (show a) a
 
 foreign import undefinedLog :: forall a. String -> a
 
--- | Wrapper around Node's fs.readFileSync. Note that Parcel will inline the underlying file.
-foreign import readFileSync :: String -> String
+-- | Contents of Definitions.calq.
+foreign import definitionsFile :: String
+
+-- | Contents of InterpreterTest.calq.
+foreign import interpreterTestFile :: String
 
 -- | Returns a array of all pair combinations between the two arrays.
 combinationsWithIndex :: forall a b. Array a -> Array b -> Array (Tuple (Tuple Int a) (Tuple Int b))

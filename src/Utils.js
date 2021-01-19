@@ -32,6 +32,6 @@ exports.bigNumberFixed = function (n) {
   }
 };
 
-exports.readFileSync = function (path) {
-  return fs.readFileSync(path, "utf-8");
-};
+exports.definitionsFile = fs.readFileSync("src/Definitions.calq", "utf-8");
+
+exports.interpreterTestFile = fs.readFileSync("test/InterpreterTest.calq", "utf-8");

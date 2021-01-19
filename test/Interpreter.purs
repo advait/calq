@@ -73,7 +73,7 @@ spec = do
       interpreterTest "2 days in minutes" "2880 minutes"
       interpreterTest "3.8 lightyears in parsecs" "1.165085 parsecs"
       interpreterTest "1.0 mi in ft" "5280 feet"
-    --   interpreterTest "27 m^2 in inches*inches" "41850.086378 inches^2"
+      interpreterTest "27 m^2 in inches*inches" "41850.086378 inches^2"
     --   interpreterTest "65 miles/hour in km/h" "104.607356652 kilometers/hour"
     describe "exponentials" do
       interpreterTest "2^2" "4"

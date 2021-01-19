@@ -16,8 +16,8 @@ foot = ft
 # ' = ft
 
 # TODO(advait): Handle "inch" parsing as distinct from "in"<*>"ch"
-#inch :: (1/12) ft
-#inches = inch
+inch :: (1/12) ft
+inches = inch
 # TODO(advait): Support " for inches
 #" = inch
 

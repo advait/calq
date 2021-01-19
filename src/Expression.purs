@@ -2,6 +2,7 @@ module Expression where
 
 import Prelude
 import Control.Alt ((<|>))
+import Data.Array (elem)
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.BigNumber (BigNumber)
@@ -14,7 +15,7 @@ import Data.String (Pattern(..))
 import Data.String as String
 import Data.String.CodeUnits (fromCharArray)
 import Parsing (bigNumParser, lexeme, spaces)
-import Text.Parsing.Parser (Parser, parseErrorMessage, runParser)
+import Text.Parsing.Parser (Parser, fail, parseErrorMessage, runParser)
 import Text.Parsing.Parser.Combinators (choice, notFollowedBy, optional, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.String (eof, satisfy, string)
@@ -95,22 +96,21 @@ exprParser =
     nameParser :: Parser String String
     nameParser =
       let
-        reserved =
-          notFollowedBy
-            $ lexeme
-            $ choice
-            $ try
-            <$> string
-            <$> [ "in" ]
-
         name =
           lexeme
             $ do
                 head <- satisfy isAlpha
                 tail <- Array.many $ satisfy isAlphaNum
                 pure $ fromCharArray $ Array.cons head tail
+
+        notReserved :: String -> Parser String String
+        notReserved s =
+          if elem s [ "in" ] then
+            fail $ "reserved word " <> s
+          else
+            pure s
       in
-        reserved *> name
+        name >>= notReserved
 
     exprParserBase =
       choice $ try

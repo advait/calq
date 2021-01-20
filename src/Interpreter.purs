@@ -21,7 +21,6 @@ import Exponentials as Exponentials
 import Expression (ParsedExpr(..), Line, parseLines)
 import Math as Math
 import Parsing (bigNum)
-import Utils (debugLogShow, undefinedLog)
 import Utils as Utils
 
 type Unit
@@ -77,7 +76,7 @@ eval (Scalar scalar) = pure { scalar, units: mempty }
 
 eval (BindDerivedUnit { name, expr: Name "CanonicalUnit" }) = do
   _ <- setName name $ CannonicalUnit
-  pure $ { scalar: bigNum "1", units: Exponentials.singleton name }
+  pure $ singletonUnit name
 
 eval (BindDerivedUnit { name, expr }) = do
   value <- eval expr
@@ -148,9 +147,9 @@ eval (Fn2 { name: "in", p1, p2 }) = do
   cast e1 desiredUnits
 
 eval (Fn2 { name: "+", p1, p2 }) = do
-  e1'@{ scalar: _, units: desiredUnits } <- eval p1
-  e1''@{ scalar: s1, units: u1 } <- reduce (debugLogShow e1')
-  e2''@{ scalar: s2, units: u2 } <- eval p2 >>= reduce
+  e1@{ scalar: _, units: desiredUnits } <- eval p1
+  { scalar: s1, units: u1 } <- reduce e1
+  { scalar: s2, units: u2 } <- eval p2 >>= reduce
   if u1 /= u2 then
     lift $ Left $ ("Cannot add units " <> show u1 <> " and " <> show u2)
   else
@@ -206,16 +205,14 @@ reduce { scalar: startScalar, units: startUnits } =
           reducedValue <- reduce $ value' `power` newPower
           pure $ acc `times` reducedValue
         -- We should not see aliases when we are reducing as they should already be evaluated
-        Alias name -> undefinedLog "We should not see Aliases when reducing"
+        Alias name -> Utils.undefinedLog "We should not see Aliases when reducing"
   in
     Exponentials.foldM foldFn { scalar: startScalar, units: mempty } startUnits
 
 -- | Determines whether the units can convert between each other.
 convertible :: Unit -> Unit -> Interpreter Boolean
 convertible u1 u2 = do
-  { scalar, units } <- reduce $ ((singletonUnit u1) `dividedBy` (singletonUnit u2))
-  let
-    ret = units == mempty
+  { scalar: _, units } <- reduce $ (singletonUnit u1) `dividedBy` (singletonUnit u2)
   pure $ units == mempty
 
 -- | Merge convertible units together (e.g. 1 ft*m will be merged to 0.3048 m^2).
@@ -253,7 +250,7 @@ execDefinitions input =
     execLines :: List (Either String Line) -> Interpreter String
     execLines Nil = pure ""
 
-    execLines ((Left err) : tail) = undefinedLog ("Error parsing Definitions.calq: " <> err)
+    execLines ((Left err) : tail) = Utils.undefinedLog $ "Error parsing Definitions.calq: " <> err
 
     -- TODO(advait): Find a better representation of Noops than `Left ""`.
     execLines ((Right Nothing) : tail) = execLines tail
@@ -263,7 +260,7 @@ execDefinitions input =
       execLines tail
   in
     case execStateT finalResult mempty of
-      Left err -> undefinedLog ("Error executing Definitions.calq: " <> err)
+      Left err -> Utils.undefinedLog $ "Error executing Definitions.calq: " <> err
       Right s -> s
 
 -- | Executes a calq program returning a list of error or result values.

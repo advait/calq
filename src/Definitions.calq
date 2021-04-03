@@ -38,30 +38,30 @@ unit m
 alias meter = m
 alias meters = m
 
-ft :: 0.3048 m
+unit ft = 0.3048 m
 alias feet = ft
 alias foot = ft
 alias ' = ft
 
-inch :: (1/12) ft
+unit inch = (1/12) ft
 alias inches = inch
 alias " = inch
 
-yard :: 3 ft
+unit yard = 3 ft
 alias yards = yard
 alias yd = yard
 
-mi :: 5280 ft
+unit mi = 5280 ft
 alias mile = mi
 alias miles = mi
 
-lightyear :: 9460730472580800 m
+unit lightyear = 9460730472580800 m
 alias lightyears = lightyear
 
-au :: 149597870700 m
+unit au = 149597870700 m
 alias aus = au
 
-parsec :: 3.261563777 lightyears
+unit parsec = 3.261563777 lightyears
 alias parsecs = parsec
 
 # Time
@@ -70,26 +70,26 @@ unit s
 alias second = s
 alias seconds = s
 
-min :: 60s
+unit min = 60s
 alias minute = min
 alias minutes = min
 
-hr :: 60min
+unit hr = 60min
 alias h = hr
 alias hrs = hr
 alias hour = hr
 alias hours = hr
 
-day :: 24hr
+unit day = 24hr
 alias days = day
 
-month :: 30 days
+unit month = 30 days
 alias months = month
 
-year :: 365 days
+unit year = 365 days
 alias years = year
 
-fortnight :: 14 days
+unit fortnight = 14 days
 alias fortnights = fortnight
 
 
@@ -99,14 +99,14 @@ unit g
 alias gram = g
 alias grams = g
 
-lbs :: 0.45359237kg
+unit lbs = 0.45359237kg
 alias lb = lbs
 alias pound = lbs
 alias pounds = lbs
 
-ton :: 2000 lbs
+unit ton = 2000 lbs
 
-ounces :: (1/16) lb
+unit ounces = (1/16) lb
 alias ounce = ounces
 
 

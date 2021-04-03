@@ -87,8 +87,9 @@ exprParser =
 
     bindUnitParser :: Parser String ParsedExpr
     bindUnitParser = do
+      _ <- lexeme $ string "unit"
       name <- nameParser
-      _ <- lexeme $ string "::"
+      _ <- lexeme $ string "="
       expr <- exprParser
       pure $ BindUnit { name, expr }
 

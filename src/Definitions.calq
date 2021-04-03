@@ -6,116 +6,242 @@
 
 # SI Prefixes
 # ---------------------------------------------------------------
-prefix yotta = 1e24                      # 1E24 Greek or Latin octo, "eight"
-prefix zetta = 1e21                      # 1E21 Latin septem, "seven"
-prefix exa   = 1e18                      # 1E18 Greek hex, "six"
-prefix peta  = 1e15                      # 1E15 Greek pente, "five"
-prefix tera  = 1e12                      # 1E12 Greek teras, "monster"
-prefix giga  = 1e9                       # 1E9  Greek gigas, "giant"
-prefix mega  = 1e6                       # 1E6  Greek megas, "large"
-prefix myria = 1e4                       # 1E4  Not an official SI prefix
-prefix kilo  = 1000                       # 1E3  Greek chilioi, "thousand"
-prefix hecto = 100                        # 1E2  Greek hekaton, "hundred"
-prefix deca  = 10                         # 1E1  Greek deka, "ten"
-prefix deci  = 1/10                       # 1E-1 Latin decimus, "tenth"
-prefix centi = 1/100                      # 1E-2 Latin centum, "hundred"
-prefix milli = 1/1000                     # 1E-3 Latin mille, "thousand"
-prefix micro = 1e-6                      # 1E-6 Latin micro/Greek mikros,"small"
-prefix nano  = 1e-9                      # 1E-9 Latin nanus or Greek nanos,"dwarf"
-prefix pico  = 1e-12                     # 1E-12 Spanish pico, "a bit"
-prefix femto = 1e-15                     # 1E-15 Danish-Norwegian femten,"fifteen"
-prefix atto  = 1e-18                     # 1E-18 Danish-Norwegian atten,"eighteen"
-prefix zepto = 1e-21                     # 1E-21 Latin septem, "seven"
-prefix yocto = 1e-24                     # 1E-24 Greek or Latin octo, "eight"
-
 # TODO(advait): Support prefix aliases
-prefix k = 1e3
+prefix yotta = 1e24                      # 1E24 Greek or Latin octo, "eight"
+prefix Y     = 1e24
+prefix zetta = 1e21                      # 1E21 Latin septem, "seven"
+prefix Z     = 1e21
+prefix exa   = 1e18                      # 1E18 Greek hex, "six"
+prefix E     = 1e18
+prefix peta  = 1e15                      # 1E15 Greek pente, "five"
+prefix P     = 1e15
+prefix tera  = 1e12                      # 1E12 Greek teras, "monster"
+prefix T     = 1e12
+prefix giga  = 1e9                       # 1E9  Greek gigas, "giant"
+prefix G     = 1e9
+prefix mega  = 1e6                       # 1E6  Greek megas, "large"
+prefix M     = 1e6
+prefix kilo  = 1000                      # 1E3  Greek chilioi, "thousand"
+prefix k     = 1e3
+prefix hecto = 100                       # 1E2  Greek hekaton, "hundred"
+prefix h     = 1e2
+prefix deca  = 10                        # 1E1  Greek deka, "ten"
+prefix da    = 1e1
+prefix deci  = 1/10                      # 1E-1 Latin decimus, "tenth"
+prefix d     = 1e-1
+prefix centi = 1/100                     # 1E-2 Latin centum, "hundred"
+prefix c     = 1e-2
+prefix milli = 1e-3                      # 1E-3 Latin mille, "thousand"
+prefix m     = 1e-3
+prefix micro = 1e-6                      # 1E-6 Latin micro/Greek mikros,"small"
+prefix u     = 1e-6
+prefix μ     = 1e-6
+prefix nano  = 1e-9                      # 1E-9 Latin nanus or Greek nanos,"dwarf"
+prefix n     = 1e-9
+prefix pico  = 1e-12                     # 1E-12 Spanish pico, "a bit"
+prefix p     = 1e-12
+prefix femto = 1e-15                     # 1E-15 Danish-Norwegian femten,"fifteen"
+prefix f     = 1e-15
+prefix atto  = 1e-18                     # 1E-18 Danish-Norwegian atten,"eighteen"
+prefix a     = 1e-18
+prefix zepto = 1e-21                     # 1E-21 Latin septem, "seven"
+prefix z     = 1e-21
+prefix yocto = 1e-24                     # 1E-24 Greek or Latin octo, "eight"
+prefix y     = 1e-24
 
 
-# Distance
+
+# Length
 # ---------------------------------------------------------------
-unit m
-alias meter = m
+unit  m
+alias meter  = m
 alias meters = m
 
-unit ft = 0.3048 m
+unit  ft   = 0.3048 m
 alias feet = ft
 alias foot = ft
-alias ' = ft
+alias '    = ft
 
-unit inch = (1/12) ft
+unit  inch   = (1/12) ft
 alias inches = inch
-alias " = inch
+alias "      = inch
 
-unit yard = 3 ft
+unit  yard  = 3 ft
 alias yards = yard
-alias yd = yard
+alias yd    = yard
 
-unit mi = 5280 ft
-alias mile = mi
+unit  mi    = 5280 ft
+alias mile  = mi
 alias miles = mi
 
-unit lightyear = 9460730472580800 m
+unit  lightyear  = 9460730472580800 m
 alias lightyears = lightyear
+alias ly = lightyear
 
-unit au = 149597870700 m
+unit  au  = 149597870700 m
 alias aus = au
 
-unit parsec = 3.261563777 lightyears
+unit  parsec  = 3.261563777 ly
 alias parsecs = parsec
+
+unit  thou       = 1/12000 ft
+unit  barleycorn = 1/36 ft
+unit  chain      = 66 ft
+alias chains     = chain
+unit  furlong    = 10 chain
+alias furlongs   = furlong
+unit  league     = 10 chains
+alias leagues    = league
+unit  fathom     = 1852 mm
+alias fathoms    = fathom
+unit  cable      = 100 fathoms
+alias cables     = cable
+unit  nauticalmile = 1852 m
+alias nauticalmiles = nauticalmile
+unit  link       = 1/100 chain
+alias links      = link
+unit  rod        = 5.5 yd
+alias rods       = rod
+
 
 # Time
 # ---------------------------------------------------------------
-unit s
-alias second = s
-alias seconds = s
+unit  s
+alias second     = s
+alias seconds    = s
 
-unit min = 60s
-alias minute = min
-alias minutes = min
+unit  min        = 60s
+alias minute     = min
+alias minutes    = min
 
-unit hr = 60min
-alias h = hr
-alias hrs = hr
-alias hour = hr
-alias hours = hr
+unit  hr         = 60min
+alias h          = hr
+alias hrs        = hr
+alias hour       = hr
+alias hours      = hr
 
-unit day = 24hr
-alias days = day
+unit  day        = 24hr
+alias days       = day
 
-unit month = 30 days
-alias months = month
+unit  month      = 30 days
+alias months     = month
 
-unit year = 365 days
-alias years = year
+unit  year       = 365 days
+alias years      = year
 
-unit fortnight = 14 days
+unit  fortnight  = 14 days
 alias fortnights = fortnight
 
 
 # Mass
 # ---------------------------------------------------------------
-unit g
-alias gram = g
-alias grams = g
+unit  g
+alias gram       = g
+alias grams      = g
 
-unit lbs = 0.45359237kg
-alias lb = lbs
-alias pound = lbs
-alias pounds = lbs
+unit  lbs        = 0.45359237kg
+alias lb         = lbs
+alias pound      = lbs
+alias pounds     = lbs
 
-unit ton = 2000 lbs
+unit  ton        = 2000 lbs
+alias tons       = ton
 
-unit ounces = (1/16) lb
-alias ounce = ounces
+unit  ounce      = (1/16) lb
+alias ounces     = ounce
+alias oz         = ounce
+
+unit grain       = (1/7000) lb
+alias gr         = grain
+alias grains     = grain
+
+unit  troypound  = 5760 grain
+alias troypounds = troypound
+
+unit  troyounce  = 1/12 troypound
+
+unit  carat      = 2/10 gram
+alias carats     = carat
+alias ct         = carat
+
+
+# Area (length^2)
+# ---------------------------------------------------------------
+unit  acre       = 4840 yd^2
+alias acres      = acre
+
+unit  perch      = 1 rod^2
+alias perches    = perch
+
+unit  rood       = 1 furlong*rod
+alias roods      = rood
 
 
 # Scalar constants
 # ---------------------------------------------------------------
+zero =                0
+one =                 1
+two =                 2
+double =              2
+three =               3
+triple =              3
+treble =              3
+four =                4
+quadruple =           4
+five =                5
+quintuple =           5
+six =                 6
+sextuple =            6
+seven =               7
+septuple =            7
+eight =               8
+nine =                9
+ten =                 10
+twenty =              20
+thirty =              30
+forty =               40
+fifty =               50
+sixty =               60
+seventy =             70
+eighty =              80
+ninety =              90
+
+hundred =             100
+thousand =            1000
+million =             1e6
+billion =             1e9
+trillion =            1e12
+quadrillion =         1e15
+quintillion =         1e18
+sextillion =          1e21
+septillion =          1e24
+octillion =           1e27
+nonillion =           1e30
+noventillion =        nonillion
+decillion =           1e33
+undecillion =         1e36
+duodecillion =        1e39
+tredecillion =        1e42
+quattuordecillion =   1e45
+quindecillion =       1e48
+sexdecillion =        1e51
+septendecillion =     1e54
+octodecillion =       1e57
+novemdecillion =      1e60
+vigintillion =        1e63
+centillion =          1e303
+
+googol =              1e100
+
 pi = 3.14159265359
 π = pi
 
+# Indian dimensionless numbers (used in English)
+# See: https://en.wikipedia.org/wiki/Indian_Numbering_System
+unit lakh        = 100 thousand
+crore            = 10 million
 
-# Speed
+
+# Speed constants
 # ---------------------------------------------------------------
 c = 299792458 m/s

@@ -27,6 +27,7 @@ data ParsedExpr
   | Fn1 { name :: String, p1 :: ParsedExpr }
   | Fn2 { name :: String, p1 :: ParsedExpr, p2 :: ParsedExpr }
   | BindDerivedUnit { name :: String, expr :: ParsedExpr }
+  | BindAlias { name :: String, target :: String }
   | BindVariable { name :: String, expr :: ParsedExpr }
   | BindPrefix { name :: String, expr :: ParsedExpr }
 
@@ -77,8 +78,9 @@ exprParser =
 
     bindPrefixParser :: Parser String ParsedExpr
     bindPrefixParser = do
+      _ <- lexeme $ string "prefix"
       name <- nameParser
-      _ <- lexeme $ string ":p:"
+      _ <- lexeme $ string "="
       expr <- exprParser
       pure $ BindPrefix { name, expr }
 
@@ -88,6 +90,14 @@ exprParser =
       _ <- lexeme $ string "::"
       expr <- exprParser
       pure $ BindDerivedUnit { name, expr }
+
+    bindAliasParser :: Parser String ParsedExpr
+    bindAliasParser = do
+      _ <- lexeme $ string "alias"
+      name <- nameParser
+      _ <- lexeme $ string "="
+      target <- nameParser
+      pure $ BindAlias { name, target }
 
     bindVariableParser :: Parser String ParsedExpr
     bindVariableParser  = do
@@ -131,6 +141,7 @@ exprParser =
           , fn1Parser
           , bindPrefixParser
           , bindDerivedUnitParser
+          , bindAliasParser
           , bindVariableParser
           , scalarParser
           , Name <$> nameParser

@@ -3,64 +3,94 @@
 
 # Note that this file is simply a calq program.
 
+
+# SI Prefixes
+# ---------------------------------------------------------------
+prefix yotta = 1e24                      # 1E24 Greek or Latin octo, "eight"
+prefix zetta = 1e21                      # 1E21 Latin septem, "seven"
+prefix exa   = 1e18                      # 1E18 Greek hex, "six"
+prefix peta  = 1e15                      # 1E15 Greek pente, "five"
+prefix tera  = 1e12                      # 1E12 Greek teras, "monster"
+prefix giga  = 1e9                       # 1E9  Greek gigas, "giant"
+prefix mega  = 1e6                       # 1E6  Greek megas, "large"
+prefix myria = 1e4                       # 1E4  Not an official SI prefix
+prefix kilo  = 1000                       # 1E3  Greek chilioi, "thousand"
+prefix hecto = 100                        # 1E2  Greek hekaton, "hundred"
+prefix deca  = 10                         # 1E1  Greek deka, "ten"
+prefix deci  = 1/10                       # 1E-1 Latin decimus, "tenth"
+prefix centi = 1/100                      # 1E-2 Latin centum, "hundred"
+prefix milli = 1/1000                     # 1E-3 Latin mille, "thousand"
+prefix micro = 1e-6                      # 1E-6 Latin micro/Greek mikros,"small"
+prefix nano  = 1e-9                      # 1E-9 Latin nanus or Greek nanos,"dwarf"
+prefix pico  = 1e-12                     # 1E-12 Spanish pico, "a bit"
+prefix femto = 1e-15                     # 1E-15 Danish-Norwegian femten,"fifteen"
+prefix atto  = 1e-18                     # 1E-18 Danish-Norwegian atten,"eighteen"
+prefix zepto = 1e-21                     # 1E-21 Latin septem, "seven"
+prefix yocto = 1e-24                     # 1E-24 Greek or Latin octo, "eight"
+
+# TODO(advait): Support prefix aliases
+prefix k = 1e3
+
+
 # Distance
 # ---------------------------------------------------------------
 m :: CanonicalUnit
-meter = m
-meters = m
+alias meter = m
+alias meters = m
 
 ft :: 0.3048 m
-feet = ft
-foot = ft
-' = ft
+alias feet = ft
+alias foot = ft
+alias ' = ft
 
 inch :: (1/12) ft
-inches = inch
-" = inch
+alias inches = inch
+alias " = inch
 
 yard :: 3 ft
-yards = yard
-yd = yard
+alias yards = yard
+alias yd = yard
 
 mi :: 5280 ft
-mile = mi
-miles = mi
+alias mile = mi
+alias miles = mi
 
 lightyear :: 9460730472580800 m
-lightyears = lightyear
+alias lightyears = lightyear
 
 au :: 149597870700 m
-aus = au
+alias aus = au
 
 parsec :: 3.261563777 lightyears
-parsecs = parsec
+alias parsecs = parsec
 
 # Time
 # ---------------------------------------------------------------
 s :: CanonicalUnit
-second = s
-seconds = s
+alias second = s
+alias seconds = s
 
 min :: 60s
-minute = min
-minutes = min
+alias minute = min
+alias minutes = min
 
 hr :: 60min
-hrs = hr
-hour = hr
-hours = hr
+alias h = hr
+alias hrs = hr
+alias hour = hr
+alias hours = hr
 
 day :: 24hr
-days = day
+alias days = day
 
 month :: 30 days
-months = month
+alias months = month
 
 year :: 365 days
-years = year
+alias years = year
 
 fortnight :: 14 days
-fortnights = fortnight
+alias fortnights = fortnight
 
 
 # Mass
@@ -70,14 +100,14 @@ kilogram = kg
 kilograms = kg
 
 lbs :: 0.45359237kg
-lb = lbs
-pound = lbs
-pounds = lbs
+alias lb = lbs
+alias pound = lbs
+alias pounds = lbs
 
 ton :: 2000 lbs
 
 ounces :: (1/16) lb
-ounce = ounces
+alias ounce = ounces
 
 
 # Scalar constants

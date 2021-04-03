@@ -57,7 +57,7 @@ data Binding a
   | Variable a
 
 type InterpreterState
-  = { bindings :: Map String (Binding EvalValue) 
+  = { bindings :: Map String (Binding EvalValue)
     , prefixes :: List (Tuple String EvalValue)
     }
 
@@ -84,10 +84,10 @@ dereferenceName name form = do
       Unreduced -> pure value
       Reduced -> reduce value
     Nothing -> searchPrefixes state.prefixes
-      where 
+      where
         searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
         searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
-        searchPrefixes ((Tuple prefix prefixValue):tail) = 
+        searchPrefixes ((Tuple prefix prefixValue):tail) =
           case String.stripPrefix (Pattern prefix) name of
             Nothing -> searchPrefixes tail
             Just suffix -> case Map.lookup suffix state.bindings of
@@ -97,10 +97,10 @@ dereferenceName name form = do
                 Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
               Just (DerivedUnit derived) -> case form of
                 Unreduced -> pure $ singletonUnit name
-                Reduced -> reduce $ (prefixValue `times` derived)
+                Reduced -> reduce $ prefixValue `times` derived
               Just (NamedAlias target) -> dereferenceName (prefix <> target) form
               Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
-  
+
 
 setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
 setName name value = do
@@ -119,6 +119,10 @@ eval (BindDerivedUnit { name, expr }) = do
   value <- eval expr
   _ <- setName name $ DerivedUnit value
   pure value
+
+eval (BindAlias { name, target }) = do
+  _ <- setName name $ NamedAlias target
+  pure $ singletonUnit target
 
 eval (BindVariable { name, expr }) = do
   value <- eval expr

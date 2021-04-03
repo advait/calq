@@ -76,7 +76,7 @@ spec = do
       interpreterTest "3.8 lightyears in parsecs" "1.165085 parsecs"
       interpreterTest "1.0 mi in ft" "5280 feet"
       interpreterTest "27 m^2 in inches*inches" "41850.086378 inches^2"
-    --   interpreterTest "65 miles/hour in km/h" "104.607356652 kilometers/hour"
+      interpreterTest "65 miles/hour in km/h" "104.607356652 km/hour"
     describe "exponentials" do
       interpreterTest "2^2" "4"
       interpreterTest "4.0 m*m in ft^2" "43.0556 ft^2"
@@ -88,6 +88,13 @@ spec = do
       interpreterTest "reduce(c)" "299792458 m/s"
       interpreterTest "pi" "3.14159265354"
       interpreterTest "reduce(pi)" "3.14159265354"
+    describe "prefixes" do
+      interpreterTest "km" "km"
+      -- TODO(advait): Support prefix aliases
+      --interpreterTest "kilom" "km"
+      --interpreterTest "kilometer" "km"
+      interpreterTest "reduce(km)" "1000 m"
+      interpreterTest "1 mi in km" "1.60934 km"
     describe "full programs" do
       programTest "assertEqual(1, 1)"
     describe "comments" do

@@ -26,8 +26,11 @@ data ParsedExpr
   | Name String
   | Fn1 { name :: String, p1 :: ParsedExpr }
   | Fn2 { name :: String, p1 :: ParsedExpr, p2 :: ParsedExpr }
-  | BindDerivedUnit { name :: String, expr :: ParsedExpr }
-  | BindAlias { name :: String, expr :: ParsedExpr }
+  | BindPrefix { name :: String, expr :: ParsedExpr }
+  | BindRootUnit { name :: String }
+  | BindUnit { name :: String, expr :: ParsedExpr }
+  | BindAlias { name :: String, target :: String }
+  | BindVariable { name :: String, expr :: ParsedExpr }
 
 -- | Parsing expressions is complicated and requires multiple levels of precedence. Ordinarily we
 -- | would just use the builtin buildExprParser but we run into complications because because "1 m"
@@ -74,19 +77,42 @@ exprParser =
             _ <- lexeme $ string ")"
             pure $ Fn1 { name, p1 }
 
-    bindDerivedUnitParser :: Parser String ParsedExpr
-    bindDerivedUnitParser = do
-      name <- nameParser
-      _ <- lexeme $ string "::"
-      expr <- exprParser
-      pure $ BindDerivedUnit { name, expr }
-
-    bindAliasParser :: Parser String ParsedExpr
-    bindAliasParser = do
+    bindPrefixParser :: Parser String ParsedExpr
+    bindPrefixParser = do
+      _ <- lexeme $ string "prefix"
       name <- nameParser
       _ <- lexeme $ string "="
       expr <- exprParser
-      pure $ BindAlias { name, expr }
+      pure $ BindPrefix { name, expr }
+
+    bindUnitParser :: Parser String ParsedExpr
+    bindUnitParser = do
+      _ <- lexeme $ string "unit"
+      name <- nameParser
+      _ <- lexeme $ string "="
+      expr <- exprParser
+      pure $ BindUnit { name, expr }
+
+    bindRootUnitParser :: Parser String ParsedExpr
+    bindRootUnitParser = do
+      _ <- lexeme $ string "unit"
+      name <- nameParser
+      pure $ BindRootUnit { name }
+
+    bindAliasParser :: Parser String ParsedExpr
+    bindAliasParser = do
+      _ <- lexeme $ string "alias"
+      name <- nameParser
+      _ <- lexeme $ string "="
+      target <- nameParser
+      pure $ BindAlias { name, target }
+
+    bindVariableParser :: Parser String ParsedExpr
+    bindVariableParser  = do
+      name <- nameParser
+      _ <- lexeme $ string "="
+      expr <- exprParser
+      pure $ BindVariable { name, expr }
 
     scalarParser :: Parser String ParsedExpr
     scalarParser = do
@@ -121,8 +147,11 @@ exprParser =
         <$> [ parenParser
           , fn2Parser
           , fn1Parser
-          , bindDerivedUnitParser
+          , bindPrefixParser
+          , bindUnitParser
+          , bindRootUnitParser
           , bindAliasParser
+          , bindVariableParser
           , scalarParser
           , Name <$> nameParser
           ]

@@ -51,8 +51,8 @@ singletonUnit :: Unit -> EvalValue
 singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
 
 data Binding a
-  = CannonicalUnit
-  | DerivedUnit a
+  = RootUnit
+  | UnitBinding a
   | NamedAlias String
   | Variable a
 
@@ -73,8 +73,8 @@ dereferenceName :: String -> DereferenceForm -> Interpreter EvalValue
 dereferenceName name form = do
   state :: InterpreterState <- State.get
   case Map.lookup name state.bindings of
-    Just CannonicalUnit -> pure $ singletonUnit name
-    Just (DerivedUnit derived) -> case form of
+    Just RootUnit -> pure $ singletonUnit name
+    Just (UnitBinding derived) -> case form of
       Unreduced -> pure $ singletonUnit name
       Reduced -> reduce derived
     Just (NamedAlias target) -> case form of
@@ -92,10 +92,10 @@ dereferenceName name form = do
             Nothing -> searchPrefixes tail
             Just suffix -> case Map.lookup suffix state.bindings of
               Nothing -> searchPrefixes tail
-              Just CannonicalUnit -> case form of
+              Just RootUnit -> case form of
                 Unreduced -> pure $ singletonUnit name
                 Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
-              Just (DerivedUnit derived) -> case form of
+              Just (UnitBinding derived) -> case form of
                 Unreduced -> pure $ singletonUnit name
                 Reduced -> reduce $ prefixValue `times` derived
               Just (NamedAlias target) -> dereferenceName (prefix <> target) form
@@ -111,13 +111,13 @@ setName name value = do
 eval :: ParsedExpr -> Interpreter EvalValue
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
-eval (BindDerivedUnit { name, expr: Name "CanonicalUnit" }) = do
-  _ <- setName name $ CannonicalUnit
+eval (BindRootUnit { name }) = do
+  _ <- setName name $ RootUnit
   pure $ singletonUnit name
 
-eval (BindDerivedUnit { name, expr }) = do
+eval (BindUnit { name, expr }) = do
   value <- eval expr
-  _ <- setName name $ DerivedUnit value
+  _ <- setName name $ UnitBinding value
   pure value
 
 eval (BindAlias { name, target }) = do
@@ -134,8 +134,6 @@ eval (BindPrefix { name, expr}) = do
   _ <- State.modify (\state -> state { prefixes = List.snoc state.prefixes (Tuple name value) } )
   pure value
 
--- | When evaluating a name, we are content with the result in terms of. CannonicalUnits as well as
--- | DerivedUnits. See `reduce` for a full reduction to CannonicalUnits.
 eval (Name name) = dereferenceName name Unreduced
 
 eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce

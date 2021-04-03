@@ -1,6 +1,7 @@
 module Interpreter where
 
 import Prelude hiding (Unit)
+
 import Control.Monad.State (StateT, execStateT, lift, runStateT)
 import Control.Monad.State as State
 import Data.Array as Array
@@ -15,10 +16,12 @@ import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Ord (abs)
+import Data.String (Pattern(..))
+import Data.String as String
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expression (ParsedExpr(..), Line, parseLines)
+import Expression (Line, ParsedExpr(..), parseLines)
 import Math as Math
 import Parsing (bigNum)
 import Utils as Utils
@@ -29,6 +32,9 @@ type Unit
 -- | Our interpreter evaluates expressions into these values.
 type EvalValue
   = { scalar :: BigNumber, units :: Exponentials Unit }
+
+scalar1 :: EvalValue
+scalar1 = { scalar : bigNum "1", units: mempty}
 
 prettyBigNum :: BigNumber -> String
 prettyBigNum n
@@ -47,10 +53,13 @@ singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
 data Binding a
   = CannonicalUnit
   | DerivedUnit a
-  | Alias a
+  | NamedAlias String
+  | Variable a
 
 type InterpreterState
-  = Map String (Binding EvalValue)
+  = { bindings :: Map String (Binding EvalValue) 
+    , prefixes :: List (Tuple String EvalValue)
+    }
 
 type Interpreter a
   = StateT InterpreterState (Either String) a
@@ -58,16 +67,44 @@ type Interpreter a
 initState :: InterpreterState
 initState = execDefinitions Utils.definitionsFile
 
-getName :: String -> Interpreter (Binding EvalValue)
-getName name = do
-  state <- State.get
-  case Map.lookup name state of
-    Nothing -> lift $ Left ("Undefined variable " <> (show name))
-    Just b -> pure b
+data DereferenceForm = Unreduced | Reduced
+
+dereferenceName :: String -> DereferenceForm -> Interpreter EvalValue
+dereferenceName name form = do
+  state :: InterpreterState <- State.get
+  case Map.lookup name state.bindings of
+    Just CannonicalUnit -> pure $ singletonUnit name
+    Just (DerivedUnit derived) -> case form of
+      Unreduced -> pure $ singletonUnit name
+      Reduced -> reduce derived
+    Just (NamedAlias target) -> case form of
+      Unreduced -> pure $ singletonUnit target
+      Reduced -> dereferenceName target form
+    Just (Variable value) -> case form of
+      Unreduced -> pure value
+      Reduced -> reduce value
+    Nothing -> searchPrefixes state.prefixes
+      where 
+        searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
+        searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
+        searchPrefixes ((Tuple prefix prefixValue):tail) = 
+          case String.stripPrefix (Pattern prefix) name of
+            Nothing -> searchPrefixes tail
+            Just suffix -> case Map.lookup suffix state.bindings of
+              Nothing -> searchPrefixes tail
+              Just CannonicalUnit -> case form of
+                Unreduced -> pure $ singletonUnit name
+                Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
+              Just (DerivedUnit derived) -> case form of
+                Unreduced -> pure $ singletonUnit name
+                Reduced -> reduce $ (prefixValue `times` derived)
+              Just (NamedAlias target) -> dereferenceName (prefix <> target) form
+              Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
+  
 
 setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
 setName name value = do
-  _ <- State.modify (\state -> Map.insert name value state)
+  _ <- State.modify (\state -> state { bindings = Map.insert name value state.bindings })
   pure value
 
 -- | Evaluate an expression, potentially updating state and returning an EvalValue.
@@ -83,20 +120,19 @@ eval (BindDerivedUnit { name, expr }) = do
   _ <- setName name $ DerivedUnit value
   pure value
 
-eval (BindAlias { name, expr }) = do
+eval (BindVariable { name, expr }) = do
   value <- eval expr
-  _ <- setName name $ Alias value
+  _ <- setName name $ Variable value
+  pure value
+
+eval (BindPrefix { name, expr}) = do
+  value <- eval expr
+  _ <- State.modify (\state -> state { prefixes = List.snoc state.prefixes (Tuple name value) } )
   pure value
 
 -- | When evaluating a name, we are content with the result in terms of. CannonicalUnits as well as
 -- | DerivedUnits. See `reduce` for a full reduction to CannonicalUnits.
-eval (Name name)
-  | otherwise = do
-    value <- getName name
-    case value of
-      CannonicalUnit -> pure $ singletonUnit name
-      DerivedUnit _ -> pure $ singletonUnit name
-      Alias aliasValue -> pure aliasValue
+eval (Name name) = dereferenceName name Unreduced
 
 eval (Fn1 { name: "reduce", p1 }) = eval p1 >>= reduce
 
@@ -196,16 +232,8 @@ reduce { scalar: startScalar, units: startUnits } =
   let
     foldFn :: EvalValue -> Tuple Unit Int -> Interpreter EvalValue
     foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
-      value <- getName newUnit
-      case value of
-        -- For a CannonicalUnit, we are done - simply return the unit with the appropriate power
-        CannonicalUnit -> pure { scalar, units: units <> (Exponentials.power newUnit newPower) }
-        -- DerivedUnits must be reduced further
-        DerivedUnit value' -> do
-          reducedValue <- reduce $ value' `power` newPower
-          pure $ acc `times` reducedValue
-        -- We should not see aliases when we are reducing as they should already be evaluated
-        Alias name -> Utils.undefinedLog "We should not see Aliases when reducing"
+      value <- dereferenceName newUnit Reduced
+      pure $ acc `times` (value `power` newPower)
   in
     Exponentials.foldM foldFn { scalar: startScalar, units: mempty } startUnits
 

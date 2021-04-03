@@ -27,7 +27,8 @@ data ParsedExpr
   | Fn1 { name :: String, p1 :: ParsedExpr }
   | Fn2 { name :: String, p1 :: ParsedExpr, p2 :: ParsedExpr }
   | BindDerivedUnit { name :: String, expr :: ParsedExpr }
-  | BindAlias { name :: String, expr :: ParsedExpr }
+  | BindVariable { name :: String, expr :: ParsedExpr }
+  | BindPrefix { name :: String, expr :: ParsedExpr }
 
 -- | Parsing expressions is complicated and requires multiple levels of precedence. Ordinarily we
 -- | would just use the builtin buildExprParser but we run into complications because because "1 m"
@@ -74,6 +75,13 @@ exprParser =
             _ <- lexeme $ string ")"
             pure $ Fn1 { name, p1 }
 
+    bindPrefixParser :: Parser String ParsedExpr
+    bindPrefixParser = do
+      name <- nameParser
+      _ <- lexeme $ string ":p:"
+      expr <- exprParser
+      pure $ BindPrefix { name, expr }
+
     bindDerivedUnitParser :: Parser String ParsedExpr
     bindDerivedUnitParser = do
       name <- nameParser
@@ -81,12 +89,12 @@ exprParser =
       expr <- exprParser
       pure $ BindDerivedUnit { name, expr }
 
-    bindAliasParser :: Parser String ParsedExpr
-    bindAliasParser = do
+    bindVariableParser :: Parser String ParsedExpr
+    bindVariableParser  = do
       name <- nameParser
       _ <- lexeme $ string "="
       expr <- exprParser
-      pure $ BindAlias { name, expr }
+      pure $ BindVariable { name, expr }
 
     scalarParser :: Parser String ParsedExpr
     scalarParser = do
@@ -121,8 +129,9 @@ exprParser =
         <$> [ parenParser
           , fn2Parser
           , fn1Parser
+          , bindPrefixParser
           , bindDerivedUnitParser
-          , bindAliasParser
+          , bindVariableParser
           , scalarParser
           , Name <$> nameParser
           ]

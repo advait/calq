@@ -32,6 +32,46 @@ data ParsedExpr
   | BindAlias { name :: String, target :: String }
   | BindVariable { name :: String, expr :: ParsedExpr }
 
+derive instance eqParsedExpr :: Eq ParsedExpr
+
+instance showParsedExpr :: Show ParsedExpr where
+  show (Scalar n) = show n
+  show (Name n) = n
+  show (Fn1 { name, p1 }) = name <> "(" <> show p1 <> ")"
+  show (Fn2 { name, p1, p2 }) = name <> "(" <> show p1 <> ", " <> show p2 <> ")"
+  show (BindPrefix { name, expr }) = "prefix " <> name <> " = " <> show expr
+  show (BindRootUnit { name }) = "unit " <> name
+  show (BindUnit { name, expr }) = "unit " <> name <> " = " <> show expr
+  show (BindAlias { name, target }) = "alias " <> name <> " = " <> target
+  show (BindVariable { name, expr }) = name <> " = " <> show expr
+
+-- type ParseMetadata = List (Tuple TokenType Position)
+-- data TokenType
+--   = WhitespaceTk
+--   | PunctuationTk
+--   | NameTk
+--   | NumberTk
+--   | InfixTk
+--   | InTk
+-- type ExprParser a = ParserT String (State ParseMetadata) a
+-- -- | Mark the history with the provided token.
+-- markT' :: TokenType -> ExprParser Unit
+-- markT' tokenType = do
+--   pos <- position
+--   _ <- lift $ (State.modify $ \history -> (Tuple tokenType pos) : history)
+--   pure unit
+-- -- | If the provided parser succeeds, mark the history with the provided token.
+-- markT :: forall a. TokenType -> ExprParser a -> ExprParser a
+-- markT tokenType p = p <* markT' tokenType
+-- -- | Parse the given literal string, marking with the given token type.
+-- -- | Also strips off whitespace.
+-- literal :: TokenType -> String -> ExprParser String
+-- literal tokenType str = do
+--   s <- string str
+--   _ <- markT' tokenType
+--   _ <- spaces
+--   _ <- markT' WhitespaceTk
+--   pure s
 -- | Parsing expressions is complicated and requires multiple levels of precedence. Ordinarily we
 -- | would just use the builtin buildExprParser but we run into complications because because "1 m"
 -- | implies "1*m". The optional lack of an explicit infix operator for multiplication forces us to
@@ -108,7 +148,7 @@ exprParser =
       pure $ BindAlias { name, target }
 
     bindVariableParser :: Parser String ParsedExpr
-    bindVariableParser  = do
+    bindVariableParser = do
       name <- nameParser
       _ <- lexeme $ string "="
       expr <- exprParser

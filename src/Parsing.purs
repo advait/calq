@@ -12,7 +12,7 @@ import Data.String.CodeUnits as String
 import Data.String.Common (toLower, toUpper)
 import Text.Parsing.Parser (Parser, ParserT)
 import Text.Parsing.Parser.Combinators (try, (<??>))
-import Text.Parsing.Parser.String (oneOf, satisfy, string)
+import Text.Parsing.Parser.String (char, oneOf, satisfy, string)
 
 -- | Matches the given character parser zero or more times.
 zeroOrMore :: Parser String Char -> Parser String String
@@ -80,6 +80,9 @@ nonStandardIntParser = Foldable.oneOf $ try <$> negativePrefix <$> [ binary, hex
 floatParser :: Parser String String
 floatParser = gt1 <|> lt1
   where
+  isDigitOrComma :: Parser String Char
+  isDigitOrComma = (satisfy isDigit) <|> (char ',')
+
   -- | Case where something preceeds the decimal.
   gt1 =
     (optional $ string "-")

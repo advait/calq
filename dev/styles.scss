@@ -4,8 +4,10 @@
 
 $family-primary: "Roboto Mono", monospace;
 
-$body-background-color: #222226;
-$text: #E3E7E9;
+$body-background-color: #1d1f21;
+$text: #c5c8c6;
+$comment: #969896;
+$number: #b5bd68;
 $body-font-size: 1.1em;
 
 // Import bulma (this belongs after the variable overrides)
@@ -49,6 +51,14 @@ $editor-line-height: 2.5;
 
   textarea:focus {
     outline: 0;
+  }
+
+  .token-comment {
+    color: $comment;
+  }
+
+  .token-number {
+    color: $number;
   }
 }
 

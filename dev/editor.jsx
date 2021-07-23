@@ -18,7 +18,7 @@ export default function (props) {
         <Editor
           value={value}
           onValueChange={setValueLS}
-          highlight={code => code}
+          highlight={code => testHighlight(code)}
         />
       </div>
       <div className="column editor-right">
@@ -27,3 +27,7 @@ export default function (props) {
     </div>
   )
 };
+
+function testHighlight(s) {
+  return s.split(" ").map(s => (<span className="token-number">{s}</span>));
+}

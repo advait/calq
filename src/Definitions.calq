@@ -232,6 +232,7 @@ vigintillion =        1e63
 centillion =          1e303
 
 googol =              1e100
+google =              googol
 
 pi = 3.14159265359
 π = pi
@@ -242,6 +243,12 @@ unit lakh        = 100 thousand
 crore            = 10 million
 
 
-# Speed constants
+# Speed
 # ---------------------------------------------------------------
 c = 299792458 m/s
+mph = miles/h
+kph = km/h
+
+unit kts = nauticalmile/h
+alias knots = kts
+alias knot = kts

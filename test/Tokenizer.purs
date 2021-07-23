@@ -1,4 +1,4 @@
-module Test.Tokenizer where
+module Test.Parsing where
 
 import Prelude
 import Data.Either (Either(..))

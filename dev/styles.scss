@@ -5,13 +5,22 @@
 $family-primary: "Roboto Mono", monospace;
 
 $body-background-color: #1d1f21;
+$body-font-size: 1.1em;
+
 $text: #c5c8c6;
 $comment: #969896;
 $number: #b5bd68;
-$body-font-size: 1.1em;
+$red: #cc6666;
+$orange: #de935f;
+$yellow: #f0c674;
+$green: #b5bd68;
+$aqua: #8abeb7;
+$blue: #81a2be;
+$purple: #b294bb;
 
-// Import bulma (this belongs after the variable overrides)
-@import "../node_modules/bulma/bulma.sass";
+body {
+  background-color: $body-background-color;
+}
 
 .primary {
   position: fixed;
@@ -19,35 +28,41 @@ $body-font-size: 1.1em;
   left: 0;
   right: 0;
   bottom: 0;
-
-  .background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1;
-  }
+  display: flex;
+  justify-content: center;
 
   .container {
-    max-width: 800px !important;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 2;
+    width: 800px;
   }
 }
 
 $editor-top-padding: 5em;
 $editor-line-height: 2.5;
 
+.editor {
+  display: flex;
+  flex-direction: row;
+  font-family: $family-primary;
+  line-height: $editor-line-height;
+  margin: 0 auto;
+}
+
 .editor-left {
   padding-top: $editor-top-padding;
   min-height: 100vh;
+  flex-grow: 2;
+  flex-basis: 0;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  overflow-x: hidden;
 
-  line-height: $editor-line-height;
+  textarea {
+    color: $text;
+    caret-color: $text;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    overflow-x: hidden;
+  }
 
   textarea:focus {
     outline: 0;
@@ -58,13 +73,30 @@ $editor-line-height: 2.5;
   }
 
   .token-number {
-    color: $number;
+    color: $green;
+  }
+
+  .token-name {
+    color: $text;
+  }
+
+  .token-reserved {
+    color: $red;
+  }
+
+  .token-infix {
+    color: $aqua;
   }
 }
 
 .editor-right {
-  background-color: $white-bis;
   color: $body-background-color;
+  background-color: $text;
+  flex-grow: 1;
+  flex-basis: 0;
+  white-space: nowrap;
+
+  max-width: 267px;
 
   padding-top: $editor-top-padding;
   padding-left: 2em;

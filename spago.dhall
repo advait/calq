@@ -17,6 +17,7 @@ You can edit this file as you like.
   , "partial"
   , "psci-support"
   , "quickcheck"
+  , "react"
   , "sorted-arrays"
   , "spec"
   , "spec-discovery"

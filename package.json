@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "bignumber.js": "^9.0.1",
-    "bulma": "^0.9.1",
     "create-react-class": "^15.7.0",
     "parcel": "^1.12.4",
     "purescript": "^0.13.8",

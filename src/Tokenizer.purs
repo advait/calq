@@ -4,15 +4,20 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.Char.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit)
+import Data.Either (Either)
 import Data.Foldable (oneOf)
 import Data.String (length)
 import Data.String.CodeUnits as String
-import Data.Tuple (Tuple(..))
-import Text.Parsing.Parser (Parser, fail)
+import Data.Tuple (Tuple(..), fst)
+import React (ReactElement)
+import React.DOM.Props as Props
+import React.DOM as DOM
+import Text.Parsing.Parser (ParseError(..), Parser, fail, runParser)
 import Text.Parsing.Parser as Parser
 import Text.Parsing.Parser.Combinators (choice, try)
 import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, string)
+import Utils (undefinedLog)
 
 -- | First we parse the input into Tokens to make it easier for subsequent expression parsing.
 -- | The tokenizer allows us to more easily handle whitespace subtleties (e.g. "4 m" == "4*m").
@@ -25,6 +30,7 @@ data TokenType
   | InfixTk String
   | ReservedTk ReservedWord
   | NameTk String
+  | CommentTk String
 
 derive instance eqTokenType :: Eq TokenType
 
@@ -42,6 +48,7 @@ instance showTokenType :: Show TokenType where
   show (ReservedTk PrefixTk) = "prefix"
   show (ReservedTk InTk) = "in"
   show (NameTk s) = s
+  show (CommentTk c) = c
 
 data Punctuation
   = OpenParen
@@ -159,6 +166,11 @@ tokenStreamParser = parser
       "in" -> pure $ ReservedTk InTk
       _ -> pure $ NameTk s
 
+  comment = do
+    start <- string "#"
+    body <- many $ satisfy ((/=) '\n')
+    pure $ CommentTk $ start <> body
+
   parser =
     Array.many $ withPos $ oneOf
       $ [ whitespace
@@ -167,4 +179,34 @@ tokenStreamParser = parser
         , baseLiteral
         , numberOrInfix
         , name
+        , comment
         ]
+
+tokenize :: String -> Either ParseError TokenStream
+tokenize s = runParser s tokenStreamParser
+
+highlight :: String -> Either ParseError (Array ReactElement)
+highlight s =
+  let
+    createSpan :: TokenType -> ReactElement
+    createSpan (WhitespaceTk w) = DOM.span [ Props.className "token-whitespace" ] [ DOM.text w ]
+
+    createSpan (NewlineTk) = DOM.br [ Props.className "token-newline" ]
+
+    createSpan p@(PunctuationTk _) = DOM.span [ Props.className "token-punctuation" ] [ DOM.text (show p) ]
+
+    createSpan (BaseLiteralTk n) = DOM.span [ Props.className "token-number" ] [ DOM.text n ]
+
+    createSpan (NumberTk n) = DOM.span [ Props.className "token-number" ] [ DOM.text n ]
+
+    createSpan (InfixTk i) = DOM.span [ Props.className "token-infix" ] [ DOM.text i ]
+
+    createSpan w@(ReservedTk _) = DOM.span [ Props.className "token-reserved" ] [ DOM.text (show w) ]
+
+    createSpan (NameTk n) = DOM.span [ Props.className "token-name" ] [ DOM.text n ]
+
+    createSpan (CommentTk c) = DOM.span [ Props.className "token-comment" ] [ DOM.text c ]
+  in
+    do
+      stream :: Array (Tuple TokenType _) <- tokenize s
+      pure $ (createSpan <$> fst <$> stream) <> ([ DOM.br [] ])

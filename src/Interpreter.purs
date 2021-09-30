@@ -1,8 +1,7 @@
 module Interpreter where
 
 import Prelude hiding (Unit)
-
-import Control.Monad.State (StateT, execStateT, lift, runStateT)
+import Control.Monad.State (StateT, evalStateT, execStateT, lift, runStateT)
 import Control.Monad.State as State
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
@@ -34,7 +33,7 @@ type EvalValue
   = { scalar :: BigNumber, units :: Exponentials Unit }
 
 scalar1 :: EvalValue
-scalar1 = { scalar : bigNum "1", units: mempty}
+scalar1 = { scalar: bigNum "1", units: mempty }
 
 prettyBigNum :: BigNumber -> String
 prettyBigNum n
@@ -67,7 +66,9 @@ type Interpreter a
 initState :: InterpreterState
 initState = execDefinitions Utils.definitionsFile
 
-data DereferenceForm = Unreduced | Reduced
+data DereferenceForm
+  = Unreduced
+  | Reduced
 
 dereferenceName :: String -> DereferenceForm -> Interpreter EvalValue
 dereferenceName name form = do
@@ -85,22 +86,21 @@ dereferenceName name form = do
       Reduced -> reduce value
     Nothing -> searchPrefixes state.prefixes
       where
-        searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
-        searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
-        searchPrefixes ((Tuple prefix prefixValue):tail) =
-          case String.stripPrefix (Pattern prefix) name of
-            Nothing -> searchPrefixes tail
-            Just suffix -> case Map.lookup suffix state.bindings of
-              Nothing -> searchPrefixes tail
-              Just RootUnit -> case form of
-                Unreduced -> pure $ singletonUnit name
-                Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
-              Just (UnitBinding derived) -> case form of
-                Unreduced -> pure $ singletonUnit name
-                Reduced -> reduce $ prefixValue `times` derived
-              Just (NamedAlias target) -> dereferenceName (prefix <> target) form
-              Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
+      searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
+      searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
 
+      searchPrefixes ((Tuple prefix prefixValue) : tail) = case String.stripPrefix (Pattern prefix) name of
+        Nothing -> searchPrefixes tail
+        Just suffix -> case Map.lookup suffix state.bindings of
+          Nothing -> searchPrefixes tail
+          Just RootUnit -> case form of
+            Unreduced -> pure $ singletonUnit name
+            Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
+          Just (UnitBinding derived) -> case form of
+            Unreduced -> pure $ singletonUnit name
+            Reduced -> reduce $ prefixValue `times` derived
+          Just (NamedAlias target) -> dereferenceName (prefix <> target) form
+          Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
 
 setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
 setName name value = do
@@ -129,9 +129,9 @@ eval (BindVariable { name, expr }) = do
   _ <- setName name $ Variable value
   pure value
 
-eval (BindPrefix { name, expr}) = do
+eval (BindPrefix { name, expr }) = do
   value <- eval expr
-  _ <- State.modify (\state -> state { prefixes = List.snoc state.prefixes (Tuple name value) } )
+  _ <- State.modify (\state -> state { prefixes = List.snoc state.prefixes (Tuple name value) })
   pure value
 
 eval (Name name) = dereferenceName name Unreduced
@@ -292,6 +292,9 @@ execDefinitions input =
     case execStateT finalResult mempty of
       Left err -> Utils.undefinedLog $ "Error executing Definitions.calq: " <> err
       Right s -> s
+
+runInterpreter :: forall a. Interpreter a -> Either String a
+runInterpreter i = evalStateT i initState
 
 -- | Executes a calq program returning a list of error or result values.
 evalProgram :: String -> Array (Either String EvalValue)

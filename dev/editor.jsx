@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 
 const Interpreter = require('../output/Interpreter');
+const EditorPS = require('../output/Editor');
 const Tokenizer = require('../output/Tokenizer');
 
 export default function (props) {
   const [value, setValue] = useState(props.initialValue || "");
-  const results = Interpreter.evalProgramShow(value);
+  // const results = Interpreter.evalProgramShow(value);
+
+  const { highlight, results } = EditorPS.run(value);
 
   const setValueLS = (v) => {
     localStorage.setItem("value", v);
@@ -19,7 +22,7 @@ export default function (props) {
         <Editor
           value={value}
           onValueChange={setValueLS}
-          highlight={code => testHighlight(code)}
+          highlight={() => highlight}
         />
       </div>
       <div className="editor-right">
@@ -28,8 +31,3 @@ export default function (props) {
     </div>
   )
 };
-
-function testHighlight(s) {
-  // TODO(advait): Better error checking if tokenization fails
-  return Tokenizer.highlight(s).value0;
-}

@@ -240,7 +240,7 @@ pi = 3.14159265359
 # Indian dimensionless numbers (used in English)
 # See: https://en.wikipedia.org/wiki/Indian_Numbering_System
 unit lakh        = 100 thousand
-crore            = 10 million
+unit crore       = 10 million
 
 
 # Speed

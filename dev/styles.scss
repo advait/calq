@@ -68,24 +68,28 @@ $editor-line-height: 2.5;
     outline: 0;
   }
 
-  .token-comment {
+  .comment {
     color: $comment;
   }
 
-  .token-number {
+  .number {
     color: $green;
   }
 
-  .token-name {
+  .name {
     color: $text;
   }
 
-  .token-reserved {
-    color: $red;
+  .reserved {
+    color: $blue;
   }
 
-  .token-infix {
+  .infix {
     color: $aqua;
+  }
+
+  .unknown {
+    color: $red;
   }
 }
 

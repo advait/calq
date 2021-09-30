@@ -5,35 +5,36 @@ import Control.Monad.State (gets, modify_, put)
 import Control.Monad.State.Trans as StateT
 import Control.Monad.Trans.Class (lift)
 import Data.Array as Array
+import Data.Either (Either)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple(..), fst)
 import Expression (ParsedExpr(..))
-import Text.Parsing.Parser (ParseState(..), Parser, ParserT(..), fail)
+import Text.Parsing.Parser (ParseError(..), ParseState(..), Parser, ParserT(..), fail, runParser)
 import Text.Parsing.Parser.Combinators (choice, skipMany, try)
 import Text.Parsing.Parser.Pos (Position(..))
 import Tokenizer (Punctuation(..), TokenStream, TokenType(..), tokenStreamParser)
 import Utils (parseBigNumber, undefinedLog)
 
-incrPos :: Position -> Position
-incrPos (Position { column, line }) = Position { column: column + 1, line }
+emptyPosition :: Position
+emptyPosition = Position { column: 0, line: 0 }
 
 tk :: forall m. Monad m => TokenType -> ParserT TokenStream m TokenType
 tk token = do
   --   input :: TokenStream <- (lift $ gets \(ParseState input _ _) -> input) :: Parser TokenStream TokenStream
-  input :: TokenStream <- gets \(ParseState i _ _) -> i
+  Tuple input pos <- gets \(ParseState i pos _) -> Tuple i pos
   case Array.uncons input of
-    Just { head: Tuple foundTk pos, tail }
-      | foundTk == token -> do
-        put $ ParseState tail (incrPos pos) true
+    Just { head, tail }
+      | head == token -> do
+        put $ ParseState tail pos true
         pure token
-      | otherwise -> fail $ "Expected '" <> show token <> "' but instead got '" <> show foundTk <> "'"
+      | otherwise -> fail $ "Expected '" <> show token <> "' but instead got '" <> show head <> "'"
     Nothing -> fail "Unexpected end"
 
 chomp :: forall m a. Monad m => (TokenType -> ParserT TokenStream m a) -> ParserT TokenStream m a
 chomp delegate = do
-  input :: TokenStream <- gets \(ParseState i _ _) -> i
+  input <- gets \(ParseState i _ _) -> i
   case Array.uncons input of
-    Just { head: Tuple foundTk pos, tail } -> delegate foundTk
+    Just { head, tail } -> delegate head
     Nothing -> fail "Unexpected end"
 
 nameParser :: forall m. Monad m => ParserT TokenStream m String
@@ -176,7 +177,13 @@ tokenExprParser =
   --   exprs <- NonEmptyArray.some exprParserExponents
   --   pure $ foldl1 (buildFn2 "*") $ NonEmptyArray.toNonEmpty exprs
   in
-    choice $ try <$> [ parenParser, fn2Parser, fn1Parser, numberParser ]
+    choice $ try
+      <$> [ parenParser
+        , fn2Parser
+        , fn1Parser
+        , Name <$> nameParser
+        , numberParser
+        ]
 
 -- do
 -- _ <- spaces

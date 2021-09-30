@@ -3,15 +3,16 @@ module Tokenizer where
 import Prelude
 import Control.Alt ((<|>))
 import Data.Array as Array
-import Data.Char.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit)
+import Data.Char.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace)
 import Data.Either (Either)
+import Data.Maybe (Maybe(..))
 import Data.Foldable (oneOf)
 import Data.String (length)
 import Data.String.CodeUnits as String
 import Data.Tuple (Tuple(..), fst)
 import React (ReactElement)
-import React.DOM.Props as Props
 import React.DOM as DOM
+import React.DOM.Props as Props
 import Text.Parsing.Parser (ParseError(..), Parser, fail, runParser)
 import Text.Parsing.Parser as Parser
 import Text.Parsing.Parser.Combinators (choice, try)
@@ -31,6 +32,7 @@ data TokenType
   | ReservedTk ReservedWord
   | NameTk String
   | CommentTk String
+  | UnknownTk String
 
 derive instance eqTokenType :: Eq TokenType
 
@@ -49,6 +51,7 @@ instance showTokenType :: Show TokenType where
   show (ReservedTk InTk) = "in"
   show (NameTk s) = s
   show (CommentTk c) = c
+  show (UnknownTk c) = c
 
 data Punctuation
   = OpenParen
@@ -66,7 +69,7 @@ data ReservedWord
 derive instance eqReservedWord :: Eq ReservedWord
 
 type TokenStream
-  = Array (Tuple TokenType Position)
+  = Array TokenType
 
 tokenStreamParser :: Parser String TokenStream
 tokenStreamParser = parser
@@ -85,13 +88,6 @@ tokenStreamParser = parser
   -- | Tries p and falls back to the empty string.
   optional :: Parser String String -> Parser String String
   optional p = (try p) <|> pure ""
-
-  -- | Annotates the given parser with its start position.
-  withPos :: Parser String TokenType -> Parser String (Tuple TokenType Position)
-  withPos p = do
-    pos <- Parser.position
-    parsed <- p
-    pure $ Tuple parsed pos
 
   whitespace = WhitespaceTk <$> (some $ oneOfChar [ ' ', '\t' ])
 
@@ -171,8 +167,10 @@ tokenStreamParser = parser
     body <- many $ satisfy ((/=) '\n')
     pure $ CommentTk $ start <> body
 
+  unknown = UnknownTk <$> many (satisfy (not <<< isSpace))
+
   parser =
-    Array.many $ withPos $ oneOf
+    Array.many $ oneOf
       $ [ whitespace
         , newline
         , punctuation
@@ -180,33 +178,21 @@ tokenStreamParser = parser
         , numberOrInfix
         , name
         , comment
+        -- , unknown
         ]
 
 tokenize :: String -> Either ParseError TokenStream
 tokenize s = runParser s tokenStreamParser
 
-highlight :: String -> Either ParseError (Array ReactElement)
-highlight s =
-  let
-    createSpan :: TokenType -> ReactElement
-    createSpan (WhitespaceTk w) = DOM.span [ Props.className "token-whitespace" ] [ DOM.text w ]
-
-    createSpan (NewlineTk) = DOM.br [ Props.className "token-newline" ]
-
-    createSpan p@(PunctuationTk _) = DOM.span [ Props.className "token-punctuation" ] [ DOM.text (show p) ]
-
-    createSpan (BaseLiteralTk n) = DOM.span [ Props.className "token-number" ] [ DOM.text n ]
-
-    createSpan (NumberTk n) = DOM.span [ Props.className "token-number" ] [ DOM.text n ]
-
-    createSpan (InfixTk i) = DOM.span [ Props.className "token-infix" ] [ DOM.text i ]
-
-    createSpan w@(ReservedTk _) = DOM.span [ Props.className "token-reserved" ] [ DOM.text (show w) ]
-
-    createSpan (NameTk n) = DOM.span [ Props.className "token-name" ] [ DOM.text n ]
-
-    createSpan (CommentTk c) = DOM.span [ Props.className "token-comment" ] [ DOM.text c ]
-  in
-    do
-      stream :: Array (Tuple TokenType _) <- tokenize s
-      pure $ (createSpan <$> fst <$> stream) <> ([ DOM.br [] ])
+-- | Takes a TokenStream, and splits it based on the NewlineTks.
+lines :: TokenStream -> Array TokenStream
+lines input = rec [] [] input
+  where
+  rec :: Array TokenStream -> TokenStream -> TokenStream -> Array TokenStream
+  rec acc current input' = case Array.uncons input' of
+    Nothing
+      | current == [] -> acc
+      | otherwise -> acc <> [ current ]
+    Just { head, tail }
+      | head == NewlineTk -> rec (acc <> [ current ]) [] tail
+      | otherwise -> rec acc (current <> [ head ]) tail

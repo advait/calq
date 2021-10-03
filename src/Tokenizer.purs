@@ -9,16 +9,10 @@ import Data.Maybe (Maybe(..))
 import Data.Foldable (oneOf)
 import Data.String (length)
 import Data.String.CodeUnits as String
-import Data.Tuple (Tuple(..), fst)
-import React (ReactElement)
-import React.DOM as DOM
-import React.DOM.Props as Props
-import Text.Parsing.Parser (ParseError(..), Parser, fail, runParser)
+import Text.Parsing.Parser (ParseError, Parser, fail, runParser)
 import Text.Parsing.Parser as Parser
 import Text.Parsing.Parser.Combinators (choice, try)
-import Text.Parsing.Parser.Pos (Position)
 import Text.Parsing.Parser.String (satisfy, string)
-import Utils (undefinedLog)
 
 -- | First we parse the input into Tokens to make it easier for subsequent expression parsing.
 -- | The tokenizer allows us to more easily handle whitespace subtleties (e.g. "4 m" == "4*m").
@@ -42,6 +36,7 @@ instance showTokenType :: Show TokenType where
   show (PunctuationTk OpenParen) = "("
   show (PunctuationTk CloseParen) = ")"
   show (PunctuationTk Comma) = ","
+  show (PunctuationTk Equals) = "="
   show (BaseLiteralTk s) = s
   show (NumberTk s) = s
   show (InfixTk s) = s
@@ -57,6 +52,7 @@ data Punctuation
   = OpenParen
   | CloseParen
   | Comma
+  | Equals
 
 derive instance eqPunctuation :: Eq Punctuation
 
@@ -94,11 +90,12 @@ tokenStreamParser = parser
   newline = NewlineTk <$ oneOfChar [ '\n' ]
 
   punctuation = do
-    c <- oneOfChar [ '(', ')', ',' ]
+    c <- oneOfChar [ '(', ')', ',', '=' ]
     case c of
       '(' -> pure $ PunctuationTk OpenParen
       ')' -> pure $ PunctuationTk CloseParen
       ',' -> pure $ PunctuationTk Comma
+      '=' -> pure $ PunctuationTk Equals
       _ -> Parser.fail "Unknown punctuation"
 
   baseLiteral = BaseLiteralTk <$> (hex <|> oct <|> bin)

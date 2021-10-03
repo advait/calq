@@ -1,19 +1,17 @@
 module TokenParser where
 
 import Prelude
-import Control.Monad.State (gets, modify_, put)
-import Control.Monad.State.Trans as StateT
-import Control.Monad.Trans.Class (lift)
+import Control.Alt ((<|>))
+import Control.Monad.State (gets, put)
 import Data.Array as Array
-import Data.Either (Either)
-import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..), fst)
+import Data.Maybe (Maybe(..), optional)
+import Data.Tuple (Tuple(..))
 import Expression (ParsedExpr(..))
-import Text.Parsing.Parser (ParseError(..), ParseState(..), Parser, ParserT(..), fail, runParser)
+import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
 import Text.Parsing.Parser.Combinators (choice, skipMany, try)
 import Text.Parsing.Parser.Pos (Position(..))
-import Tokenizer (Punctuation(..), TokenStream, TokenType(..), tokenStreamParser)
-import Utils (parseBigNumber, undefinedLog)
+import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
+import Utils (parseBigNumber)
 
 emptyPosition :: Position
 emptyPosition = Position { column: 0, line: 0 }
@@ -98,61 +96,32 @@ tokenExprParser =
         do
           n <- chomp num'
           pure $ Scalar $ parseBigNumber n
-  -- bindPrefixParser :: Parser String ParsedExpr
-  -- bindPrefixParser = do
-  --   _ <- lexeme $ string "prefix"
-  --   name <- nameParser
-  --   _ <- lexeme $ string "="
-  --   expr <- exprParser
-  --   pure $ BindPrefix { name, expr }
-  -- bindUnitParser :: Parser String ParsedExpr
-  -- bindUnitParser = do
-  --   _ <- lexeme $ string "unit"
-  --   name <- nameParser
-  --   _ <- lexeme $ string "="
-  --   expr <- exprParser
-  --   pure $ BindUnit { name, expr }
-  -- bindRootUnitParser :: Parser String ParsedExpr
-  -- bindRootUnitParser = do
-  --   _ <- lexeme $ string "unit"
-  --   name <- nameParser
-  --   pure $ BindRootUnit { name }
-  -- bindAliasParser :: Parser String ParsedExpr
-  -- bindAliasParser = do
-  --   _ <- lexeme $ string "alias"
-  --   name <- nameParser
-  --   _ <- lexeme $ string "="
-  --   target <- nameParser
-  --   pure $ BindAlias { name, target }
-  -- bindVariableParser :: Parser String ParsedExpr
-  -- bindVariableParser = do
-  --   name <- nameParser
-  --   _ <- lexeme $ string "="
-  --   expr <- exprParser
-  --   pure $ BindVariable { name, expr }
-  -- scalarParser :: Parser String ParsedExpr
-  -- scalarParser = do
-  --   value <- bigNumParser
-  --   pure $ Scalar value
-  -- nameParser :: Parser String String
-  -- nameParser =
-  --   let
-  --     name =
-  --       lexeme
-  --         $ do
-  --             head <- satisfy startingChar
-  --             tail <- Array.many $ satisfy bodyChar
-  --             pure $ fromCharArray $ Array.cons head tail
-  --     startingChar c = isAlpha c || c `elem` [ '\'', '"' ]
-  --     bodyChar c = isAlphaNum c || c `elem` [ '\'', '"' ]
-  --     notReserved :: String -> Parser String String
-  --     notReserved s =
-  --       if elem s [ "in" ] then
-  --         fail $ "reserved word " <> s
-  --       else
-  --         pure s
-  --   in
-  --     name >>= notReserved
+
+    bindParser :: Parser TokenStream ParsedExpr
+    bindParser = do
+      prefix <- optional $ ((tk $ ReservedTk UnitTk) <|> (tk $ ReservedTk PrefixTk))
+      name <- nameParser
+      _ <- tk $ PunctuationTk Equals
+      expr <- tokenExprParser
+      case prefix of
+        Just (ReservedTk UnitTk) -> pure $ BindUnit { name, expr }
+        Just (ReservedTk PrefixTk) -> pure $ BindPrefix { name, expr }
+        Nothing -> pure $ BindVariable { name, expr }
+        _ -> fail "Not a bind expression"
+
+    bindAliasParser :: Parser TokenStream ParsedExpr
+    bindAliasParser = do
+      prefix <- tk $ ReservedTk AliasTk
+      name <- nameParser
+      _ <- tk $ PunctuationTk Equals
+      target <- nameParser
+      pure $ BindAlias { name, target }
+
+    bindRootUnitParser :: Parser TokenStream ParsedExpr
+    bindRootUnitParser = do
+      prefix <- tk $ ReservedTk UnitTk
+      name <- nameParser
+      pure $ BindRootUnit { name }
   -- exprParserBase =
   --   choice $ try
   --     <$> [ parenParser
@@ -181,6 +150,9 @@ tokenExprParser =
       <$> [ parenParser
         , fn2Parser
         , fn1Parser
+        , bindParser
+        , bindAliasParser
+        , bindRootUnitParser
         , Name <$> nameParser
         , numberParser
         ]

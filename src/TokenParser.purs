@@ -9,6 +9,7 @@ import Data.Tuple (Tuple(..))
 import Expression (ParsedExpr(..))
 import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
 import Text.Parsing.Parser.Combinators (choice, skipMany, try)
+import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Pos (Position(..))
 import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
 import Utils (parseBigNumber)
@@ -30,10 +31,20 @@ tk token = do
 
 chomp :: forall m a. Monad m => (TokenType -> ParserT TokenStream m a) -> ParserT TokenStream m a
 chomp delegate = do
+  Tuple input pos <- gets \(ParseState i pos _) -> Tuple i pos
+  case Array.uncons input of
+    Just { head, tail } -> do
+      result <- delegate head
+      put $ ParseState tail pos true
+      pure result
+    Nothing -> fail "Unexpected end"
+
+eof :: forall m. Monad m => ParserT TokenStream m Unit
+eof = do
   input <- gets \(ParseState i _ _) -> i
   case Array.uncons input of
-    Just { head, tail } -> delegate head
-    Nothing -> fail "Unexpected end"
+    Nothing -> pure unit
+    Just something -> fail $ "Expected end"
 
 nameParser :: forall m. Monad m => ParserT TokenStream m String
 nameParser = chomp name'
@@ -122,50 +133,35 @@ tokenExprParser =
       prefix <- tk $ ReservedTk UnitTk
       name <- nameParser
       pure $ BindRootUnit { name }
-  -- exprParserBase =
-  --   choice $ try
-  --     <$> [ parenParser
-  --       , fn2Parser
-  --       , fn1Parser
-  --       , bindPrefixParser
-  --       , bindUnitParser
-  --       , bindRootUnitParser
-  --       , bindAliasParser
-  --       , bindVariableParser
-  --       , scalarParser
-  --       , Name <$> nameParser
-  --       ]
-  -- buildFn2 :: String -> ParsedExpr -> ParsedExpr -> ParsedExpr
-  -- buildFn2 name p1 p2 = Fn2 { name, p1, p2 }
-  -- exprParserExponents =
-  --   buildExprParser
-  --     [ [ Infix (buildFn2 <$> (lexeme $ string "^")) AssocLeft ] ]
-  --     (lexeme exprParserBase)
-  -- exprParserImplicitTimes :: Parser String ParsedExpr
-  -- exprParserImplicitTimes = do
-  --   exprs <- NonEmptyArray.some exprParserExponents
-  --   pure $ foldl1 (buildFn2 "*") $ NonEmptyArray.toNonEmpty exprs
-  in
-    choice $ try
-      <$> [ parenParser
-        , fn2Parser
-        , fn1Parser
-        , bindParser
-        , bindAliasParser
-        , bindRootUnitParser
-        , Name <$> nameParser
-        , numberParser
-        ]
 
--- do
--- _ <- spaces
--- buildExprParser
--- [ [ Infix (buildFn2 <$> (lexeme $ string "*")) AssocLeft
--- , Infix (buildFn2 <$> (lexeme $ string "/")) AssocLeft
--- ]
--- , [ Infix (buildFn2 <$> (lexeme $ string "+")) AssocLeft
--- , Infix (buildFn2 <$> (lexeme $ string "-")) AssocLeft
--- ]
--- , [ Infix (buildFn2 <$> (lexeme $ string "in")) AssocLeft ]
--- ]
--- (lexeme exprParserImplicitTimes)
+    exprParserBase :: Parser TokenStream ParsedExpr
+    exprParserBase =
+      choice $ try
+        <$> [ parenParser
+          , fn2Parser
+          , fn1Parser
+          , bindParser
+          , bindAliasParser
+          , bindRootUnitParser
+          , Name <$> nameParser
+          , numberParser
+          ]
+
+    buildFn2 :: TokenType -> ParsedExpr -> ParsedExpr -> ParsedExpr
+    buildFn2 token p1 p2 = Fn2 { name: show token, p1, p2 }
+
+    parser =
+      buildExprParser
+        [ [ Infix (buildFn2 <$> (tk $ InfixTk "^")) AssocLeft
+          ]
+        , [ Infix (buildFn2 <$> (tk $ InfixTk "*")) AssocLeft
+          , Infix (buildFn2 <$> (tk $ InfixTk "/")) AssocLeft
+          ]
+        , [ Infix (buildFn2 <$> (tk $ InfixTk "+")) AssocLeft
+          , Infix (buildFn2 <$> (tk $ InfixTk "-")) AssocLeft
+          ]
+        , [ Infix (buildFn2 <$> (tk $ ReservedTk InTk)) AssocLeft ]
+        ]
+        exprParserBase
+  in
+    parser <* eof

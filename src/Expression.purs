@@ -34,11 +34,16 @@ data ParsedExpr
 
 derive instance eqParsedExpr :: Eq ParsedExpr
 
+infixNames :: Array String
+infixNames = [ "+", "-", "*", "/", "^", "in" ]
+
 instance showParsedExpr :: Show ParsedExpr where
   show (Scalar n) = show n
   show (Name n) = n
   show (Fn1 { name, p1 }) = name <> "(" <> show p1 <> ")"
-  show (Fn2 { name, p1, p2 }) = name <> "(" <> show p1 <> ", " <> show p2 <> ")"
+  show (Fn2 { name, p1, p2 })
+    | Array.elem name infixNames = show p1 <> name <> show p2
+    | otherwise = name <> "(" <> show p1 <> "," <> show p2 <> ")"
   show (BindPrefix { name, expr }) = "prefix " <> name <> " = " <> show expr
   show (BindRootUnit { name }) = "unit " <> name
   show (BindUnit { name, expr }) = "unit " <> name <> " = " <> show expr

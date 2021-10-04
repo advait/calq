@@ -5,10 +5,11 @@ import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.Char.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace)
 import Data.Either (Either)
-import Data.Maybe (Maybe(..))
 import Data.Foldable (oneOf)
+import Data.Maybe (Maybe(..))
 import Data.String (length)
 import Data.String.CodeUnits as String
+import Expression (infixNames)
 import Text.Parsing.Parser (ParseError, Parser, fail, runParser)
 import Text.Parsing.Parser as Parser
 import Text.Parsing.Parser.Combinators (choice, try)
@@ -142,7 +143,7 @@ tokenStreamParser = parser
       prefix <- optional $ String.singleton <$> oneOfChar [ '+', '-' ]
       pure 2
 
-  infixP = InfixTk <$> String.singleton <$> oneOfChar [ '+', '-', '*', '/', '^' ]
+  infixP = InfixTk <$> choice (string <$> infixNames)
 
   -- | Because numbers may start with a leading + or -, we must backtrack for infix tokens.
   numberOrInfix = (try number) <|> infixP

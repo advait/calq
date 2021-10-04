@@ -6,13 +6,12 @@ import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Expression (ParsedExpr)
 import Interpreter (Interpreter, eval, runInterpreter)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import Text.Parsing.Parser (ParseError, runParser)
+import Text.Parsing.Parser (runParser)
 import TokenParser (tokenExprParser)
-import Tokenizer (TokenStream, TokenType(..))
+import Tokenizer (TokenType(..))
 import Tokenizer as Tokenizer
 import Utils (undefinedLog)
 
@@ -37,9 +36,6 @@ run input =
 
       f _ = true
 
-    parseExpr :: TokenStream -> Either ParseError ParsedExpr
-    parseExpr line = runParser line tokenExprParser
-
     -- | Rather than short circuiting when we have a failed expression, we keep executing lines.
     alwaysSucceed :: Interpreter String -> Interpreter String
     alwaysSucceed couldFail =
@@ -50,7 +46,7 @@ run input =
         )
 
     evalLine :: Array TokenType -> Interpreter String
-    evalLine line = case parseExpr line of
+    evalLine line = case runParser line tokenExprParser of
       Left err -> pure $ show err
       Right expr -> alwaysSucceed $ show <$> eval expr
 
@@ -68,7 +64,6 @@ highlightTokens :: Array TokenType -> Array JSX
 highlightTokens input =
   let
     createSpan :: TokenType -> JSX
-    -- createSpan (WhitespaceTk w) = DOM.span [ Props.className "whitespace" ] [ DOM.text w ]
     createSpan (WhitespaceTk w) = DOM.span { className: "whitespace", children: [ DOM.text w ] }
 
     createSpan (NewlineTk) = DOM.br { className: "newline" }

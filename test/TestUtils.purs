@@ -8,9 +8,10 @@ import Text.Parsing.Parser (Parser, runParser)
 
 -- | Runs the given parser or fails the test.
 runParserOrFail ::
-  forall a m.
+  forall s a m.
+  Show s =>
   MonadThrow Error m =>
-  String -> Parser String a -> m a
+  s -> Parser s a -> m a
 runParserOrFail input p = case runParser input p of
   Right res -> pure res
   Left err -> throwError $ error ("Failed to parse " <> show input <> ": " <> show err)

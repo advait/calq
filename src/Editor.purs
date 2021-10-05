@@ -11,7 +11,7 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import Text.Parsing.Parser (runParser)
 import TokenParser (tokenExprParser)
-import Tokenizer (TokenType(..))
+import Tokenizer (TokenType(..), removeWhitespace)
 import Tokenizer as Tokenizer
 import Utils (undefinedLog)
 
@@ -29,12 +29,6 @@ run input =
 
     lines :: Array (Array TokenType)
     lines = removeWhitespace <$> Tokenizer.lines tokens
-      where
-      removeWhitespace = Array.filter f
-
-      f (WhitespaceTk _) = false
-
-      f _ = true
 
     -- | Rather than short circuiting when we have a failed expression, we keep executing lines.
     alwaysSucceed :: Interpreter String -> Interpreter String

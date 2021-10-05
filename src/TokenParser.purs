@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..), optional)
 import Data.Tuple (Tuple(..))
 import Expression (ParsedExpr(..))
 import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
-import Text.Parsing.Parser.Combinators (choice, skipMany, try)
+import Text.Parsing.Parser.Combinators (choice, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Text.Parsing.Parser.Pos (Position(..))
 import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
@@ -19,7 +19,6 @@ emptyPosition = Position { column: 0, line: 0 }
 
 tk :: forall m. Monad m => TokenType -> ParserT TokenStream m TokenType
 tk token = do
-  --   input :: TokenStream <- (lift $ gets \(ParseState input _ _) -> input) :: Parser TokenStream TokenStream
   Tuple input pos <- gets \(ParseState i pos _) -> Tuple i pos
   case Array.uncons input of
     Just { head, tail }
@@ -54,20 +53,6 @@ nameParser = chomp name'
 
   name' _ = fail "Expected Name"
 
-whitespace :: forall m. Monad m => ParserT TokenStream m Unit
-whitespace = chomp ws'
-  where
-  ws' :: TokenType -> ParserT TokenStream m Unit
-  ws' (WhitespaceTk _) = pure unit
-
-  ws' _ = fail "Expected whitespace"
-
-lexeme :: forall m a. Monad m => ParserT TokenStream m a -> ParserT TokenStream m a
-lexeme p = do
-  ret <- p
-  _ <- skipMany whitespace
-  pure ret
-
 tokenExprParser :: Parser TokenStream ParsedExpr
 tokenExprParser =
   let
@@ -81,19 +66,19 @@ tokenExprParser =
     fn2Parser :: Parser TokenStream ParsedExpr
     fn2Parser = do
       name <- nameParser
-      _ <- lexeme $ tk $ PunctuationTk OpenParen
-      p1 <- lexeme $ tokenExprParser
-      _ <- lexeme $ tk $ PunctuationTk Comma
-      p2 <- lexeme $ tokenExprParser
-      _ <- lexeme $ tk $ PunctuationTk CloseParen
+      _ <- tk $ PunctuationTk OpenParen
+      p1 <- tokenExprParser
+      _ <- tk $ PunctuationTk Comma
+      p2 <- tokenExprParser
+      _ <- tk $ PunctuationTk CloseParen
       pure $ Fn2 { name, p1, p2 }
 
     fn1Parser :: Parser TokenStream ParsedExpr
     fn1Parser = do
       name <- nameParser
-      _ <- lexeme $ tk $ PunctuationTk OpenParen
-      p1 <- lexeme $ tokenExprParser
-      _ <- lexeme $ tk $ PunctuationTk CloseParen
+      _ <- tk $ PunctuationTk OpenParen
+      p1 <- tokenExprParser
+      _ <- tk $ PunctuationTk CloseParen
       pure $ Fn1 { name, p1 }
 
     numberParser :: Parser TokenStream ParsedExpr
@@ -156,6 +141,8 @@ tokenExprParser =
           ]
         , [ Infix (buildFn2 <$> (tk $ InfixTk "*")) AssocLeft
           , Infix (buildFn2 <$> (tk $ InfixTk "/")) AssocLeft
+          -- | Implicit multiplication
+          , Infix ((\p1 p2 -> Fn2 { name: "*", p1, p2 }) <$ pure unit) AssocLeft
           ]
         , [ Infix (buildFn2 <$> (tk $ InfixTk "+")) AssocLeft
           , Infix (buildFn2 <$> (tk $ InfixTk "-")) AssocLeft

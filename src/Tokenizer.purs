@@ -194,3 +194,10 @@ lines input = rec [] [] input
     Just { head, tail }
       | head == NewlineTk -> rec (acc <> [ current ]) [] tail
       | otherwise -> rec acc (current <> [ head ]) tail
+
+removeWhitespace :: Array TokenType -> Array TokenType
+removeWhitespace = Array.filter f
+  where
+  f (WhitespaceTk _) = false
+
+  f _ = true

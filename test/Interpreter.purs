@@ -16,6 +16,8 @@ import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import TestUtils (runParserOrFail)
 import Text.Parsing.Parser.String (eof)
+import TokenParser (tokenExprParser)
+import Tokenizer (removeWhitespace, tokenStreamParser)
 import Utils as Utils
 
 spec :: Spec Unit
@@ -106,7 +108,8 @@ spec = do
 interpreterTest :: String -> String -> Spec Unit
 interpreterTest input expected =
   it ("converts " <> show input <> " to " <> show expected <> " successfully") do
-    input' <- runParserOrFail input (exprParser <* eof)
+    inputTokens <- removeWhitespace <$> runParserOrFail input tokenStreamParser
+    input' <- runParserOrFail inputTokens tokenExprParser
     expected' <- runParserOrFail expected (exprParser <* eof)
     case Tuple (evalStateT (eval input') initState) (evalStateT (eval expected') initState) of
       Tuple (Left err) _ -> fail err

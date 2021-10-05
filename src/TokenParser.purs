@@ -138,10 +138,12 @@ tokenExprParser =
     buildExprParser
       [ [ Infix (buildFn2 <$> (tk $ InfixTk "^")) AssocLeft
         ]
+      , [ Infix ((\p1 p2 -> Fn2 { name: "*", p1, p2 }) <$ pure unit) AssocLeft
+        -- Implicit multiplication. Note that this takes a higher priority than
+        -- explicit multiplication and division as 2m/2m should be 1 and not 1m^2.
+        ]
       , [ Infix (buildFn2 <$> (tk $ InfixTk "*")) AssocLeft
         , Infix (buildFn2 <$> (tk $ InfixTk "/")) AssocLeft
-        -- | Implicit multiplication
-        , Infix ((\p1 p2 -> Fn2 { name: "*", p1, p2 }) <$ pure unit) AssocLeft
         ]
       , [ Infix (buildFn2 <$> (tk $ InfixTk "+")) AssocLeft
         , Infix (buildFn2 <$> (tk $ InfixTk "-")) AssocLeft

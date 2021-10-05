@@ -10,7 +10,7 @@ import Interpreter (Interpreter, eval, runInterpreter)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import Text.Parsing.Parser (runParser)
-import TokenParser (tokenExprParser)
+import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespace)
 import Tokenizer as Tokenizer
 import Utils (undefinedLog)
@@ -40,7 +40,7 @@ run input =
         )
 
     evalLine :: Array TokenType -> Interpreter String
-    evalLine line = case runParser line tokenExprParser of
+    evalLine line = case runParser line (tokenExprParser <* eof) of
       Left err -> pure $ show err
       Right expr -> alwaysSucceed $ show <$> eval expr
 

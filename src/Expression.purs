@@ -35,7 +35,7 @@ data ParsedExpr
 derive instance eqParsedExpr :: Eq ParsedExpr
 
 infixNames :: Array String
-infixNames = [ "+", "-", "*", "/", "^", "in" ]
+infixNames = [ "+", "-", "*", "/", "^" ]
 
 instance showParsedExpr :: Show ParsedExpr where
   show (Scalar n) = show n

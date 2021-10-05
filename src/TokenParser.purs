@@ -28,30 +28,31 @@ tk token = do
       | otherwise -> fail $ "Expected '" <> show token <> "' but instead got '" <> show head <> "'"
     Nothing -> fail "Unexpected end"
 
-chomp :: forall m a. Monad m => (TokenType -> ParserT TokenStream m a) -> ParserT TokenStream m a
-chomp delegate = do
+matchToken :: forall m. Monad m => (TokenType -> Boolean) -> ParserT TokenStream m TokenType
+matchToken predicate = do
   Tuple input pos <- gets \(ParseState i pos _) -> Tuple i pos
   case Array.uncons input of
-    Just { head, tail } -> do
-      result <- delegate head
-      put $ ParseState tail pos true
-      pure result
+    Just { head, tail }
+      | predicate head -> do
+        put $ ParseState tail pos true
+        pure head
+      | otherwise -> fail $ "Did not match predicate"
     Nothing -> fail "Unexpected end"
 
 eof :: forall m. Monad m => ParserT TokenStream m Unit
 eof = do
   input <- gets \(ParseState i _ _) -> i
   case Array.uncons input of
+    Just _ -> fail $ "Expected end but got: " <> show input
     Nothing -> pure unit
-    Just something -> fail $ "Expected end"
 
 nameParser :: forall m. Monad m => ParserT TokenStream m String
-nameParser = chomp name'
+nameParser = show <$> matchToken name'
   where
-  name' :: TokenType -> ParserT TokenStream m String
-  name' (NameTk name) = pure $ name
+  name' :: TokenType -> Boolean
+  name' (NameTk name) = true
 
-  name' _ = fail "Expected Name"
+  name' _ = false
 
 tokenExprParser :: Parser TokenStream ParsedExpr
 tokenExprParser =
@@ -84,13 +85,12 @@ tokenExprParser =
     numberParser :: Parser TokenStream ParsedExpr
     numberParser =
       let
-        num' :: TokenType -> Parser TokenStream String
-        num' (NumberTk n) = pure n
+        num' (NumberTk n) = true
 
-        num' _ = fail "Expected number"
+        num' _ = false
       in
         do
-          n <- chomp num'
+          n <- show <$> matchToken num'
           pure $ Scalar $ parseBigNumber n
 
     bindParser :: Parser TokenStream ParsedExpr
@@ -134,21 +134,18 @@ tokenExprParser =
 
     buildFn2 :: TokenType -> ParsedExpr -> ParsedExpr -> ParsedExpr
     buildFn2 token p1 p2 = Fn2 { name: show token, p1, p2 }
-
-    parser =
-      buildExprParser
-        [ [ Infix (buildFn2 <$> (tk $ InfixTk "^")) AssocLeft
-          ]
-        , [ Infix (buildFn2 <$> (tk $ InfixTk "*")) AssocLeft
-          , Infix (buildFn2 <$> (tk $ InfixTk "/")) AssocLeft
-          -- | Implicit multiplication
-          , Infix ((\p1 p2 -> Fn2 { name: "*", p1, p2 }) <$ pure unit) AssocLeft
-          ]
-        , [ Infix (buildFn2 <$> (tk $ InfixTk "+")) AssocLeft
-          , Infix (buildFn2 <$> (tk $ InfixTk "-")) AssocLeft
-          ]
-        , [ Infix (buildFn2 <$> (tk $ ReservedTk InTk)) AssocLeft ]
-        ]
-        exprParserBase
   in
-    parser <* eof
+    buildExprParser
+      [ [ Infix (buildFn2 <$> (tk $ InfixTk "^")) AssocLeft
+        ]
+      , [ Infix (buildFn2 <$> (tk $ InfixTk "*")) AssocLeft
+        , Infix (buildFn2 <$> (tk $ InfixTk "/")) AssocLeft
+        -- | Implicit multiplication
+        , Infix ((\p1 p2 -> Fn2 { name: "*", p1, p2 }) <$ pure unit) AssocLeft
+        ]
+      , [ Infix (buildFn2 <$> (tk $ InfixTk "+")) AssocLeft
+        , Infix (buildFn2 <$> (tk $ InfixTk "-")) AssocLeft
+        ]
+      , [ Infix (buildFn2 <$> (tk $ ReservedTk InTk)) AssocLeft ]
+      ]
+      exprParserBase

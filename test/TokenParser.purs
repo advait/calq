@@ -10,7 +10,7 @@ import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.QuickCheck (quickCheck)
 import Text.Parsing.Parser (ParseError, runParser)
 import TokenParser (eof, tokenExprParser)
-import Tokenizer (TokenType(..), tokenStreamParser)
+import Tokenizer (Punctuation(..), TokenType(..), tokenStreamParser)
 
 spec :: Spec Unit
 spec = do
@@ -35,6 +35,13 @@ spec = do
       (runParser [] eof) `shouldEqual` (Right unit)
     it "handles manual numbers" do
       (show <$> runParser [ NumberTk "1" ] tokenExprParser) `shouldEqual` Right "1"
+    it "handles function forms" do
+      runParser "reduce(1)" tokenStreamParser `shouldEqual` (Right [ NameTk "reduce", PunctuationTk OpenParen, NumberTk "1", PunctuationTk CloseParen ])
+      (show <$> runParser [ NameTk "reduce", PunctuationTk OpenParen, NumberTk "1", PunctuationTk CloseParen ] tokenExprParser) `shouldEqual` Right "reduce(1)"
+      (show <$> execP "reduce(1)") `shouldEqual` (Right "reduce(1)")
+    it "handles names" do
+      (show <$> execP "hello") `shouldEqual` Right "hello"
+      (show <$> execP "reduce") `shouldEqual` Right "reduce"
     it "manual tests" do
       (show <$> execP "1") `shouldEqual` (Right "1")
       (show <$> execP "-1") `shouldEqual` (Right "-1")

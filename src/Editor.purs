@@ -2,7 +2,6 @@ module Editor where
 
 import Prelude
 import Control.Monad.State.Trans (StateT(..), runStateT)
-import Data.Array as Array
 import Data.Either (Either(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
@@ -11,7 +10,7 @@ import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import Text.Parsing.Parser (runParser)
 import TokenParser (eof, tokenExprParser)
-import Tokenizer (TokenType(..), removeWhitespace)
+import Tokenizer (TokenType(..), removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
 import Utils (undefinedLog)
 
@@ -28,7 +27,7 @@ run input =
       Right t -> t
 
     lines :: Array (Array TokenType)
-    lines = removeWhitespace <$> Tokenizer.lines tokens
+    lines = removeWhitespaceAndComments <$> Tokenizer.lines tokens
 
     -- | Rather than short circuiting when we have a failed expression, we keep executing lines.
     alwaysSucceed :: Interpreter String -> Interpreter String

@@ -2,6 +2,7 @@ module Test.Parsing where
 
 import Prelude
 import Data.Either (Either(..))
+import Data.Number.Format as Format
 import Parsing as Parsing
 import Test.QuickCheck (Result(..), (===))
 import Test.Spec (Spec, describe, it)

@@ -195,9 +195,11 @@ lines input = rec [] [] input
       | head == NewlineTk -> rec (acc <> [ current ]) [] tail
       | otherwise -> rec acc (current <> [ head ]) tail
 
-removeWhitespace :: Array TokenType -> Array TokenType
-removeWhitespace = Array.filter f
+removeWhitespaceAndComments :: Array TokenType -> Array TokenType
+removeWhitespaceAndComments = Array.filter f
   where
   f (WhitespaceTk _) = false
+
+  f (CommentTk _) = false
 
   f _ = true

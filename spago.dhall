@@ -12,6 +12,7 @@ You can edit this file as you like.
   , "group"
   , "maybe"
   , "newtype"
+  , "numbers"
   , "ordered-collections"
   , "parsing"
   , "partial"

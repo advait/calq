@@ -80,8 +80,12 @@ $editor-line-height: 2.5;
     color: $text;
   }
 
+  .punctuation {
+    color: $text;
+  }
+
   .reserved {
-    color: $blue;
+    color: $yellow;
   }
 
   .infix {

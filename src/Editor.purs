@@ -5,7 +5,7 @@ import Control.Monad.State.Trans (StateT(..), runStateT)
 import Data.Either (Either(..))
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Interpreter (Interpreter, eval, runInterpreter)
+import Interpreter (Interpreter, eval, prettyEvalValue, runInterpreter)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import Text.Parsing.Parser (runParser)
@@ -41,7 +41,7 @@ run input =
     evalLine :: Array TokenType -> Interpreter String
     evalLine line = case runParser line (tokenExprParser <* eof) of
       Left err -> pure $ show err
-      Right expr -> alwaysSucceed $ show <$> eval expr
+      Right expr -> alwaysSucceed $ (prettyEvalValue) <$> eval expr
 
     results :: Interpreter (Array String)
     results = traverse evalLine lines

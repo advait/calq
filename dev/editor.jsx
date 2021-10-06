@@ -7,7 +7,6 @@ const Tokenizer = require('../output/Tokenizer');
 
 export default function (props) {
   const [value, setValue] = useState(props.initialValue || "");
-  // const results = Interpreter.evalProgramShow(value);
 
   const { highlight, results } = EditorPS.run(value);
 

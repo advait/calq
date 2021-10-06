@@ -38,7 +38,6 @@ assertEqual(1ft + 1m, 4.28083989ft)
 assertEqual(1m + 1ft, 1.3048m)
 assertEqual(1ft + 6inch, 1.5ft)
 assertEqual(1ft - 6inch, 0.5ft)
-#assertEqual(3+5*3, 18)
 
 # Functions
 #assertEqual(sqrt(2), 1.4142135623730950488)

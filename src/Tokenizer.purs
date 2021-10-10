@@ -165,7 +165,7 @@ tokenStreamParser = parser
     body <- many $ satisfy ((/=) '\n')
     pure $ CommentTk $ start <> body
 
-  unknown = UnknownTk <$> many (satisfy (not <<< isSpace))
+  unknown = UnknownTk <$> some (satisfy (not <<< isSpace))
 
   parser =
     Array.many $ oneOf
@@ -176,7 +176,7 @@ tokenStreamParser = parser
         , numberOrInfix
         , name
         , comment
-        -- , unknown
+        , unknown
         ]
 
 tokenize :: String -> Either ParseError TokenStream

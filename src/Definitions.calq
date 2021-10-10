@@ -249,6 +249,6 @@ c = 299792458 m/s
 mph = miles/h
 kph = km/h
 
-unit kts = nauticalmile/h
-alias knots = kts
-alias knot = kts
+kts = nauticalmile/h
+knots = kts
+knot = kts

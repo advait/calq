@@ -2,13 +2,17 @@ module Editor where
 
 import Prelude
 import Control.Monad.State.Trans (StateT(..), runStateT)
+import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
+import Data.Maybe as Maybe
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
+import Data.Typelevel.Undefined (undefined)
 import Interpreter (Interpreter, eval, prettyEvalValue, runInterpreter)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import Text.Parsing.Parser (runParser)
+import Text.Parsing.Parser (parseErrorMessage, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
@@ -38,12 +42,25 @@ run input =
             success -> success
         )
 
+    -- | Finds the first UnknownTk in the line if it exists.
+    findUnknown :: Array TokenType -> Maybe TokenType
+    findUnknown items = Array.head $ Array.filter isUnknown items
+      where
+      isUnknown (UnknownTk _) = true
+
+      isUnknown _ = false
+
+    -- | Evaluates the line, yielding the String result or error.
     evalLine :: Array TokenType -> Interpreter String
     evalLine [] = pure $ ""
 
-    evalLine line = case runParser line (tokenExprParser <* eof) of
-      Left err -> pure $ show err
-      Right expr -> alwaysSucceed $ (prettyEvalValue) <$> eval expr
+    evalLine line
+      | Maybe.isJust $ findUnknown line = case findUnknown line of
+        Just tk -> pure $ "Did not understand \"" <> show tk <> "\""
+        _ -> undefined
+      | otherwise = case runParser line (tokenExprParser <* eof) of
+        Left err -> pure $ parseErrorMessage err
+        Right expr -> alwaysSucceed $ (prettyEvalValue) <$> eval expr
 
     results :: Interpreter (Array String)
     results = traverse evalLine lines

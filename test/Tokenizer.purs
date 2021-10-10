@@ -4,6 +4,7 @@ import Prelude
 import Data.Either (Either(..))
 import Test.QuickCheck (Result(..), (===))
 import Test.Spec (Spec, describe, it)
+import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.QuickCheck (quickCheck)
 import Text.Parsing.Parser (Parser, runParser)
 import Tokenizer (TokenType(..), tokenStreamParser)
@@ -19,6 +20,8 @@ spec = do
       quickCheck \(n :: Number) -> case runParser (show n) numberParser of
         Left err -> Failed $ show err
         Right parsed -> parsed === (show n)
+    it "parses unknown characters" do
+      runParser "~" tokenStreamParser `shouldEqual` Right [ UnknownTk "~" ]
 
 numberParser :: Parser String String
 numberParser = f <$> tokenStreamParser

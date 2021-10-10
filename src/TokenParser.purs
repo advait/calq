@@ -33,7 +33,7 @@ matchToken predicate = do
       | predicate head -> do
         put $ ParseState tail pos true
         pure head
-      | otherwise -> fail $ "Did not match predicate"
+      | otherwise -> fail $ "Did not expect \"" <> show head <> "\""
     Nothing -> fail "Unexpected end"
 
 eof :: forall m. Monad m => ParserT TokenStream m Unit

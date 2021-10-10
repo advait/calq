@@ -1,15 +1,12 @@
-module Test.Parsing where
+module Test.Tokenizer where
 
 import Prelude
 import Data.Either (Either(..))
-import Data.Number.Format as Format
 import Test.QuickCheck (Result(..), (===))
 import Test.Spec (Spec, describe, it)
-import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.QuickCheck (quickCheck)
-import Text.Parsing.Parser (Parser(..), fail, runParser)
+import Text.Parsing.Parser (Parser, runParser)
 import Tokenizer (TokenType(..), tokenStreamParser)
-import Utils (parseBigNumber)
 
 spec :: Spec Unit
 spec = do

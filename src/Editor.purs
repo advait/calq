@@ -39,6 +39,8 @@ run input =
         )
 
     evalLine :: Array TokenType -> Interpreter String
+    evalLine [] = pure $ ""
+
     evalLine line = case runParser line (tokenExprParser <* eof) of
       Left err -> pure $ show err
       Right expr -> alwaysSucceed $ (prettyEvalValue) <$> eval expr

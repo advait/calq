@@ -25,7 +25,7 @@ export default function (props) {
         />
       </div>
       <div className="editor-right">
-        {results.map(res => (<div>{res}</div>))}
+        {results.map(res => (<div>{res || '\u00A0'}</div>))}
       </div>
     </div>
   )

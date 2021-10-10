@@ -1,13 +1,13 @@
 module Interpreter where
 
-import Prelude hiding (Unit)
-
-import Control.Monad.State (StateT, execStateT, lift, runStateT)
+import Prelude
+import Control.Monad.State (StateT, evalStateT, execStateT, lift)
 import Control.Monad.State as State
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.BigNumber as BigNumber
 import Data.Either (Either(..))
+import Data.Foldable (traverse_)
 import Data.Group as Group
 import Data.Int as Int
 import Data.List (List(..), (:))
@@ -21,25 +21,29 @@ import Data.String as String
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expression (Line, ParsedExpr(..), parseLines)
+import Expression (ParsedExpr(..))
 import Math as Math
-import Parsing (bigNum)
+import Text.Parsing.Parser (runParser)
+import TokenParser (eof, tokenExprParser)
+import Tokenizer (TokenType, removeWhitespaceAndComments)
+import Tokenizer as Tokenizer
+import Utils (parseBigNumber, undefinedLog)
 import Utils as Utils
 
-type Unit
+type ConcreteUnit
   = String
 
 -- | Our interpreter evaluates expressions into these values.
 type EvalValue
-  = { scalar :: BigNumber, units :: Exponentials Unit }
+  = { scalar :: BigNumber, units :: Exponentials ConcreteUnit }
 
 scalar1 :: EvalValue
-scalar1 = { scalar : bigNum "1", units: mempty}
+scalar1 = { scalar: parseBigNumber "1", units: mempty }
 
 prettyBigNum :: BigNumber -> String
 prettyBigNum n
-  | n - (Utils.bigNumberFixed 0 n) < bigNum ".01" = Utils.bigNumberFormatFixed 0 n
-  | n - (Utils.bigNumberFixed 1 n) < bigNum ".01" = Utils.bigNumberFormatFixed 1 n
+  | n - (Utils.bigNumberFixed 0 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 0 n
+  | n - (Utils.bigNumberFixed 1 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 1 n
   | otherwise = Utils.bigNumberFormatFixed 2 n
 
 prettyEvalValue :: EvalValue -> String
@@ -47,8 +51,8 @@ prettyEvalValue { scalar, units }
   | units == mempty = prettyBigNum scalar
   | otherwise = prettyBigNum scalar <> " " <> show units
 
-singletonUnit :: Unit -> EvalValue
-singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
+singletonUnit :: ConcreteUnit -> EvalValue
+singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
 
 data Binding a
   = RootUnit
@@ -64,10 +68,9 @@ type InterpreterState
 type Interpreter a
   = StateT InterpreterState (Either String) a
 
-initState :: InterpreterState
-initState = execDefinitions Utils.definitionsFile
-
-data DereferenceForm = Unreduced | Reduced
+data DereferenceForm
+  = Unreduced
+  | Reduced
 
 dereferenceName :: String -> DereferenceForm -> Interpreter EvalValue
 dereferenceName name form = do
@@ -85,22 +88,21 @@ dereferenceName name form = do
       Reduced -> reduce value
     Nothing -> searchPrefixes state.prefixes
       where
-        searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
-        searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
-        searchPrefixes ((Tuple prefix prefixValue):tail) =
-          case String.stripPrefix (Pattern prefix) name of
-            Nothing -> searchPrefixes tail
-            Just suffix -> case Map.lookup suffix state.bindings of
-              Nothing -> searchPrefixes tail
-              Just RootUnit -> case form of
-                Unreduced -> pure $ singletonUnit name
-                Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
-              Just (UnitBinding derived) -> case form of
-                Unreduced -> pure $ singletonUnit name
-                Reduced -> reduce $ prefixValue `times` derived
-              Just (NamedAlias target) -> dereferenceName (prefix <> target) form
-              Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
+      searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
+      searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
 
+      searchPrefixes ((Tuple prefix prefixValue) : tail) = case String.stripPrefix (Pattern prefix) name of
+        Nothing -> searchPrefixes tail
+        Just suffix -> case Map.lookup suffix state.bindings of
+          Nothing -> searchPrefixes tail
+          Just RootUnit -> case form of
+            Unreduced -> pure $ singletonUnit name
+            Reduced -> pure $ prefixValue `times` (singletonUnit suffix)
+          Just (UnitBinding derived) -> case form of
+            Unreduced -> pure $ singletonUnit name
+            Reduced -> reduce $ prefixValue `times` derived
+          Just (NamedAlias target) -> dereferenceName (prefix <> target) form
+          Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
 
 setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
 setName name value = do
@@ -129,9 +131,9 @@ eval (BindVariable { name, expr }) = do
   _ <- setName name $ Variable value
   pure value
 
-eval (BindPrefix { name, expr}) = do
+eval (BindPrefix { name, expr }) = do
   value <- eval expr
-  _ <- State.modify (\state -> state { prefixes = List.snoc state.prefixes (Tuple name value) } )
+  _ <- State.modify (\state -> state { prefixes = List.snoc state.prefixes (Tuple name value) })
   pure value
 
 eval (Name name) = dereferenceName name Unreduced
@@ -181,7 +183,7 @@ eval (Fn2 { name: "/", p1, p2 }) = do
 eval (Fn2 { name: "in", p1, p2 }) = do
   e1 <- eval p1 >>= reduce
   { scalar: desiredScalar, units: desiredUnits } <- eval p2
-  when (desiredScalar /= bigNum "1") (lift $ Left $ "Cannot cast to a numeric unit")
+  when (desiredScalar /= parseBigNumber "1") (lift $ Left $ "Cannot cast to a numeric unit")
   cast e1 desiredUnits
 
 eval (Fn2 { name: "+", p1, p2 }) = do
@@ -210,7 +212,7 @@ dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } =
 
 power :: EvalValue -> Int -> EvalValue
 power { scalar, units } n =
-  { scalar: scalar `BigNumber.pow` (bigNum $ show n)
+  { scalar: scalar `BigNumber.pow` (parseBigNumber $ show n)
   , units: Group.power units n
   }
 
@@ -218,13 +220,13 @@ power { scalar, units } n =
 approxEqual :: EvalValue -> EvalValue -> Boolean
 approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
   | u1 /= u2 = false
-  | s1 == (bigNum "0") = s1 == s2
-  | otherwise = (abs (s1 - s2) / s1) < (bigNum "1e-5")
+  | s1 == (parseBigNumber "0") = s1 == s2
+  | otherwise = (abs (s1 - s2) / s1) < (parseBigNumber "1e-5")
 
 -- | Casts the given value to the given unit.
-cast :: EvalValue -> Exponentials Unit -> Interpreter EvalValue
+cast :: EvalValue -> Exponentials ConcreteUnit -> Interpreter EvalValue
 cast value desiredUnits = do
-  { scalar, units } <- reduce $ value `dividedBy` { scalar: bigNum "1", units: desiredUnits }
+  { scalar, units } <- reduce $ value `dividedBy` { scalar: parseBigNumber "1", units: desiredUnits }
   when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
   pure { scalar, units: desiredUnits }
 
@@ -232,7 +234,7 @@ cast value desiredUnits = do
 reduce :: EvalValue -> Interpreter EvalValue
 reduce { scalar: startScalar, units: startUnits } =
   let
-    foldFn :: EvalValue -> Tuple Unit Int -> Interpreter EvalValue
+    foldFn :: EvalValue -> Tuple ConcreteUnit Int -> Interpreter EvalValue
     foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
       value <- dereferenceName newUnit Reduced
       pure $ acc `times` (value `power` newPower)
@@ -240,7 +242,7 @@ reduce { scalar: startScalar, units: startUnits } =
     Exponentials.foldM foldFn { scalar: startScalar, units: mempty } startUnits
 
 -- | Determines whether the units can convert between each other.
-convertible :: Unit -> Unit -> Interpreter Boolean
+convertible :: ConcreteUnit -> ConcreteUnit -> Interpreter Boolean
 convertible u1 u2 = do
   { scalar: _, units } <- reduce $ (singletonUnit u1) `dividedBy` (singletonUnit u2)
   pure $ units == mempty
@@ -249,18 +251,18 @@ convertible u1 u2 = do
 mergeConvertible :: EvalValue -> Interpreter EvalValue
 mergeConvertible ev@{ scalar: _, units } =
   let
-    pairs :: List (Tuple (Tuple Unit Int) (Tuple Unit Int))
+    pairs :: List (Tuple (Tuple ConcreteUnit Int) (Tuple ConcreteUnit Int))
     pairs = List.fromFoldable $ Utils.nonrepeatedCombinations $ Exponentials.toArray units
 
     -- | Iterate through pairs. If we find a convertible pair, merge them and restart process.
-    rec :: List (Tuple (Tuple Unit Int) (Tuple Unit Int)) -> Interpreter EvalValue
+    rec :: List (Tuple (Tuple ConcreteUnit Int) (Tuple ConcreteUnit Int)) -> Interpreter EvalValue
     rec Nil = pure ev
 
     rec ((Tuple (Tuple u1 p1) (Tuple u2 p2)) : tail) = do
       isConvertible <- convertible u1 u2
       if isConvertible then do
         let
-          unitsToMerge = { scalar: bigNum "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
+          unitsToMerge = { scalar: parseBigNumber "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
         conversionFactor <- reduce $ unitsToMerge
         mergeConvertible $ ev `dividedBy` unitsToMerge `times` conversionFactor
       else
@@ -268,53 +270,34 @@ mergeConvertible ev@{ scalar: _, units } =
   in
     rec pairs
 
--- | Executes a calq program returning the final state. Useful for Definitions.
-execDefinitions :: String -> InterpreterState
-execDefinitions input =
+execDefinitions :: InterpreterState -> String -> InterpreterState
+execDefinitions startState input =
   let
-    lines :: Array (Either String Line)
-    lines = parseLines input
+    tokens = case Tokenizer.tokenize input of
+      Left err -> undefinedLog $ "This happens when tokenization fails (should never fail): " <> show err
+      Right t -> t
 
-    finalResult = execLines $ List.fromFoldable lines
+    lines :: Array (Array TokenType)
+    lines = Array.filter (not <<< Array.null) $ removeWhitespaceAndComments <$> Tokenizer.lines tokens
 
-    execLines :: List (Either String Line) -> Interpreter String
-    execLines Nil = pure ""
+    execLine :: Array TokenType -> Interpreter EvalValue
+    execLine line =
+      let
+        expr = case runParser line (tokenExprParser <* eof) of
+          Left err -> undefinedLog $ "Failed to parse definitions: " <> show err
+          Right e -> e
+      in
+        eval expr
 
-    execLines ((Left err) : tail) = Utils.undefinedLog $ "Error parsing Definitions.calq: " <> err
-
-    -- TODO(advait): Find a better representation of Noops than `Left ""`.
-    execLines ((Right Nothing) : tail) = execLines tail
-
-    execLines ((Right (Just expr)) : tail) = do
-      res <- eval expr
-      execLines tail
+    result :: StateT InterpreterState (Either String) Unit
+    result = traverse_ execLine lines
   in
-    case execStateT finalResult mempty of
-      Left err -> Utils.undefinedLog $ "Error executing Definitions.calq: " <> err
-      Right s -> s
+    case execStateT result startState of
+      Left err -> undefinedLog $ "Failed to exec definitions: " <> show err
+      Right state -> state
 
--- | Executes a calq program returning a list of error or result values.
-evalProgram :: String -> Array (Either String EvalValue)
-evalProgram input = Array.fromFoldable $ rec (List.fromFoldable lines) initState
-  where
-  lines = parseLines input
+initState :: InterpreterState
+initState = execDefinitions mempty Utils.definitionsFile
 
-  rec :: List (Either String Line) -> InterpreterState -> List (Either String EvalValue)
-  rec Nil _ = Nil
-
-  rec ((Left err) : tail) state = (Left err) : (rec tail state)
-
-  -- TODO(advait): Find a better representation of Noops than `Left ""`.
-  rec ((Right Nothing) : tail) state = (Left "") : (rec tail state)
-
-  rec ((Right (Just head)) : tail) state = case runStateT (eval head) state of
-    Left e -> (Left e) : (rec tail state)
-    Right (Tuple v state') -> (Right v) : (rec tail state')
-
--- | Executes the program, returning strings corresponding to the evaluation of each line.
-evalProgramShow :: String -> Array String
-evalProgramShow input = showItem <$> evalProgram input
-  where
-  showItem (Left s) = s
-
-  showItem (Right value) = prettyEvalValue value
+runInterpreter :: forall a. Interpreter a -> Either String a
+runInterpreter i = evalStateT i initState

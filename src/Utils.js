@@ -1,6 +1,7 @@
 "use strict";
 
 var fs = require("fs");
+var bn = require("bignumber.js");
 
 exports.debugLog = function (a) {
   console.log(a);
@@ -31,6 +32,10 @@ exports.bigNumberFixed = function (n) {
     return b.toFixed(n);
   }
 };
+
+exports.parseBigNumber = function(s) {
+  return bn.BigNumber(s);
+}
 
 exports.definitionsFile = fs.readFileSync("src/Definitions.calq", "utf-8");
 

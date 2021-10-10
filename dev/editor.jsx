@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import Editor from 'react-simple-code-editor';
 
 const Interpreter = require('../output/Interpreter');
+const EditorPS = require('../output/Editor');
+const Tokenizer = require('../output/Tokenizer');
 
 export default function (props) {
   const [value, setValue] = useState(props.initialValue || "");
-  const results = Interpreter.evalProgramShow(value);
+
+  const { highlight, results } = EditorPS.run(value);
 
   const setValueLS = (v) => {
     localStorage.setItem("value", v);
@@ -13,15 +16,15 @@ export default function (props) {
   };
 
   return (
-    <div className="editor columns">
-      <div className="column editor-left is-two-thirds">
+    <div className="editor">
+      <div className="editor-left">
         <Editor
           value={value}
           onValueChange={setValueLS}
-          highlight={code => code}
+          highlight={() => highlight}
         />
       </div>
-      <div className="column editor-right">
+      <div className="editor-right">
         {results.map(res => (<div>{res}</div>))}
       </div>
     </div>

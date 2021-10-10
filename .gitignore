@@ -9,5 +9,7 @@
 /.psa*
 /.spago
 /.cache/
+/.parcel-cache/
 /dist/
 /prod/
+/*.log

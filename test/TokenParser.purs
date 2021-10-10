@@ -42,6 +42,13 @@ spec = do
     it "handles names" do
       (show <$> execP "hello") `shouldEqual` Right "hello"
       (show <$> execP "reduce") `shouldEqual` Right "reduce"
+    -- it "handles bignums properly" do
+    -- (show <$> execP "0b101010101010101010101010101010101010101010101010101010101010101010") `shouldEqual` (Right "49191317529892137642")
+    -- (show <$> execP "0B101010101010101010101010101010101010101010101010101010101010101010") `shouldEqual` (Right "49191317529892137642")
+    -- (show <$> execP "0x1234567890abcdef1234567890abcdef") `shouldEqual` (Right "24197857200151252728969465429440056815")
+    -- (show <$> execP "0X1234567890abcdef1234567890abcdef") `shouldEqual` (Right "24197857200151252728969465429440056815")
+    -- (show <$> execP "0o56123423423423523452345234512341256245365236462452345642") `shouldEqual` (Right "269870138443162641462903354048649622586931538414498")
+    -- (show <$> execP "0O56123423423423523452345234512341256245365236462452345642") `shouldEqual` (Right "269870138443162641462903354048649622586931538414498")
     it "manual tests" do
       (show <$> execP "1") `shouldEqual` (Right "1")
       (show <$> execP "-1") `shouldEqual` (Right "-1")

@@ -23,12 +23,11 @@ import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Expression (ParsedExpr(..))
 import Math as Math
-import Parsing (bigNum)
 import Text.Parsing.Parser (runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType, removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
-import Utils (undefinedLog)
+import Utils (parseBigNumber, undefinedLog)
 import Utils as Utils
 
 type ConcreteUnit
@@ -39,12 +38,12 @@ type EvalValue
   = { scalar :: BigNumber, units :: Exponentials ConcreteUnit }
 
 scalar1 :: EvalValue
-scalar1 = { scalar: bigNum "1", units: mempty }
+scalar1 = { scalar: parseBigNumber "1", units: mempty }
 
 prettyBigNum :: BigNumber -> String
 prettyBigNum n
-  | n - (Utils.bigNumberFixed 0 n) < bigNum ".01" = Utils.bigNumberFormatFixed 0 n
-  | n - (Utils.bigNumberFixed 1 n) < bigNum ".01" = Utils.bigNumberFormatFixed 1 n
+  | n - (Utils.bigNumberFixed 0 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 0 n
+  | n - (Utils.bigNumberFixed 1 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 1 n
   | otherwise = Utils.bigNumberFormatFixed 2 n
 
 prettyEvalValue :: EvalValue -> String
@@ -53,7 +52,7 @@ prettyEvalValue { scalar, units }
   | otherwise = prettyBigNum scalar <> " " <> show units
 
 singletonUnit :: ConcreteUnit -> EvalValue
-singletonUnit unit = { scalar: bigNum "1", units: Exponentials.singleton unit }
+singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
 
 data Binding a
   = RootUnit
@@ -184,7 +183,7 @@ eval (Fn2 { name: "/", p1, p2 }) = do
 eval (Fn2 { name: "in", p1, p2 }) = do
   e1 <- eval p1 >>= reduce
   { scalar: desiredScalar, units: desiredUnits } <- eval p2
-  when (desiredScalar /= bigNum "1") (lift $ Left $ "Cannot cast to a numeric unit")
+  when (desiredScalar /= parseBigNumber "1") (lift $ Left $ "Cannot cast to a numeric unit")
   cast e1 desiredUnits
 
 eval (Fn2 { name: "+", p1, p2 }) = do
@@ -213,7 +212,7 @@ dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } =
 
 power :: EvalValue -> Int -> EvalValue
 power { scalar, units } n =
-  { scalar: scalar `BigNumber.pow` (bigNum $ show n)
+  { scalar: scalar `BigNumber.pow` (parseBigNumber $ show n)
   , units: Group.power units n
   }
 
@@ -221,13 +220,13 @@ power { scalar, units } n =
 approxEqual :: EvalValue -> EvalValue -> Boolean
 approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
   | u1 /= u2 = false
-  | s1 == (bigNum "0") = s1 == s2
-  | otherwise = (abs (s1 - s2) / s1) < (bigNum "1e-5")
+  | s1 == (parseBigNumber "0") = s1 == s2
+  | otherwise = (abs (s1 - s2) / s1) < (parseBigNumber "1e-5")
 
 -- | Casts the given value to the given unit.
 cast :: EvalValue -> Exponentials ConcreteUnit -> Interpreter EvalValue
 cast value desiredUnits = do
-  { scalar, units } <- reduce $ value `dividedBy` { scalar: bigNum "1", units: desiredUnits }
+  { scalar, units } <- reduce $ value `dividedBy` { scalar: parseBigNumber "1", units: desiredUnits }
   when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
   pure { scalar, units: desiredUnits }
 
@@ -263,7 +262,7 @@ mergeConvertible ev@{ scalar: _, units } =
       isConvertible <- convertible u1 u2
       if isConvertible then do
         let
-          unitsToMerge = { scalar: bigNum "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
+          unitsToMerge = { scalar: parseBigNumber "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
         conversionFactor <- reduce $ unitsToMerge
         mergeConvertible $ ev `dividedBy` unitsToMerge `times` conversionFactor
       else

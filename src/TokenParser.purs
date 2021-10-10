@@ -10,12 +10,8 @@ import Expression (ParsedExpr(..))
 import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
 import Text.Parsing.Parser.Combinators (choice, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
-import Text.Parsing.Parser.Pos (Position(..))
 import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
 import Utils (parseBigNumber)
-
-emptyPosition :: Position
-emptyPosition = Position { column: 0, line: 0 }
 
 tk :: forall m. Monad m => TokenType -> ParserT TokenStream m TokenType
 tk token = do

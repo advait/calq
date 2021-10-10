@@ -1,5 +1,7 @@
 @charset "utf-8";
 
+@use "sass:math";
+
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
 
 $family-primary: "Roboto Mono", monospace;
@@ -37,9 +39,10 @@ body {
 }
 
 $editor-top-padding: 5em;
-$editor-line-height: 2.5;
+$editor-line-height: 4.5;
 
 .editor {
+  position: relative;
   display: flex;
   flex-direction: row;
   font-family: $family-primary;
@@ -55,6 +58,7 @@ $editor-line-height: 2.5;
   white-space: nowrap;
   overflow-wrap: normal;
   overflow-x: hidden;
+  z-index: 1;
 
   textarea {
     color: $text;
@@ -98,17 +102,20 @@ $editor-line-height: 2.5;
 }
 
 .editor-right {
-  color: $body-background-color;
-  background-color: $text;
-  flex-grow: 1;
-  flex-basis: 0;
+  position: absolute;
+  color: $text;
   white-space: nowrap;
 
   max-width: 267px;
 
-  padding-top: $editor-top-padding;
+  padding-top: $editor-top-padding + math.div($editor-line-height, 2.5);
   padding-left: 2em;
   min-height: 100vh;
 
   line-height: $editor-line-height;
+  z-index: 0;
+
+  div::before {
+    content: "⤷ "
+  }
 }

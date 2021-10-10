@@ -23,8 +23,8 @@ spec = do
       interpreterTest "7 + 11" "18"
       interpreterTest "1 - 1" "0"
       interpreterTest "7m - 9m" "-2m"
-    -- TODO(advait): "4-4" gets parsed as "4 * (-4)" due to implicit multiplication.
-    --interpreterTest "4-4" "0"
+      describe "make sure 4-4 doesn't parse to 4*(-4)" do
+        interpreterTest "4-4" "0"
     describe "multiplication and division" do
       interpreterTest "1 * m" "m"
       interpreterTest "21 * 2 * m" " 42 * m"
@@ -66,6 +66,7 @@ spec = do
     describe "order of operations" do
       interpreterTest "3m/3m" "1"
       interpreterTest "3m/3*m" "m*m"
+      interpreterTest "3^2-4*5" "-11"
     describe "casting" do
       interpreterTest "1 m in ft" "3.28084 ft"
       interpreterTest "4.0 m*m in ft*ft" "43.0556 ft*ft"
@@ -87,9 +88,8 @@ spec = do
       interpreterTest "reduce(pi)" "3.14159265354"
     describe "prefixes" do
       interpreterTest "km" "km"
-      -- TODO(advait): Support prefix aliases
-      --interpreterTest "kilom" "km"
-      --interpreterTest "kilometer" "km"
+      interpreterTest "reduce(kilom)" "reduce(km)"
+      interpreterTest "reduce(kilometer)" "reduce(km)"
       interpreterTest "reduce(km)" "1000 m"
       interpreterTest "1 mi in km" "1.60934 km"
     describe "full programs" do

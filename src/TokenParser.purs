@@ -4,6 +4,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.State (gets, put)
 import Data.Array as Array
+import Data.BigNumber as BigNumber
 import Data.Maybe (Maybe(..), optional)
 import Data.Tuple (Tuple(..))
 import Expression (ParsedExpr(..))
@@ -134,9 +135,18 @@ tokenExprParser =
     buildExprParser
       [ [ Infix (buildFn2 <$> (tk $ InfixTk "^")) AssocLeft
         ]
-      , [ Infix ((\p1 p2 -> Fn2 { name: "*", p1, p2 }) <$ pure unit) AssocLeft
-        -- Implicit multiplication. Note that this takes a higher priority than
-        -- explicit multiplication and division as 2m/2m should be 1 and not 1m^2.
+      , [ let
+            -- If the second parameter is a negative scalar (e.g. 4-4),
+            -- we should interpret as "4 + -4" instead of "4 * -4".
+            buildImplicitMultiplication p1 p2@(Scalar n)
+              | BigNumber.isNegative n = Fn2 { name: "+", p1, p2 }
+
+            -- If the second parameter is anything else, we should interpretet as implicit multiplication.
+            buildImplicitMultiplication p1 p2 = Fn2 { name: "*", p1, p2 }
+          in
+            -- Note that implicit multiplication has higher priority than explicit multiplication
+            -- or division so that "4m / 4m == 1".
+            Infix (buildImplicitMultiplication <$ pure unit) AssocLeft
         ]
       , [ Infix (buildFn2 <$> (tk $ InfixTk "*")) AssocLeft
         , Infix (buildFn2 <$> (tk $ InfixTk "/")) AssocLeft

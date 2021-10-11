@@ -237,6 +237,10 @@ google =              googol
 pi = 3.14159265359
 π = pi
 
+e = 2.718281828459
+
+goldenratio = 1.6180339887498
+
 # Indian dimensionless numbers (used in English)
 # See: https://en.wikipedia.org/wiki/Indian_Numbering_System
 unit lakh        = 100 thousand

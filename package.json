@@ -5,13 +5,12 @@
   "repository": "git@github.com:advait/calq.git",
   "author": "Advait Shinde <advait.shinde@gmail.com>",
   "license": "MIT",
-  "private": true,
   "scripts": {
     "build": "./node_modules/.bin/spago build",
     "test": "./node_modules/.bin/spago test",
     "serve": "./node_modules/.bin/parcel dev/index.html --open",
     "build-prod": "rm -rf output dist && yarn run build && ./node_modules/.bin/parcel build dev/index.html",
-    "gh-pages": "yarn run build-prod && ./node_modules/.bin/gh-pages -d dist/"
+    "gh-pages": "yarn run build-prod && echo 'calq.app' > dist/CNAME && ./node_modules/.bin/gh-pages -d dist/"
   },
   "dependencies": {
     "bignumber.js": "^9.0.1",

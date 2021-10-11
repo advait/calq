@@ -7,7 +7,6 @@
 $family-primary: "Roboto Mono", monospace;
 
 $body-background-color: #1d1f21;
-$body-font-size: 1.1em;
 
 $text: #c5c8c6;
 $comment: #969896;
@@ -21,6 +20,7 @@ $blue: #81a2be;
 $purple: #b294bb;
 
 body {
+  color: $text;
   background-color: $body-background-color;
 }
 
@@ -34,27 +34,38 @@ body {
   justify-content: center;
 
   .container {
-    width: 800px;
+    min-width: 800px;
+  }
+
+  @media only screen and (max-width: 850px) {
+    .container {
+      min-width: 600px;
+    }
+  }
+
+  @media only screen and (max-width: 650px) {
+    .container {
+      min-width: 400px;
+    }
   }
 }
 
-$editor-top-padding: 5em;
-$editor-line-height: 4.5;
-
 .editor {
   position: relative;
-  display: flex;
-  flex-direction: row;
   font-family: $family-primary;
-  line-height: $editor-line-height;
-  margin: 0 auto;
+
+  .result {
+    position: absolute;
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  .result::before {
+    content: "⤷ "
+  }
 }
 
 .editor-left {
-  padding-top: $editor-top-padding;
-  min-height: 100vh;
-  flex-grow: 2;
-  flex-basis: 0;
   white-space: nowrap;
   overflow-wrap: normal;
   overflow-x: hidden;
@@ -98,24 +109,5 @@ $editor-line-height: 4.5;
 
   .unknown {
     color: $red;
-  }
-}
-
-.editor-right {
-  position: absolute;
-  color: $text;
-  white-space: nowrap;
-
-  max-width: 267px;
-
-  padding-top: $editor-top-padding + math.div($editor-line-height, 2.5);
-  padding-left: 2em;
-  min-height: 100vh;
-
-  line-height: $editor-line-height;
-  z-index: 0;
-
-  div::before {
-    content: "⤷ "
   }
 }

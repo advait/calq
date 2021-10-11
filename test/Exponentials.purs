@@ -21,8 +21,8 @@ spec = do
     it "Handles power inverses" do
       ((Exponentials.power "A" 3) <> (Exponentials.power "A" (-3))) `shouldEqual` mempty
     it "Is able to print exponentials without crashing" do
-      quickCheck \((Tuple a b) :: Tuple Int Int) ->
+      quickCheck \((Tuple n1 n2) :: Tuple Int Int) ->
         let
-          exp = Exponentials.power "a" a <> Exponentials.power "b" b
+          exp = Exponentials.power "a" n1 <> Exponentials.power "b" n2
         in
           show exp `assertGreaterThan` ""

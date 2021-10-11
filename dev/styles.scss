@@ -58,6 +58,7 @@ body {
     position: absolute;
     white-space: nowrap;
     z-index: 2;
+    cursor: pointer;
   }
 
   .result::before {

@@ -33,9 +33,18 @@ export default function (props) {
           />
         </div>
         {results.map((res, i) => {
+          const value = res || '\u00A0';
           const offset = i * lineHeightPx + lineHeightPx * .8;
           const style = {top: offset + "px", left: "2em"};
-          return (<div className="result" style={style}>{res || '\u00A0'}</div>);
+          return (
+            <div
+              className="result"
+              style={style}
+              onClick={() => navigator.clipboard.writeText(value)}
+              >
+                {value}
+            </div>
+          );
         })}
       </div>
     </div>

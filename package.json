@@ -1,7 +1,7 @@
 {
   "name": "calq",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.0.2",
+  "browser": true,
   "repository": "git@github.com:advait/calq.git",
   "author": "Advait Shinde <advait.shinde@gmail.com>",
   "license": "MIT",
@@ -33,5 +33,8 @@
     "purty": "^7.0.0",
     "sass": "^1.30.0",
     "spago": "^0.17.0"
+  },
+  "alias": {
+    "fs": false
   }
 }

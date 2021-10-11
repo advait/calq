@@ -1,6 +1,8 @@
 module Exponentials where
 
-import Prelude
+import Prelude hiding (map)
+import Data.Array (sortBy)
+import Data.Foldable (foldl)
 import Data.Foldable as Foldable
 import Data.Group (class Group, ginverse)
 import Data.Group as Group
@@ -10,6 +12,7 @@ import Data.Newtype (class Newtype)
 import Data.Newtype as Newtype
 import Data.String as String
 import Data.Tuple (Tuple(..))
+import Utils (undefinedLog)
 
 -- | Represents a collection of values that are raised to positive or negative integer exponents.
 -- | Transparently handles eliminating zero-power values.
@@ -24,18 +27,28 @@ instance showExponentialsString :: Show (Exponentials String) where
       showPower :: Tuple String Int -> String
       showPower (Tuple a 1) = a
 
-      showPower (Tuple a n) = a <> "^" <> show n
-    in
-      String.joinWith "*" (showPower <$> toArray e)
-else instance showExponentials :: (Ord a, Show a) => Show (Exponentials a) where
-  show e@(Exponentials m) =
-    let
-      showPower :: Tuple a Int -> String
-      showPower (Tuple a 1) = show a
+      showPower (Tuple a n) = a <> superscript n
 
-      showPower (Tuple a n) = show a <> "^" <> show n
+      orderExponents :: Tuple String Int -> Tuple String Int -> Ordering
+      orderExponents (Tuple a na) (Tuple b nb)
+        | na == nb = compare a b
+        | na < 0 && nb < 0 = compare (-na) (-nb)
+        | na > 0 && nb > 0 = compare na nb
+        | na < 0 && nb > 0 = GT -- we want negative exponents to come after
+        | na > 0 && nb < 0 = LT -- we want negative exponents to come after
+        | otherwise = undefinedLog "exhaustive orderExponents search"
+
+      items = sortBy orderExponents $ toArray e
+
+      joinItems :: String -> Tuple String Int -> String
+      joinItems acc (Tuple a n)
+        | n < 0 = acc <> "/" <> showPower (Tuple a (-n))
+        | otherwise = acc <> "*" <> showPower (Tuple a n)
     in
-      String.joinWith "*" (showPower <$> toArray e)
+      -- This leaves us with a leading "*" or "/" that we need to strip
+      String.drop 1 $ foldl joinItems "" items
+else instance showExponentials :: (Ord a, Show a) => Show (Exponentials a) where
+  show e@(Exponentials m) = show $ show `map` e
 
 cancel :: forall a. Ord a => Exponentials a -> Exponentials a
 cancel = Newtype.over Exponentials $ Map.filter ((/=) 0)
@@ -89,3 +102,30 @@ quotient num den =
 -- | Raise a to the given exponent.
 power :: forall a. Ord a => a -> Int -> Exponentials a
 power a n = Group.power (singleton a) n
+
+-- | Convert a number to its superscript unicode.
+superscript :: Int -> String
+superscript 0 = "⁰"
+
+superscript 1 = "¹"
+
+superscript 2 = "²"
+
+superscript 3 = "³"
+
+superscript 4 = "⁴"
+
+superscript 5 = "⁵"
+
+superscript 6 = "⁶"
+
+superscript 7 = "⁷"
+
+superscript 8 = "⁸"
+
+superscript 9 = "⁹"
+
+superscript n
+  | n < 0 = "⁻" <> superscript (-n)
+  | n >= 10 = superscript (n / 10) <> superscript (n `mod` 10)
+  | otherwise = undefinedLog "all superscript cases already covered"

@@ -1,0 +1,90 @@
+@charset "UTF-8";
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
+body {
+  color: #c5c8c6;
+  background-color: #1d1f21;
+}
+.primary {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+}
+.primary .container {
+  min-width: 800px;
+}
+@media only screen and (max-width: 850px) {
+  .primary .container {
+    min-width: 600px;
+  }
+}
+@media only screen and (max-width: 650px) {
+  .primary .container {
+    min-width: 400px;
+  }
+}
+.editor {
+  position: relative;
+  font-family: "Roboto Mono", monospace;
+}
+.editor .result {
+  position: absolute;
+  white-space: nowrap;
+  z-index: 2;
+  cursor: pointer;
+}
+.editor .result::before {
+  content: "⤷ ";
+}
+.editor .result:hover::after {
+  background: url("outline_content_copy_white_24dp.9fc929a5.png") 0 0 no-repeat;
+  background-size: 16px 16px;
+  color: #00000000;
+  content: "copy";
+  margin-left: 14px;
+  width: 24px;
+  height: 24px;
+  position: relative;
+  top: 3px;
+}
+.editor-left {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  overflow-x: hidden;
+  z-index: 1;
+}
+.editor-left textarea {
+  color: #c5c8c6;
+  caret-color: #c5c8c6;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  overflow-x: hidden;
+}
+.editor-left textarea:focus {
+  outline: 0;
+}
+.editor-left .comment {
+  color: #969896;
+}
+.editor-left .number {
+  color: #b5bd68;
+}
+.editor-left .name {
+  color: #c5c8c6;
+}
+.editor-left .punctuation {
+  color: #c5c8c6;
+}
+.editor-left .reserved {
+  color: #f0c674;
+}
+.editor-left .infix {
+  color: #8abeb7;
+}
+.editor-left .unknown {
+  color: #cc6666;
+}
+/*# sourceMappingURL=index.de126ce6.css.map */

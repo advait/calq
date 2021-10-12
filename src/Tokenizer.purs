@@ -7,7 +7,7 @@ import Data.Char.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, 
 import Data.Either (Either)
 import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..))
-import Data.String (length)
+import Data.String (joinWith, length)
 import Data.String.CodeUnits as String
 import Expression (infixNames)
 import Text.Parsing.Parser (ParseError, Parser, fail, runParser)
@@ -79,6 +79,14 @@ tokenStreamParser = parser
   some :: Parser String Char -> Parser String String
   some p = String.fromCharArray <$> Array.some p
 
+  -- | Repeats the given parser a specific number of times.
+  times :: Int -> Parser String String -> Parser String String
+  times 0 _ = fail "Cannot match parser zero times"
+
+  times 1 p = p
+
+  times n p = p <> times (n - 1) p
+
   oneOfChar :: Array Char -> Parser String Char
   oneOfChar cs = satisfy (\c -> Array.elem c cs)
 
@@ -116,10 +124,10 @@ tokenStreamParser = parser
       body <- many $ oneOfChar [ '0', '1' ]
       pure $ prefix <> body
 
-  number = NumberTk <$> choice (try <$> [ sci, withoutCommas ])
+  number = NumberTk <$> choice (try <$> [ sci, withCommas, withoutCommas ])
     where
     sci = do
-      prefix <- optional (String.singleton <$> oneOfChar [ '+', '-' ])
+      prefix <- optional $ string "-"
       preDecimal <- many $ satisfy isDigit
       postDecimal <- optional $ string "." <> (some $ satisfy isDigit)
       e <- do
@@ -129,19 +137,35 @@ tokenStreamParser = parser
         pure $ e' <> sign <> value
       pure $ prefix <> preDecimal <> postDecimal <> e
 
+    withCommas = do
+      prefix <- optional $ string "-"
+      let
+        digitP = String.singleton <$> satisfy isDigit
+      headGroup <- choice (try <$> [ digitP <> digitP <> digitP, digitP <> digitP, digitP ])
+      let
+        groupP = do
+          comma <- string ","
+          body <- digitP <> digitP <> digitP
+          pure $ comma <> body
+      tailGroups <- joinWith "" <$> Array.some groupP
+      postDecimal <-
+        optional
+          ( do
+              dot <- string "."
+              decimal <- many $ satisfy isDigit
+              pure $ dot <> decimal
+          )
+      pure $ prefix <> headGroup <> tailGroups <> postDecimal
+
     withoutCommas = do
-      prefix <- optional $ String.singleton <$> oneOfChar [ '+', '-' ]
+      prefix <- optional $ string "-"
       preDecimal <- many $ satisfy isDigit
-      dot <- string "." <|> string ""
+      dot <- optional $ string "."
       postDecimal <- many $ satisfy isDigit
       if length preDecimal + length postDecimal == 0 then
         fail $ "Invalid number '" <> prefix <> dot <> "'"
       else
         pure $ prefix <> preDecimal <> dot <> postDecimal
-
-    foo = do
-      prefix <- optional $ String.singleton <$> oneOfChar [ '+', '-' ]
-      pure 2
 
   infixP = InfixTk <$> choice (string <$> infixNames)
 

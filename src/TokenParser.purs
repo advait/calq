@@ -6,6 +6,7 @@ import Control.Monad.State (gets, put)
 import Data.Array as Array
 import Data.BigNumber as BigNumber
 import Data.Maybe (Maybe(..), optional)
+import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
 import Expression (ParsedExpr(..))
 import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
@@ -88,7 +89,9 @@ tokenExprParser =
       in
         do
           n <- show <$> matchToken num'
-          pure $ Scalar $ parseBigNumber n
+          let
+            withoutCommas = replaceAll (Pattern ",") (Replacement "") n
+          pure $ Scalar $ parseBigNumber withoutCommas
 
     bindParser :: Parser TokenStream ParsedExpr
     bindParser = do

@@ -64,6 +64,18 @@ body {
   .result::before {
     content: "⤷ "
   }
+
+  .result:hover::after {
+    background: url("../assets/outline_content_copy_white_24dp.png") 0 0 no-repeat;
+    background-size: 16px 16px;
+    color: #00000000;
+    content: "copy";
+    margin-left: 14px;
+    width: 24px;
+    height: 24px;
+    position: relative;
+    top: 3px;
+  }
 }
 
 .editor-left {

@@ -79,14 +79,6 @@ tokenStreamParser = parser
   some :: Parser String Char -> Parser String String
   some p = String.fromCharArray <$> Array.some p
 
-  -- | Repeats the given parser a specific number of times.
-  times :: Int -> Parser String String -> Parser String String
-  times 0 _ = fail "Cannot match parser zero times"
-
-  times 1 p = p
-
-  times n p = p <> times (n - 1) p
-
   oneOfChar :: Array Char -> Parser String Char
   oneOfChar cs = satisfy (\c -> Array.elem c cs)
 

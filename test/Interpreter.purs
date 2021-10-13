@@ -23,6 +23,7 @@ spec = do
       interpreterTest "7 + 11" "18"
       interpreterTest "1 - 1" "0"
       interpreterTest "7m - 9m" "-2m"
+      interpreterTest "2+-3" "-1"
       describe "make sure 4-4 doesn't parse to 4*(-4)" do
         interpreterTest "4-4" "0"
     describe "multiplication and division" do

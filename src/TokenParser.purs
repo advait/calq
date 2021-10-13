@@ -140,9 +140,9 @@ tokenExprParser =
         ]
       , [ let
             -- If the second parameter is a negative scalar (e.g. 4-4),
-            -- we should interpret as "4 + -4" instead of "4 * -4".
+            -- we should interpret as "4 - 4" instead of "4 * -4".
             buildImplicitMultiplication p1 p2@(Scalar n)
-              | BigNumber.isNegative n = Fn2 { name: "+", p1, p2 }
+              | BigNumber.isNegative n = Fn2 { name: "-", p1, p2: Scalar $ negate n }
 
             -- If the second parameter is anything else, we should interpretet as implicit multiplication.
             buildImplicitMultiplication p1 p2 = Fn2 { name: "*", p1, p2 }

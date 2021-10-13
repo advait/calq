@@ -14,7 +14,7 @@ spec :: Spec Unit
 spec = do
   describe "Parsing" do
     it "parses integers" do
-      quickCheckParser (\(n :: Int) -> show n) numberParser
+      quickCheckParser (show :: Int -> String) numberParser
     it "parses integers with commas" do
       quickCheckParser
         ( \(n :: Int) ->
@@ -22,7 +22,7 @@ spec = do
         )
         numberParser
     it "parses floats" do
-      quickCheckParser (\(n :: Number) -> show n) numberParser
+      quickCheckParser (show :: Number -> String) numberParser
     it "parses unknown characters" do
       runParser "~" tokenStreamParser `shouldEqual` Right [ UnknownTk "~" ]
 

@@ -1,14 +1,14 @@
 module Test.TokenParser where
 
 import Prelude
+import Control.Monad.Except (throwError)
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 import Expression (ParsedExpr)
-import Test.QuickCheck (Result(..), (===))
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
-import Test.Spec.QuickCheck (quickCheck)
-import Text.Parsing.Parser (ParseError, runParser)
+import TestUtils (quickCheckParser)
+import Text.Parsing.Parser (ParseError, Parser, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (Punctuation(..), TokenType(..), tokenStreamParser)
 
@@ -16,21 +16,11 @@ spec :: Spec Unit
 spec = do
   describe "TokenParser" do
     it "parses integers" do
-      quickCheck \(n :: Int) -> case execP (show n) of
-        Left err -> Failed $ "Failed to parse: " <> show n <> "\nError: " <> (show err)
-        Right parsed -> show parsed === show n
+      quickCheckParser (show :: Int -> String) chainP
     it "parses floats" do
-      quickCheck \(n :: Number) -> case execP (show n) of
-        Left err -> Failed $ show n
-        Right parsed -> show parsed === show n
+      quickCheckParser (show :: Number -> String) chainP
     it "parses infix" do
-      quickCheck \(Tuple (a :: Int) (b :: Int)) ->
-        let
-          s = (show a <> "*" <> show b)
-        in
-          case execP s of
-            Left err -> Failed $ show s
-            Right parsed -> show parsed === s
+      quickCheckParser (\(Tuple (a :: Int) (b :: Int)) -> (show a <> "*" <> show b)) chainP
     it "handles eof" do
       (runParser [] eof) `shouldEqual` (Right unit)
     it "handles manual numbers" do
@@ -59,6 +49,13 @@ spec = do
       runParser "*-1" tokenStreamParser `shouldEqual` (Right [ InfixTk "*", NumberTk "-1" ])
       runParser "-1*-1" tokenStreamParser `shouldEqual` (Right [ NumberTk "-1", InfixTk "*", NumberTk "-1" ])
       (show <$> execP "1*1") `shouldEqual` (Right "1*1")
+
+chainP :: Parser String String
+chainP = do
+  tokenStream <- tokenStreamParser
+  case runParser tokenStream tokenExprParser of
+    Left err -> throwError err
+    Right foo -> pure $ show foo
 
 execP :: String -> Either ParseError ParsedExpr
 execP input = do

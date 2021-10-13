@@ -44,9 +44,14 @@ instance showExponentialsString :: Show (Exponentials String) where
       joinItems acc (Tuple a n)
         | n < 0 = acc <> "/" <> showPower (Tuple a (-n))
         | otherwise = acc <> "*" <> showPower (Tuple a n)
+
+      result = foldl joinItems "" items
     in
-      -- This leaves us with a leading "*" or "/" that we need to strip
-      String.drop 1 $ foldl joinItems "" items
+      -- This leaves us with a leading "*" or "/" that we need to strip or adjust for.
+      case String.take 1 result of
+        "*" -> String.drop 1 result
+        "/" -> "1" <> result
+        _ -> result
 else instance showExponentials :: (Ord a, Show a) => Show (Exponentials a) where
   show e@(Exponentials m) = show $ show `map` e
 

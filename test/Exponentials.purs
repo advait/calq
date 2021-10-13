@@ -26,3 +26,5 @@ spec = do
           exp = Exponentials.power "a" n1 <> Exponentials.power "b" n2
         in
           show exp `assertGreaterThan` ""
+    it "Prints negative exponentials appropriately" do
+      (show $ Exponentials.power "A" (-2)) `shouldEqual` "1/A²"

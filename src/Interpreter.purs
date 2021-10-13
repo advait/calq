@@ -30,14 +30,15 @@ import Tokenizer as Tokenizer
 import Utils (parseBigNumber, undefinedLog)
 import Utils as Utils
 
+-- | Represents a concrete unit like "m" (meters).
 type ConcreteUnit
   = String
 
 -- | Our interpreter evaluates expressions into these values.
-type EvalValue
+type Value
   = { scalar :: BigNumber, units :: Exponentials ConcreteUnit }
 
-scalar1 :: EvalValue
+scalar1 :: Value
 scalar1 = { scalar: parseBigNumber "1", units: mempty }
 
 prettyBigNum :: BigNumber -> String
@@ -46,12 +47,12 @@ prettyBigNum n
   | n - (Utils.bigNumberFixed 1 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 1 n
   | otherwise = Utils.bigNumberFormatFixed 2 n
 
-prettyEvalValue :: EvalValue -> String
-prettyEvalValue { scalar, units }
+prettyValue :: Value -> String
+prettyValue { scalar, units }
   | units == mempty = prettyBigNum scalar
   | otherwise = prettyBigNum scalar <> " " <> show units
 
-singletonUnit :: ConcreteUnit -> EvalValue
+singletonUnit :: ConcreteUnit -> Value
 singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
 
 data Binding a
@@ -61,8 +62,8 @@ data Binding a
   | Variable a
 
 type InterpreterState
-  = { bindings :: Map String (Binding EvalValue)
-    , prefixes :: List (Tuple String EvalValue)
+  = { bindings :: Map String (Binding Value)
+    , prefixes :: List (Tuple String Value)
     }
 
 type Interpreter a
@@ -72,7 +73,7 @@ data DereferenceForm
   = Unreduced
   | Reduced
 
-dereferenceName :: String -> DereferenceForm -> Interpreter EvalValue
+dereferenceName :: String -> DereferenceForm -> Interpreter Value
 dereferenceName name form = do
   state :: InterpreterState <- State.get
   case Map.lookup name state.bindings of
@@ -88,7 +89,7 @@ dereferenceName name form = do
       Reduced -> reduce value
     Nothing -> searchPrefixes state.prefixes
       where
-      searchPrefixes :: List (Tuple String EvalValue) -> Interpreter EvalValue
+      searchPrefixes :: List (Tuple String Value) -> Interpreter Value
       searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
 
       searchPrefixes ((Tuple prefix prefixValue) : tail) = case String.stripPrefix (Pattern prefix) name of
@@ -104,13 +105,13 @@ dereferenceName name form = do
           Just (NamedAlias target) -> dereferenceName (prefix <> target) form
           Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
 
-setName :: String -> Binding EvalValue -> Interpreter (Binding EvalValue)
+setName :: String -> Binding Value -> Interpreter (Binding Value)
 setName name value = do
   _ <- State.modify (\state -> state { bindings = Map.insert name value state.bindings })
   pure value
 
--- | Evaluate an expression, potentially updating state and returning an EvalValue.
-eval :: Expr -> Interpreter EvalValue
+-- | Evaluate an expression, potentially updating state and returning an Value.
+eval :: Expr -> Interpreter Value
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
 eval (BindRootUnit { name }) = do
@@ -201,40 +202,40 @@ eval (Fn2 { name: "-", p1, p2 }) = do
 eval (Fn2 { name, p1, p2 }) = do
   lift $ Left $ "Unknown function: " <> show name
 
-times :: EvalValue -> EvalValue -> EvalValue
+times :: Value -> Value -> Value
 times { scalar: s1, units: u1 } { scalar: s2, units: u2 } = { scalar: s1 * s2, units: u1 <> u2 }
 
-dividedBy :: EvalValue -> EvalValue -> EvalValue
+dividedBy :: Value -> Value -> Value
 dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } =
   { scalar: s1 / s2
   , units: u1 <> (Group.ginverse u2)
   }
 
-power :: EvalValue -> Int -> EvalValue
+power :: Value -> Int -> Value
 power { scalar, units } n =
   { scalar: scalar `BigNumber.pow` (parseBigNumber $ show n)
   , units: Group.power units n
   }
 
 -- | Returns whether the values are within .001% of each other.
-approxEqual :: EvalValue -> EvalValue -> Boolean
+approxEqual :: Value -> Value -> Boolean
 approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
   | u1 /= u2 = false
   | s1 == (parseBigNumber "0") = s1 == s2
   | otherwise = (abs (s1 - s2) / s1) < (parseBigNumber "1e-5")
 
 -- | Casts the given value to the given unit.
-cast :: EvalValue -> Exponentials ConcreteUnit -> Interpreter EvalValue
+cast :: Value -> Exponentials ConcreteUnit -> Interpreter Value
 cast value desiredUnits = do
   { scalar, units } <- reduce $ value `dividedBy` { scalar: parseBigNumber "1", units: desiredUnits }
   when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
   pure { scalar, units: desiredUnits }
 
 -- | Reduces a value such that units are all CannonicalUnits.
-reduce :: EvalValue -> Interpreter EvalValue
+reduce :: Value -> Interpreter Value
 reduce { scalar: startScalar, units: startUnits } =
   let
-    foldFn :: EvalValue -> Tuple ConcreteUnit Int -> Interpreter EvalValue
+    foldFn :: Value -> Tuple ConcreteUnit Int -> Interpreter Value
     foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
       value <- dereferenceName newUnit Reduced
       pure $ acc `times` (value `power` newPower)
@@ -248,14 +249,14 @@ convertible u1 u2 = do
   pure $ units == mempty
 
 -- | Merge convertible units together (e.g. 1 ft*m will be merged to 0.3048 m^2).
-mergeConvertible :: EvalValue -> Interpreter EvalValue
+mergeConvertible :: Value -> Interpreter Value
 mergeConvertible ev@{ scalar: _, units } =
   let
     pairs :: List (Tuple (Tuple ConcreteUnit Int) (Tuple ConcreteUnit Int))
     pairs = List.fromFoldable $ Utils.nonrepeatedCombinations $ Exponentials.toArray units
 
     -- | Iterate through pairs. If we find a convertible pair, merge them and restart process.
-    rec :: List (Tuple (Tuple ConcreteUnit Int) (Tuple ConcreteUnit Int)) -> Interpreter EvalValue
+    rec :: List (Tuple (Tuple ConcreteUnit Int) (Tuple ConcreteUnit Int)) -> Interpreter Value
     rec Nil = pure ev
 
     rec ((Tuple (Tuple u1 p1) (Tuple u2 p2)) : tail) = do
@@ -280,7 +281,7 @@ execDefinitions startState input =
     lines :: Array (Array TokenType)
     lines = Array.filter (not <<< Array.null) $ removeWhitespaceAndComments <$> Tokenizer.lines tokens
 
-    execLine :: Array TokenType -> Interpreter EvalValue
+    execLine :: Array TokenType -> Interpreter Value
     execLine line =
       let
         expr = case runParser line (tokenExprParser <* eof) of

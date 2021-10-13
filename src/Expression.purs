@@ -10,23 +10,23 @@ import Test.QuickCheck.Gen as Gen
 import Utils (parseBigNumber)
 
 -- | Represents an expression that can be evaluated.
-data ParsedExpr
+data Expr
   = Scalar BigNumber
   | Name String
-  | Fn1 { name :: String, p1 :: ParsedExpr }
-  | Fn2 { name :: String, p1 :: ParsedExpr, p2 :: ParsedExpr }
-  | BindPrefix { name :: String, expr :: ParsedExpr }
+  | Fn1 { name :: String, p1 :: Expr }
+  | Fn2 { name :: String, p1 :: Expr, p2 :: Expr }
+  | BindPrefix { name :: String, expr :: Expr }
   | BindRootUnit { name :: String }
-  | BindUnit { name :: String, expr :: ParsedExpr }
+  | BindUnit { name :: String, expr :: Expr }
   | BindAlias { name :: String, target :: String }
-  | BindVariable { name :: String, expr :: ParsedExpr }
+  | BindVariable { name :: String, expr :: Expr }
 
-derive instance eqParsedExpr :: Eq ParsedExpr
+derive instance eqExpr :: Eq Expr
 
 infixNames :: Array String
 infixNames = [ "+", "-", "*", "/", "^" ]
 
-instance showParsedExpr :: Show ParsedExpr where
+instance showExpr :: Show Expr where
   show (Scalar n) = show n
   show (Name n) = n
   show (Fn1 { name, p1 }) = name <> "(" <> show p1 <> ")"
@@ -40,7 +40,7 @@ instance showParsedExpr :: Show ParsedExpr where
   show (BindVariable { name, expr }) = name <> " = " <> show expr
 
 -- | Wraps the expression in parentheses if it's a compound expression.
-showWrapped :: ParsedExpr -> String
+showWrapped :: Expr -> String
 showWrapped (Scalar n) = show n
 
 showWrapped (Name n) = n
@@ -48,22 +48,22 @@ showWrapped (Name n) = n
 showWrapped e = "(" <> show e <> ")"
 
 -- | TODO(advait): See if we can move Arbitrary to the test package.
-instance arbitraryParsedExpr :: Arbitrary ParsedExpr where
+instance arbitraryExpr :: Arbitrary Expr where
   arbitrary = genExpr 3
 
 genBigNumber :: Gen BigNumber
 genBigNumber = parseBigNumber <$> show <$> (arbitrary :: Gen Int)
 
-genScalar :: Gen ParsedExpr
+genScalar :: Gen Expr
 genScalar = Scalar <$> genBigNumber
 
-genName :: Gen ParsedExpr
+genName :: Gen Expr
 genName = Name <$> Gen.elements ("ft" :| [ "pi", "m", "advait" ])
 
-genConcrete :: Gen ParsedExpr
+genConcrete :: Gen Expr
 genConcrete = Gen.oneOf (genScalar :| [ genName ])
 
-genInfix :: Int -> Gen ParsedExpr
+genInfix :: Int -> Gen Expr
 genInfix maxDepth
   | maxDepth <= 0 = genConcrete
   | otherwise = do
@@ -72,7 +72,7 @@ genInfix maxDepth
     p2 <- genExpr (maxDepth - 1)
     pure $ Fn2 { name, p1, p2 }
 
-genExpr :: Int -> Gen ParsedExpr
+genExpr :: Int -> Gen Expr
 genExpr maxDepth
   | maxDepth <= 0 = genConcrete
   | otherwise = Gen.oneOf (genInfix maxDepth :| [])

@@ -8,7 +8,7 @@ import Data.BigNumber as BigNumber
 import Data.Maybe (Maybe(..), optional)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
-import Expression (ParsedExpr(..))
+import Expression (Expr(..))
 import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
 import Text.Parsing.Parser.Combinators (choice, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
@@ -52,17 +52,17 @@ nameParser = show <$> matchToken name'
 
   name' _ = false
 
-tokenExprParser :: Parser TokenStream ParsedExpr
+tokenExprParser :: Parser TokenStream Expr
 tokenExprParser =
   let
-    parenParser :: Parser TokenStream ParsedExpr
+    parenParser :: Parser TokenStream Expr
     parenParser = do
       _ <- tk $ PunctuationTk OpenParen
       expr <- tokenExprParser
       _ <- tk $ PunctuationTk CloseParen
       pure expr
 
-    fn2Parser :: Parser TokenStream ParsedExpr
+    fn2Parser :: Parser TokenStream Expr
     fn2Parser = do
       name <- nameParser
       _ <- tk $ PunctuationTk OpenParen
@@ -72,7 +72,7 @@ tokenExprParser =
       _ <- tk $ PunctuationTk CloseParen
       pure $ Fn2 { name, p1, p2 }
 
-    fn1Parser :: Parser TokenStream ParsedExpr
+    fn1Parser :: Parser TokenStream Expr
     fn1Parser = do
       name <- nameParser
       _ <- tk $ PunctuationTk OpenParen
@@ -80,7 +80,7 @@ tokenExprParser =
       _ <- tk $ PunctuationTk CloseParen
       pure $ Fn1 { name, p1 }
 
-    numberParser :: Parser TokenStream ParsedExpr
+    numberParser :: Parser TokenStream Expr
     numberParser =
       let
         num' (NumberTk n) = true
@@ -93,7 +93,7 @@ tokenExprParser =
             withoutCommas = replaceAll (Pattern ",") (Replacement "") n
           pure $ Scalar $ parseBigNumber withoutCommas
 
-    bindParser :: Parser TokenStream ParsedExpr
+    bindParser :: Parser TokenStream Expr
     bindParser = do
       prefix <- optional $ ((tk $ ReservedTk UnitTk) <|> (tk $ ReservedTk PrefixTk))
       name <- nameParser
@@ -105,7 +105,7 @@ tokenExprParser =
         Nothing -> pure $ BindVariable { name, expr }
         _ -> fail "Not a bind expression"
 
-    bindAliasParser :: Parser TokenStream ParsedExpr
+    bindAliasParser :: Parser TokenStream Expr
     bindAliasParser = do
       prefix <- tk $ ReservedTk AliasTk
       name <- nameParser
@@ -113,13 +113,13 @@ tokenExprParser =
       target <- nameParser
       pure $ BindAlias { name, target }
 
-    bindRootUnitParser :: Parser TokenStream ParsedExpr
+    bindRootUnitParser :: Parser TokenStream Expr
     bindRootUnitParser = do
       prefix <- tk $ ReservedTk UnitTk
       name <- nameParser
       pure $ BindRootUnit { name }
 
-    exprParserBase :: Parser TokenStream ParsedExpr
+    exprParserBase :: Parser TokenStream Expr
     exprParserBase =
       choice $ try
         <$> [ parenParser
@@ -132,7 +132,7 @@ tokenExprParser =
           , numberParser
           ]
 
-    buildFn2 :: TokenType -> ParsedExpr -> ParsedExpr -> ParsedExpr
+    buildFn2 :: TokenType -> Expr -> Expr -> Expr
     buildFn2 token p1 p2 = Fn2 { name: show token, p1, p2 }
   in
     buildExprParser

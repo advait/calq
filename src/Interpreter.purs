@@ -21,7 +21,7 @@ import Data.String as String
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expression (ParsedExpr(..))
+import Expression (Expr(..))
 import Math as Math
 import Text.Parsing.Parser (runParser)
 import TokenParser (eof, tokenExprParser)
@@ -110,7 +110,7 @@ setName name value = do
   pure value
 
 -- | Evaluate an expression, potentially updating state and returning an EvalValue.
-eval :: ParsedExpr -> Interpreter EvalValue
+eval :: Expr -> Interpreter EvalValue
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
 eval (BindRootUnit { name }) = do

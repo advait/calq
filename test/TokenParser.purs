@@ -5,7 +5,7 @@ import Control.Monad.Except (throwError)
 import Data.Either (Either(..))
 import Data.Tuple (Tuple(..))
 import Effect.Aff (Aff)
-import Expression (ParsedExpr)
+import Expression (Expr)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import TestUtils (quickCheckParser)
@@ -24,7 +24,7 @@ spec = do
       quickCheckParser (\(Tuple (a :: Int) (b :: Int)) -> (show a <> "*" <> show b)) chainP
       quickCheckParser (\(Tuple (a :: Int) (b :: Int)) -> (show a <> "-" <> show b)) chainP
     it "parses arbitrary expressions" do
-      quickCheckParser (show :: ParsedExpr -> String) chainP
+      quickCheckParser (show :: Expr -> String) chainP
     it "handles eof" do
       (runParser [] eof) `shouldEqual` (Right unit)
     it "handles manual numbers" do

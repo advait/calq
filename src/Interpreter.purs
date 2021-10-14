@@ -55,24 +55,38 @@ prettyValue { scalar, units }
 singletonUnit :: ConcreteUnit -> Value
 singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
 
-data Binding a
+-- | Names map to Bindings which come in different forms.
+data Binding
+  -- | A RootUnit is a fundamental/irreducible unit like "m" or "g".
   = RootUnit
-  | UnitBinding a
+  -- | A UnitBinding is something that's defined in terms of other Bindings like "ft = 0.3048 m".
+  -- | A UnitBinding dereferences to itself. It's possible to reduce bindings (either with
+  -- | reduce(binding) or with the "in" keyword) after which the binding recursively resolves to
+  -- | the ultimate RootUnit (e.g. yard -> ft -> m).
+  | UnitBinding Value
+  -- | A NamedAlias immediately dereferences to the label it points to (e.g. meter -> m).
+  -- | This is so we print consistent representations of units (e.g. don't want 1 meter*m).
   | NamedAlias String
-  | Variable a
+  -- | A variable is like a UnitBinding except it can't be casted to.
+  | Variable Value
 
 type InterpreterState
-  = { bindings :: Map String (Binding Value)
+  = { bindings :: Map String Binding
     , prefixes :: List (Tuple String Value)
     }
 
 type Interpreter a
   = StateT InterpreterState (Either String) a
 
+-- | Describe how we want to dereference the underlying value.
+-- | TODO(advait): Can't we eliminate this with a simple (dereferenceName >>= reduce)?
 data DereferenceForm
   = Unreduced
   | Reduced
 
+-- | Dereferences the underlying name to a given value. Follows the rules of Bindings above.
+-- | If the given name can't be found, we try all of the prefixes in the order that the prefixes
+-- | were defined.
 dereferenceName :: String -> DereferenceForm -> Interpreter Value
 dereferenceName name form = do
   state :: InterpreterState <- State.get
@@ -89,6 +103,7 @@ dereferenceName name form = do
       Reduced -> reduce value
     Nothing -> searchPrefixes state.prefixes
       where
+      -- | TODO(advait): Support prefix aliases so that "kilometer" evaluates to "km" instead of "kilom".
       searchPrefixes :: List (Tuple String Value) -> Interpreter Value
       searchPrefixes Nil = lift $ Left ("Undefined variable " <> (show name))
 
@@ -105,31 +120,32 @@ dereferenceName name form = do
           Just (NamedAlias target) -> dereferenceName (prefix <> target) form
           Just (Variable _) -> lift $ Left ("Undefined variable " <> (show name))
 
-setName :: String -> Binding Value -> Interpreter (Binding Value)
-setName name value = do
+-- | Creates a new binding for the given name and value.
+createBinding :: String -> Binding -> Interpreter Unit
+createBinding name value = do
   _ <- State.modify (\state -> state { bindings = Map.insert name value state.bindings })
-  pure value
+  pure unit
 
 -- | Evaluate an expression, potentially updating state and returning an Value.
 eval :: Expr -> Interpreter Value
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
 eval (BindRootUnit { name }) = do
-  _ <- setName name $ RootUnit
+  _ <- createBinding name $ RootUnit
   pure $ singletonUnit name
 
 eval (BindUnit { name, expr }) = do
   value <- eval expr
-  _ <- setName name $ UnitBinding value
+  _ <- createBinding name $ UnitBinding value
   pure value
 
 eval (BindAlias { name, target }) = do
-  _ <- setName name $ NamedAlias target
+  _ <- createBinding name $ NamedAlias target
   pure $ singletonUnit target
 
 eval (BindVariable { name, expr }) = do
   value <- eval expr
-  _ <- setName name $ Variable value
+  _ <- createBinding name $ Variable value
   pure value
 
 eval (BindPrefix { name, expr }) = do
@@ -271,6 +287,7 @@ mergeConvertible ev@{ scalar: _, units } =
   in
     rec pairs
 
+-- | Execute a definitions file, yielding the final InterpreterState.
 execDefinitions :: InterpreterState -> String -> InterpreterState
 execDefinitions startState input =
   let
@@ -297,8 +314,10 @@ execDefinitions startState input =
       Left err -> undefinedLog $ "Failed to exec definitions: " <> show err
       Right state -> state
 
+-- | Initial state after the Definitions.calq file is executed.
 initState :: InterpreterState
 initState = execDefinitions mempty Utils.definitionsFile
 
+-- | Runs the interpreter, providing the evaluated value.
 runInterpreter :: forall a. Interpreter a -> Either String a
 runInterpreter i = evalStateT i initState

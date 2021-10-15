@@ -4,7 +4,6 @@ import Prelude
 import Control.Monad.State (StateT, evalStateT, execStateT, lift)
 import Control.Monad.State as State
 import Data.Array as Array
-import Data.BigNumber (BigNumber)
 import Data.BigNumber as BigNumber
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
@@ -21,7 +20,7 @@ import Data.String as String
 import Data.Tuple (Tuple(..))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expression (Expr(..))
+import Expression (Expr(..), Value, ConcreteUnit, singletonUnit)
 import Math as Math
 import Text.Parsing.Parser (runParser)
 import TokenParser (eof, tokenExprParser)
@@ -30,30 +29,17 @@ import Tokenizer as Tokenizer
 import Utils (parseBigNumber, undefinedLog)
 import Utils as Utils
 
--- | Represents a concrete unit like "m" (meters).
-type ConcreteUnit
-  = String
+-- | Our Interpreter evaluated Exprs into Values.
+-- | It's possible that evaluations fail (e.g. unknown variables, fractional exponents, bad
+-- | unit casting, etc.). Failures are indicated by (Either String).
+-- | The Interpreter keeps track of variable bindings with a (StateT InterpreterState).
+type Interpreter a
+  = StateT InterpreterState (Either String) a
 
--- | Our interpreter evaluates expressions into these values.
-type Value
-  = { scalar :: BigNumber, units :: Exponentials ConcreteUnit }
-
-scalar1 :: Value
-scalar1 = { scalar: parseBigNumber "1", units: mempty }
-
-prettyBigNum :: BigNumber -> String
-prettyBigNum n
-  | n - (Utils.bigNumberFixed 0 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 0 n
-  | n - (Utils.bigNumberFixed 1 n) < parseBigNumber ".01" = Utils.bigNumberFormatFixed 1 n
-  | otherwise = Utils.bigNumberFormatFixed 2 n
-
-prettyValue :: Value -> String
-prettyValue { scalar, units }
-  | units == mempty = prettyBigNum scalar
-  | otherwise = prettyBigNum scalar <> " " <> show units
-
-singletonUnit :: ConcreteUnit -> Value
-singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
+type InterpreterState
+  = { bindings :: Map String Binding
+    , prefixes :: List (Tuple String Value)
+    }
 
 -- | Names map to Bindings which come in different forms.
 data Binding
@@ -69,14 +55,6 @@ data Binding
   | NamedAlias String
   -- | A variable is like a UnitBinding except it can't be casted to.
   | Variable Value
-
-type InterpreterState
-  = { bindings :: Map String Binding
-    , prefixes :: List (Tuple String Value)
-    }
-
-type Interpreter a
-  = StateT InterpreterState (Either String) a
 
 -- | Describe how we want to dereference the underlying value.
 -- | TODO(advait): Can't we eliminate this with a simple (dereferenceName >>= reduce)?
@@ -98,9 +76,9 @@ dereferenceName name form = do
     Just (NamedAlias target) -> case form of
       Unreduced -> pure $ singletonUnit target
       Reduced -> dereferenceName target form
-    Just (Variable value) -> case form of
-      Unreduced -> pure value
-      Reduced -> reduce value
+    Just (Variable variable) -> case form of
+      Unreduced -> pure variable
+      Reduced -> reduce variable
     Nothing -> searchPrefixes state.prefixes
       where
       -- | TODO(advait): Support prefix aliases so that "kilometer" evaluates to "km" instead of "kilom".
@@ -126,7 +104,7 @@ createBinding name value = do
   _ <- State.modify (\state -> state { bindings = Map.insert name value state.bindings })
   pure unit
 
--- | Evaluate an expression, potentially updating state and returning an Value.
+-- | Evaluate an Expr into a Value.
 eval :: Expr -> Interpreter Value
 eval (Scalar scalar) = pure { scalar, units: mempty }
 
@@ -137,7 +115,7 @@ eval (BindRootUnit { name }) = do
 eval (BindUnit { name, expr }) = do
   value <- eval expr
   _ <- createBinding name $ UnitBinding value
-  pure value
+  pure $ singletonUnit name
 
 eval (BindAlias { name, target }) = do
   _ <- createBinding name $ NamedAlias target

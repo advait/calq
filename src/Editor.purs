@@ -9,7 +9,8 @@ import Data.Maybe as Maybe
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Typelevel.Undefined (undefined)
-import Interpreter (Interpreter, eval, prettyValue, runInterpreter)
+import Expression (prettyValue)
+import Interpreter (Interpreter, eval, runInterpreter)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
 import Text.Parsing.Parser (parseErrorMessage, runParser)

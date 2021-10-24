@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Editor from './editor';
+import Editor2 from './editor2';
 
 function main() {
   const initialValue = localStorage.getItem("value") || "1 m/s * 3 years\n2 * 2";
@@ -8,7 +9,8 @@ function main() {
   const mainComponent = (
     <div className="primary">
       <div className="container">
-        <Editor initialValue={initialValue} />
+        {/* <Editor initialValue={initialValue} /> */}
+        <Editor2 initialText={"hello\nworld"} />
       </div>
       <div className="background">
         <div className="columns">

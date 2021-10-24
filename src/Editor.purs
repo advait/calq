@@ -20,19 +20,18 @@ import Tokenizer as Tokenizer
 import Utils (undefinedLog)
 
 type EditorResult
-  = { highlight :: Array JSX
+  = { highlights :: Array (Array JSX)
     , results :: Array String
     }
 
-run :: String -> EditorResult
-run input =
+run :: Array String -> EditorResult
+run inputLines =
   let
-    tokens = case Tokenizer.tokenize input of
+    tokenize input = case Tokenizer.tokenize input of
       Left err -> undefinedLog $ "This happens when tokenization fails (should never fail): " <> show err
       Right t -> t
 
-    lines :: Array (Array TokenType)
-    lines = removeWhitespaceAndComments <$> Tokenizer.lines tokens
+    tokens = tokenize <$> inputLines
 
     -- | Rather than short circuiting when we have a failed expression, we keep executing lines.
     alwaysSucceed :: Interpreter String -> Interpreter String
@@ -64,9 +63,9 @@ run input =
         Right expr -> alwaysSucceed $ (prettyValue) <$> eval expr
 
     results :: Interpreter (Array String)
-    results = traverse evalLine lines
+    results = traverse evalLine $ removeWhitespaceAndComments <$> tokens
   in
-    { highlight: highlightTokens tokens
+    { highlights: highlightTokens <$> tokens
     , results:
         case runInterpreter results of
           Left s -> [ "Interpreter failed: " <> (show s) ]
@@ -76,26 +75,28 @@ run input =
 highlightTokens :: Array TokenType -> Array JSX
 highlightTokens input =
   let
-    createSpan :: TokenType -> JSX
-    createSpan (WhitespaceTk w) = DOM.span { className: "whitespace", children: [ DOM.text w ] }
+    span :: String -> String -> JSX
+    span className text = DOM.span { className, children: [ DOM.text text ], key: text }
 
-    createSpan (NewlineTk) = DOM.br { className: "newline" }
+    convertToken :: TokenType -> JSX
+    convertToken (NewlineTk) = undefinedLog "Cannot render newlines"
 
-    createSpan p@(PunctuationTk _) = DOM.span { className: "punctuation", children: [ DOM.text (show p) ] }
+    convertToken (WhitespaceTk w) = span "whitespace" w
 
-    createSpan (BaseLiteralTk n) = DOM.span { className: "number", children: [ DOM.text n ] }
+    convertToken p@(PunctuationTk _) = span "punctuation" (show p)
 
-    createSpan (NumberTk n) = DOM.span { className: "number", children: [ DOM.text n ] }
+    convertToken (BaseLiteralTk n) = span "number" n
 
-    createSpan (InfixTk i) = DOM.span { className: "infix", children: [ DOM.text i ] }
+    convertToken (NumberTk n) = span "number" n
 
-    createSpan w@(ReservedTk _) = DOM.span { className: "reserved", children: [ DOM.text (show w) ] }
+    convertToken (InfixTk i) = span "infix" i
 
-    createSpan (NameTk n) = DOM.span { className: "name", children: [ DOM.text n ] }
+    convertToken w@(ReservedTk _) = span "reserved" (show w)
 
-    createSpan (CommentTk c) = DOM.span { className: "comment", children: [ DOM.text c ] }
+    convertToken (NameTk n) = span "name" n
 
-    createSpan (UnknownTk c) = DOM.span { className: "unknown", children: [ DOM.text c ] }
+    convertToken (CommentTk c) = span "comment" c
+
+    convertToken (UnknownTk c) = span "unknown" c
   in
-    -- Note that simple-react-code-editor requires a trailing <br> to function.
-    (createSpan <$> input) <> [ DOM.br {} ]
+    convertToken <$> input

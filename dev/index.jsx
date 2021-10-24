@@ -5,12 +5,13 @@ import Editor2 from './editor2';
 
 function main() {
   const initialValue = localStorage.getItem("value") || "1 m/s * 3 years\n2 * 2";
+  console.log(initialValue);
 
   const mainComponent = (
     <div className="primary">
       <div className="container">
         {/* <Editor initialValue={initialValue} /> */}
-        <Editor2 initialText={"hello\nworld"} />
+        <Editor2 initialText={initialValue} />
       </div>
       <div className="background">
         <div className="columns">

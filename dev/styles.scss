@@ -96,38 +96,11 @@ body {
     outline: 0;
   }
 
-  .comment {
-    color: $comment;
-  }
-
-  .number {
-    color: $green;
-  }
-
-  .name {
-    color: $text;
-  }
-
-  .punctuation {
-    color: $text;
-  }
-
-  .reserved {
-    color: $yellow;
-  }
-
-  .infix {
-    color: $aqua;
-  }
-
-  .unknown {
-    color: $red;
-  }
 }
 
 $editor-line-height: 40px;
 
-.editor2-container {
+.editor2-line {
   position: relative;
   font-family: $family-primary;
   font-size: $editor-line-height;
@@ -157,7 +130,6 @@ $editor-line-height: 40px;
   }
 
   .highlight {
-    color: $blue;
     padding: 0;
     margin: 0;
     font-family: inherit;
@@ -165,5 +137,33 @@ $editor-line-height: 40px;
     line-height: inherit;
     pointer-events: none;
     min-height: $editor-line-height;
+
+    .comment {
+      color: $comment;
+    }
+
+    .number {
+      color: $green;
+    }
+
+    .name {
+      color: $text;
+    }
+
+    .punctuation {
+      color: $text;
+    }
+
+    .reserved {
+      color: $yellow;
+    }
+
+    .infix {
+      color: $aqua;
+    }
+
+    .unknown {
+      color: $red;
+    }
   }
 }

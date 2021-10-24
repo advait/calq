@@ -1,5 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 
+const EditorPS = require('../output/Editor');
+
 type Editor2Props = {
   initialText: String
 };
@@ -8,6 +10,9 @@ export default function Editor2(props: Editor2Props) {
   const initialLines: String[] = props.initialText.split("\n");
   const [lines, setLines] = React.useState(initialLines);
   const [focus, setFocus] = useState({ line: lines.length - 1, offset: lines[lines.length - 1].length })
+
+  const { highlights, results } = EditorPS.run(lines);
+  console.log("focus", focus);
 
   const onValueChanged = (e, i) => {
     const newLines = [...lines];
@@ -27,6 +32,7 @@ export default function Editor2(props: Editor2Props) {
     setFocus({ line: i + 1, offset: 0 });
   };
 
+  // When the backspace key is pressed at the cursor is at the beginning of the line
   const onBackspace0 = (i: number) => {
     if (i == 0) {
       return;
@@ -38,6 +44,7 @@ export default function Editor2(props: Editor2Props) {
     setFocus({ line: i - 1, offset: lines[i - 1].length });
   };
 
+  // When either the up or down key is pressed
   const onUpDown = (i: number, up: boolean, selectionStart: number) => {
     const targetLine = up ? i - 1 : i + 1;
     if (targetLine < 0 || targetLine >= lines.length) {
@@ -53,7 +60,9 @@ export default function Editor2(props: Editor2Props) {
           i={i}
           onValueChanged={onValueChanged}
           line={line}
+          key={i}
           focusOffset={focus.line === i ? focus.offset : null}
+          highlight={highlights[i]}
           onEnter={onEnter}
           onBackspace0={onBackspace0}
           onUpDown={onUpDown} />
@@ -70,7 +79,8 @@ const KEY_DOWN = 40;
 function Line(props) {
   let textarea = null;
 
-  const taRef = useCallback(node => {
+  const textareaRef = useCallback(node => {
+    console.log("cb", props.i, node);
     textarea = node;
     if (!textarea || props.focusOffset === null) {
       return;
@@ -95,14 +105,13 @@ function Line(props) {
   };
 
   return (
-    <div className="editor2-container">
+    <div className="editor2-line">
       <textarea
         onChange={e => props.onValueChanged(e, props.i)}
         value={props.line}
-        ref={taRef}
-        autoFocus={props.autoFocus}
+        ref={textareaRef}
         onKeyDown={onKeyDown} />
-      <div ariea-hidden="true" className="highlight">{props.line}</div>
+      <pre ariea-hidden="true" className="highlight">{props.highlight}</pre>
     </div>
   );
 }

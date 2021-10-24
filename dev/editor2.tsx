@@ -14,17 +14,28 @@ export default function Editor2(props: Editor2Props) {
     const inserted = e.target.value.split("\n");
     newLines.splice(i, 1, ...inserted);
     setLines(newLines);
+    // When the editor value changes, each textarea will manage its own focus/selectionStart
     setFocus({ line: null, offset: null });
   };
 
-  const onEnter = (i, selectionStart) => {
-    console.log("Enter", i, selectionStart);
+  const onEnter = (i, selectionStart, selectionEnd) => {
     const first = lines[i].substring(0, selectionStart);
-    const second = lines[i].substring(selectionStart);
+    const second = lines[i].substring(selectionEnd);
     const newLines = [...lines];
     newLines.splice(i, 1, first, second);
     setLines(newLines);
     setFocus({ line: i + 1, offset: 0 });
+  };
+
+  const onBackspace0 = (i) => {
+    if (i == 0) {
+      return;
+    }
+    const newLines = [...lines];
+    newLines[i - 1] = newLines[i - 1] + newLines[i];
+    newLines.splice(i, 1);
+    setLines(newLines);
+    setFocus({ line: i - 1, offset: lines[i - 1].length });
   };
 
   return (
@@ -35,19 +46,20 @@ export default function Editor2(props: Editor2Props) {
           onValueChanged={onValueChanged}
           line={line}
           focusOffset={focus.line === i ? focus.offset : null}
-          onEnter={onEnter} />
+          onEnter={onEnter}
+          onBackspace0={onBackspace0} />
       ))}
     </div>
   );
 }
 
 const KEY_ENTER = 13;
+const KEY_BACKSPACE = 8;
 
 function Line(props) {
   let textarea = null;
 
   const taRef = useCallback(node => {
-    console.log("cb", props.i, node, node && node.selectionStart, node && node.selectionEnd);
     textarea = node;
     if (!textarea || props.focusOffset === null) {
       return;
@@ -56,11 +68,14 @@ function Line(props) {
     textarea.focus();
   });
 
-  const onKeyPress = (e) => {
-    console.log(e.charCode);
+  const onKeyDown = (e) => {
     const selectionStart = (textarea && textarea.selectionStart) || 0;
-    if (e.charCode == KEY_ENTER) {
-      props.onEnter(props.i, selectionStart);
+    const selectionEnd = (textarea && textarea.selectionEnd) || 0;
+    if (e.keyCode == KEY_ENTER) {
+      props.onEnter(props.i, selectionStart, selectionEnd);
+      e.preventDefault();
+    } else if (e.keyCode == KEY_BACKSPACE && selectionStart == 0 && selectionEnd == 0) {
+      props.onBackspace0(props.i);
       e.preventDefault();
     }
   };
@@ -72,7 +87,7 @@ function Line(props) {
         value={props.line}
         ref={taRef}
         autoFocus={props.autoFocus}
-        onKeyPress={onKeyPress} />
+        onKeyDown={onKeyDown} />
       <div ariea-hidden="true" className="highlight">{props.line}</div>
     </div>
   );

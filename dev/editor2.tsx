@@ -18,7 +18,7 @@ export default function Editor2(props: Editor2Props) {
     setFocus({ line: null, offset: null });
   };
 
-  const onEnter = (i, selectionStart, selectionEnd) => {
+  const onEnter = (i: number, selectionStart: number, selectionEnd: number) => {
     const first = lines[i].substring(0, selectionStart);
     const second = lines[i].substring(selectionEnd);
     const newLines = [...lines];
@@ -27,7 +27,7 @@ export default function Editor2(props: Editor2Props) {
     setFocus({ line: i + 1, offset: 0 });
   };
 
-  const onBackspace0 = (i) => {
+  const onBackspace0 = (i: number) => {
     if (i == 0) {
       return;
     }
@@ -36,6 +36,14 @@ export default function Editor2(props: Editor2Props) {
     newLines.splice(i, 1);
     setLines(newLines);
     setFocus({ line: i - 1, offset: lines[i - 1].length });
+  };
+
+  const onUpDown = (i: number, up: boolean, selectionStart: number) => {
+    const targetLine = up ? i - 1 : i + 1;
+    if (targetLine < 0 || targetLine >= lines.length) {
+      return;
+    }
+    setFocus({ line: targetLine, offset: Math.min(lines[targetLine].length, selectionStart) });
   };
 
   return (
@@ -47,7 +55,8 @@ export default function Editor2(props: Editor2Props) {
           line={line}
           focusOffset={focus.line === i ? focus.offset : null}
           onEnter={onEnter}
-          onBackspace0={onBackspace0} />
+          onBackspace0={onBackspace0}
+          onUpDown={onUpDown} />
       ))}
     </div>
   );
@@ -55,6 +64,8 @@ export default function Editor2(props: Editor2Props) {
 
 const KEY_ENTER = 13;
 const KEY_BACKSPACE = 8;
+const KEY_UP = 38;
+const KEY_DOWN = 40;
 
 function Line(props) {
   let textarea = null;
@@ -76,6 +87,9 @@ function Line(props) {
       e.preventDefault();
     } else if (e.keyCode == KEY_BACKSPACE && selectionStart == 0 && selectionEnd == 0) {
       props.onBackspace0(props.i);
+      e.preventDefault();
+    } else if (e.keyCode == KEY_UP || e.keyCode == KEY_DOWN) {
+      props.onUpDown(props.i, e.keyCode == KEY_UP, selectionStart);
       e.preventDefault();
     }
   };

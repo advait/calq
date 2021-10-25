@@ -8,7 +8,6 @@ function main() {
 
   const mainComponent = (
     <div className="primary">
-      <div style={{ height: "2em" }} />
       <div className="container">
         <Editor initialText={initialValue} />
       </div>

@@ -17,12 +17,18 @@ import Text.Parsing.Parser (parseErrorMessage, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
+import Unsafe.Coerce (unsafeCoerce)
 import Utils (undefinedLog)
 
 type EditorResult
   = { highlights :: Array (Array JSX)
-    , results :: Array String
+    , results :: Array Answer
     }
+
+data Answer
+  = EmptyLine
+  | SuccessResult String
+  | ErrorResult String
 
 run :: Array String -> EditorResult
 run inputLines =
@@ -50,25 +56,34 @@ run inputLines =
 
       isUnknown _ = false
 
-    -- | Evaluates the line, yielding the String result or error.
-    evalLine :: Array TokenType -> Interpreter String
-    evalLine [] = pure $ ""
+    -- | Evaluates the line, yielding the String result or error, or Nothing if the line is empty.
+    evalLine :: Array TokenType -> Interpreter Answer
+    evalLine [] = pure EmptyLine
 
     evalLine line
       | Maybe.isJust $ findUnknown line = case findUnknown line of
-        Just tk -> pure $ "Did not understand \"" <> show tk <> "\""
+        Just tk -> pure $ ErrorResult $ "Did not understand \"" <> show tk <> "\""
         _ -> undefined
       | otherwise = case runParser line (tokenExprParser <* eof) of
-        Left err -> pure $ parseErrorMessage err
-        Right expr -> alwaysSucceed $ (prettyValue) <$> eval expr
+        Left err -> pure $ ErrorResult $ parseErrorMessage err
+        Right expr -> SuccessResult <$> (alwaysSucceed $ (prettyValue) <$> eval expr)
 
-    results :: Interpreter (Array String)
-    results = traverse evalLine $ removeWhitespaceAndComments <$> tokens
+    -- | Convert the answer into the JS object.
+    answerToJS (EmptyLine) = unsafeCoerce $ { empty: true }
+
+    answerToJS (SuccessResult success) = unsafeCoerce $ { success }
+
+    answerToJS (ErrorResult error) = unsafeCoerce $ { error }
+
+    results :: Interpreter (Array Answer)
+    results = traverse evalLine' $ removeWhitespaceAndComments <$> tokens
+      where
+      evalLine' t = answerToJS <$> evalLine t
   in
     { highlights: highlightTokens <$> tokens
     , results:
         case runInterpreter results of
-          Left s -> [ "Interpreter failed: " <> (show s) ]
+          Left s -> undefinedLog $ "Interpreter failed: " <> (show s)
           Right r -> r
     }
 
@@ -76,7 +91,7 @@ highlightTokens :: Array TokenType -> Array JSX
 highlightTokens input =
   let
     span :: String -> String -> JSX
-    span className text = DOM.span { className, children: [ DOM.text text ], key: text }
+    span className text = DOM.span { className, children: [ DOM.text text ] }
 
     convertToken :: TokenType -> JSX
     convertToken (NewlineTk) = undefinedLog "Cannot render newlines"

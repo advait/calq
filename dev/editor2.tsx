@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 
 const EditorPS = require('../output/Editor');
 
@@ -8,11 +8,15 @@ type Editor2Props = {
 
 export default function Editor2(props: Editor2Props) {
   const initialLines: String[] = props.initialText.split("\n");
-  const [lines, setLines] = React.useState(initialLines);
+  const [lines, setLines_] = useState(initialLines);
   const [focus, setFocus] = useState({ line: lines.length - 1, offset: lines[lines.length - 1].length })
 
+  const setLines = l => {
+    localStorage.setItem("value", l.join("\n"));
+    setLines_(l);
+  }
+
   const { highlights, results } = EditorPS.run(lines);
-  console.log("focus", focus);
 
   const onValueChanged = (e, i) => {
     const newLines = [...lines];
@@ -60,6 +64,7 @@ export default function Editor2(props: Editor2Props) {
           i={i}
           onValueChanged={onValueChanged}
           line={line}
+          result={results[i]}
           key={i}
           focusOffset={focus.line === i ? focus.offset : null}
           highlight={highlights[i]}
@@ -80,7 +85,6 @@ function Line(props) {
   let textarea = null;
 
   const textareaRef = useCallback(node => {
-    console.log("cb", props.i, node);
     textarea = node;
     if (!textarea || props.focusOffset === null) {
       return;
@@ -104,14 +108,27 @@ function Line(props) {
     }
   };
 
+  const result = (() => {
+    if (props.result.empty) {
+      return;
+    } else if (props.result.success !== undefined) {
+      return (<div className="result success" onClick={() => navigator.clipboard.writeText(props.result.success)}>{props.result.success}</div>);
+    } else if (props.result.error !== undefined) {
+      return (<div className="result error">{props.result.error}</div>);
+    }
+  })();
+
   return (
     <div className="editor2-line">
-      <textarea
-        onChange={e => props.onValueChanged(e, props.i)}
-        value={props.line}
-        ref={textareaRef}
-        onKeyDown={onKeyDown} />
-      <pre ariea-hidden="true" className="highlight">{props.highlight}</pre>
+      <div className="editable">
+        <textarea
+          onChange={e => props.onValueChanged(e, props.i)}
+          value={props.line}
+          ref={textareaRef}
+          onKeyDown={onKeyDown} />
+        <pre ariea-hidden="true" className="highlight">{props.highlight}</pre>
+      </div>
+      {result}
     </div>
   );
 }

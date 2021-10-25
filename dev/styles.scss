@@ -32,6 +32,7 @@ body {
   bottom: 0;
   display: flex;
   justify-content: center;
+  margin-top: 4em;
 
   .container {
     min-width: 800px;
@@ -50,62 +51,17 @@ body {
   }
 }
 
-.editor {
-  position: relative;
-  font-family: $family-primary;
-
-  .result {
-    position: absolute;
-    white-space: nowrap;
-    z-index: 2;
-    cursor: pointer;
-  }
-
-  .result::before {
-    content: "⤷ "
-  }
-
-  .result:hover::after {
-    background: url("../assets/outline_content_copy_white_24dp.png") 0 0 no-repeat;
-    background-size: 16px 16px;
-    color: #00000000;
-    content: "copy";
-    margin-left: 14px;
-    width: 24px;
-    height: 24px;
-    position: relative;
-    top: 3px;
-  }
-}
-
-.editor-left {
-  white-space: nowrap;
-  overflow-wrap: normal;
-  overflow-x: hidden;
-  z-index: 1;
-
-  textarea {
-    color: $text;
-    caret-color: $text;
-    white-space: nowrap;
-    overflow-wrap: normal;
-    overflow-x: hidden;
-  }
-
-  textarea:focus {
-    outline: 0;
-  }
-
-}
-
-$editor-line-height: 40px;
+$editor-line-height: 20px;
 
 .editor2-line {
-  position: relative;
   font-family: $family-primary;
   font-size: $editor-line-height;
   line-height: $editor-line-height;
   margin-bottom: math.div($editor-line-height, 2);
+
+  .editable {
+    position: relative;
+  }
 
   textarea {
     position: absolute;
@@ -116,7 +72,6 @@ $editor-line-height: 40px;
     border: none;
     color: #00000000;
     caret-color: $text;
-    // background-color: #ff000088;
     background-color: transparent;
     overflow: hidden;
     resize: none;
@@ -165,5 +120,31 @@ $editor-line-height: 40px;
     .unknown {
       color: $red;
     }
+  }
+
+  .result {
+    margin-left: 1em;
+    margin-top: $editor-line-height * 0.5;
+    margin-bottom: $editor-line-height * 0.5;
+  }
+
+  .result.success {
+    cursor: pointer;
+  }
+
+  .result.success::before {
+    content: "⤷ "
+  }
+
+  .result.success:hover::after {
+    background: url("../assets/outline_content_copy_white_24dp.png") 0 0 no-repeat;
+    background-size: 16px 16px;
+    color: #00000000;
+    content: "copy";
+    margin-left: 14px;
+    width: 24px;
+    height: 24px;
+    position: relative;
+    top: 3px;
   }
 }

@@ -9,15 +9,10 @@ function main() {
 
   const mainComponent = (
     <div className="primary">
+      <div style={{ height: "2em" }} />
       <div className="container">
         {/* <Editor initialValue={initialValue} /> */}
         <Editor2 initialText={initialValue} />
-      </div>
-      <div className="background">
-        <div className="columns">
-          <div className="column editor-left is-two-thirds" />
-          <div className="column editor-right" />
-        </div>
       </div>
     </div>
   );

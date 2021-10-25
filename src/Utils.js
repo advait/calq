@@ -33,7 +33,7 @@ exports.bigNumberFixed = function (n) {
   }
 };
 
-exports.parseBigNumber = function(s) {
+exports.parseBigNumber = function (s) {
   return bn.BigNumber(s);
 }
 

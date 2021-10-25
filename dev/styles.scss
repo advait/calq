@@ -50,77 +50,100 @@ body {
   }
 }
 
-.editor {
-  position: relative;
+$editor-line-height: 20px;
+
+.editor-line {
   font-family: $family-primary;
+  font-size: $editor-line-height;
+  line-height: $editor-line-height;
+  margin-bottom: $editor-line-height * 0.5;
+
+  .editable {
+    position: relative;
+  }
+
+  textarea {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    color: #00000000;
+    caret-color: $text;
+    background-color: transparent;
+    overflow: hidden;
+    resize: none;
+    outline: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .highlight {
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    pointer-events: none;
+    min-height: $editor-line-height;
+
+    .comment {
+      color: $comment;
+    }
+
+    .number {
+      color: $green;
+    }
+
+    .name {
+      color: $text;
+    }
+
+    .punctuation {
+      color: $text;
+    }
+
+    .reserved {
+      color: $yellow;
+    }
+
+    .infix {
+      color: $aqua;
+    }
+
+    .unknown {
+      color: $red;
+    }
+  }
 
   .result {
-    position: absolute;
-    white-space: nowrap;
-    z-index: 2;
+    margin-left: 1em;
+    margin-top: $editor-line-height * 0.5;
+    margin-bottom: $editor-line-height * 0.5;
+  }
+
+  .result.success {
     cursor: pointer;
   }
 
-  .result::before {
+  .result.success::before {
     content: "⤷ "
   }
 
-  .result:hover::after {
+  .result.success:hover::after {
     background: url("../assets/outline_content_copy_white_24dp.png") 0 0 no-repeat;
-    background-size: 16px 16px;
+    background-size: $editor-line-height $editor-line-height;
     color: #00000000;
     content: "copy";
-    margin-left: 14px;
-    width: 24px;
-    height: 24px;
+    margin-left: 0.5em;
+    width: $editor-line-height;
+    height: $editor-line-height;
     position: relative;
-    top: 3px;
-  }
-}
-
-.editor-left {
-  white-space: nowrap;
-  overflow-wrap: normal;
-  overflow-x: hidden;
-  z-index: 1;
-
-  textarea {
-    color: $text;
-    caret-color: $text;
-    white-space: nowrap;
-    overflow-wrap: normal;
-    overflow-x: hidden;
-  }
-
-  textarea:focus {
-    outline: 0;
-  }
-
-  .comment {
-    color: $comment;
-  }
-
-  .number {
-    color: $green;
-  }
-
-  .name {
-    color: $text;
-  }
-
-  .punctuation {
-    color: $text;
-  }
-
-  .reserved {
-    color: $yellow;
-  }
-
-  .infix {
-    color: $aqua;
-  }
-
-  .unknown {
-    color: $red;
+    top: $editor-line-height * 0.2;
   }
 }

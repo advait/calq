@@ -17,22 +17,27 @@ import Text.Parsing.Parser (parseErrorMessage, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
+import Unsafe.Coerce (unsafeCoerce)
 import Utils (undefinedLog)
 
 type EditorResult
-  = { highlight :: Array JSX
-    , results :: Array String
+  = { highlights :: Array (Array JSX)
+    , results :: Array Answer
     }
 
-run :: String -> EditorResult
-run input =
+data Answer
+  = EmptyLine
+  | SuccessResult String
+  | ErrorResult String
+
+run :: Array String -> EditorResult
+run inputLines =
   let
-    tokens = case Tokenizer.tokenize input of
+    tokenize input = case Tokenizer.tokenize input of
       Left err -> undefinedLog $ "This happens when tokenization fails (should never fail): " <> show err
       Right t -> t
 
-    lines :: Array (Array TokenType)
-    lines = removeWhitespaceAndComments <$> Tokenizer.lines tokens
+    tokens = tokenize <$> inputLines
 
     -- | Rather than short circuiting when we have a failed expression, we keep executing lines.
     alwaysSucceed :: Interpreter String -> Interpreter String
@@ -51,51 +56,62 @@ run input =
 
       isUnknown _ = false
 
-    -- | Evaluates the line, yielding the String result or error.
-    evalLine :: Array TokenType -> Interpreter String
-    evalLine [] = pure $ ""
+    -- | Evaluates the line, yielding the String result or error, or Nothing if the line is empty.
+    evalLine :: Array TokenType -> Interpreter Answer
+    evalLine [] = pure EmptyLine
 
     evalLine line
       | Maybe.isJust $ findUnknown line = case findUnknown line of
-        Just tk -> pure $ "Did not understand \"" <> show tk <> "\""
+        Just tk -> pure $ ErrorResult $ "Did not understand \"" <> show tk <> "\""
         _ -> undefined
       | otherwise = case runParser line (tokenExprParser <* eof) of
-        Left err -> pure $ parseErrorMessage err
-        Right expr -> alwaysSucceed $ (prettyValue) <$> eval expr
+        Left err -> pure $ ErrorResult $ parseErrorMessage err
+        Right expr -> SuccessResult <$> (alwaysSucceed $ (prettyValue) <$> eval expr)
 
-    results :: Interpreter (Array String)
-    results = traverse evalLine lines
+    -- | Convert the answer into the JS object.
+    answerToJS (EmptyLine) = unsafeCoerce $ { empty: true }
+
+    answerToJS (SuccessResult success) = unsafeCoerce $ { success }
+
+    answerToJS (ErrorResult error) = unsafeCoerce $ { error }
+
+    results :: Interpreter (Array Answer)
+    results = traverse evalLine' $ removeWhitespaceAndComments <$> tokens
+      where
+      evalLine' t = answerToJS <$> evalLine t
   in
-    { highlight: highlightTokens tokens
+    { highlights: highlightTokens <$> tokens
     , results:
         case runInterpreter results of
-          Left s -> [ "Interpreter failed: " <> (show s) ]
+          Left s -> undefinedLog $ "Interpreter failed: " <> (show s)
           Right r -> r
     }
 
 highlightTokens :: Array TokenType -> Array JSX
 highlightTokens input =
   let
-    createSpan :: TokenType -> JSX
-    createSpan (WhitespaceTk w) = DOM.span { className: "whitespace", children: [ DOM.text w ] }
+    span :: String -> String -> JSX
+    span className text = DOM.span { className, children: [ DOM.text text ] }
 
-    createSpan (NewlineTk) = DOM.br { className: "newline" }
+    convertToken :: TokenType -> JSX
+    convertToken (NewlineTk) = undefinedLog "Cannot render newlines"
 
-    createSpan p@(PunctuationTk _) = DOM.span { className: "punctuation", children: [ DOM.text (show p) ] }
+    convertToken (WhitespaceTk w) = span "whitespace" w
 
-    createSpan (BaseLiteralTk n) = DOM.span { className: "number", children: [ DOM.text n ] }
+    convertToken p@(PunctuationTk _) = span "punctuation" (show p)
 
-    createSpan (NumberTk n) = DOM.span { className: "number", children: [ DOM.text n ] }
+    convertToken (BaseLiteralTk n) = span "number" n
 
-    createSpan (InfixTk i) = DOM.span { className: "infix", children: [ DOM.text i ] }
+    convertToken (NumberTk n) = span "number" n
 
-    createSpan w@(ReservedTk _) = DOM.span { className: "reserved", children: [ DOM.text (show w) ] }
+    convertToken (InfixTk i) = span "infix" i
 
-    createSpan (NameTk n) = DOM.span { className: "name", children: [ DOM.text n ] }
+    convertToken w@(ReservedTk _) = span "reserved" (show w)
 
-    createSpan (CommentTk c) = DOM.span { className: "comment", children: [ DOM.text c ] }
+    convertToken (NameTk n) = span "name" n
 
-    createSpan (UnknownTk c) = DOM.span { className: "unknown", children: [ DOM.text c ] }
+    convertToken (CommentTk c) = span "comment" c
+
+    convertToken (UnknownTk c) = span "unknown" c
   in
-    -- Note that simple-react-code-editor requires a trailing <br> to function.
-    (createSpan <$> input) <> [ DOM.br {} ]
+    convertToken <$> input

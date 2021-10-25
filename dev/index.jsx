@@ -4,17 +4,13 @@ import Editor from './editor';
 
 function main() {
   const initialValue = localStorage.getItem("value") || "1 m/s * 3 years\n2 * 2";
+  console.log(initialValue);
 
   const mainComponent = (
     <div className="primary">
+      <div style={{ height: "2em" }} />
       <div className="container">
-        <Editor initialValue={initialValue} />
-      </div>
-      <div className="background">
-        <div className="columns">
-          <div className="column editor-left is-two-thirds" />
-          <div className="column editor-right" />
-        </div>
+        <Editor initialText={initialValue} />
       </div>
     </div>
   );

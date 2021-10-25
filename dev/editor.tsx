@@ -2,11 +2,11 @@ import React, { useCallback, useState } from 'react';
 
 const EditorPS = require('../output/Editor');
 
-type Editor2Props = {
+type EditorProps = {
   initialText: String
 };
 
-export default function Editor2(props: Editor2Props) {
+export default function Editor(props: EditorProps) {
   const initialLines: String[] = props.initialText.split("\n");
   const [lines, setLines_] = useState(initialLines);
   const [focus, setFocus] = useState({ line: lines.length - 1, offset: lines[lines.length - 1].length })
@@ -119,7 +119,7 @@ function Line(props) {
   })();
 
   return (
-    <div className="editor2-line">
+    <div className="editor-line">
       <div className="editable">
         <textarea
           onChange={e => props.onValueChanged(e, props.i)}

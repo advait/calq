@@ -53,11 +53,11 @@ body {
 
 $editor-line-height: 20px;
 
-.editor2-line {
+.editor-line {
   font-family: $family-primary;
   font-size: $editor-line-height;
   line-height: $editor-line-height;
-  margin-bottom: math.div($editor-line-height, 2);
+  margin-bottom: $editor-line-height * 0.5;
 
   .editable {
     position: relative;
@@ -138,13 +138,13 @@ $editor-line-height: 20px;
 
   .result.success:hover::after {
     background: url("../assets/outline_content_copy_white_24dp.png") 0 0 no-repeat;
-    background-size: 16px 16px;
+    background-size: $editor-line-height $editor-line-height;
     color: #00000000;
     content: "copy";
-    margin-left: 14px;
-    width: 24px;
-    height: 24px;
+    margin-left: 0.5em;
+    width: $editor-line-height;
+    height: $editor-line-height;
     position: relative;
-    top: 3px;
+    top: $editor-line-height * 0.2;
   }
 }

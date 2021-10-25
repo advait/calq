@@ -6,6 +6,11 @@ type EditorProps = {
   initialText: String
 };
 
+/**
+ * Code editor that works by providing a transprent textarea and overlaying a <pre> which cointains
+ * highlighted tokens.
+ * Inspired by react-simple-code-editor and simplified for this use case.
+ */
 export default function Editor(props: EditorProps) {
   const initialLines: String[] = props.initialText.split("\n");
   const [lines, setLines_] = useState(initialLines);

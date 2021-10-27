@@ -4,7 +4,7 @@ import Prelude
 import Data.Array as Array
 import Data.BigNumber (BigNumber)
 import Data.NonEmpty ((:|))
-import Exponentials (Exponentials(..))
+import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (Gen)

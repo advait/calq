@@ -3,7 +3,8 @@ import React, { useCallback, useState } from 'react';
 const EditorPS = require('../output/Editor');
 
 type EditorProps = {
-  initialText: String
+  value: String,
+  setValue: (string) => void,
 };
 
 /**
@@ -12,13 +13,13 @@ type EditorProps = {
  * Inspired by react-simple-code-editor and simplified for this use case.
  */
 export default function Editor(props: EditorProps) {
-  const initialLines: String[] = props.initialText.split("\n");
-  const [lines, setLines_] = useState(initialLines);
+  const lines = props.value.split("\n");
   const [focus, setFocus] = useState({ line: lines.length - 1, offset: lines[lines.length - 1].length })
 
-  const setLines = l => {
-    localStorage.setItem("value", l.join("\n"));
-    setLines_(l);
+  const setLines = (l: string[]) => {
+    const newValue = l.join("\n");
+    localStorage.setItem("value", newValue);
+    props.setValue(newValue);
   }
 
   const { highlights, results } = EditorPS.run(lines);

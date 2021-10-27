@@ -28,7 +28,6 @@ exports.bigNumberFormatFixed = function (n) {
 exports.bigNumberFixed = function (n) {
   return function (b) {
     var ret = b.toFixed(n);
-    console.log(n, b.toString(), ret.toString());
     return b.toFixed(n);
   }
 };

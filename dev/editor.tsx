@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react';
 
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
 import Snackbar from '@mui/material/Snackbar';
 
 const EditorPS = require('../output/Editor');
@@ -128,7 +130,10 @@ function Line(props) {
             navigator.clipboard.writeText(props.result.success);
             setShowSnack(true);
           }}>
+          {/* <KeyboardReturnIcon className="return-icon" /> */}
+          <span className="return-icon" >⤷</span>
           {props.result.success}
+          <ContentCopyIcon className="copy-icon" />
         </div >
       );
     } else if (props.result.error !== undefined) {

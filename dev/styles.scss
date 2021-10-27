@@ -101,28 +101,27 @@ $editor-line-height: 20px;
   }
 
   .result {
-    margin-left: 1em;
     margin-top: $editor-line-height * 0.5;
     margin-bottom: $editor-line-height * 0.5;
+    height: $editor-line-height;
+
+    .return-icon {
+      margin: 0.1em 0.5em -0.1em 0.5em;
+      font-size: 1em;
+    }
+
+    .copy-icon {
+      margin: 0.1em 0 -0.1em 0.3em;
+      font-size: 1em;
+      visibility: hidden;
+    }
   }
 
   .result.success {
     cursor: pointer;
   }
 
-  .result.success::before {
-    content: "⤷ "
-  }
-
-  .result.success:hover::after {
-    background: url("../assets/outline_content_copy_white_24dp.png") 0 0 no-repeat;
-    background-size: $editor-line-height $editor-line-height;
-    color: #00000000;
-    content: "copy";
-    margin-left: 0.5em;
-    width: $editor-line-height;
-    height: $editor-line-height;
-    position: relative;
-    top: $editor-line-height * 0.2;
+  .result.success:hover .copy-icon {
+    visibility: visible;
   }
 }

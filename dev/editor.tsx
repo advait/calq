@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react';
 
+import Snackbar from '@mui/material/Snackbar';
+
 const EditorPS = require('../output/Editor');
 
 type EditorProps = {
@@ -88,6 +90,8 @@ const KEY_UP = 38;
 const KEY_DOWN = 40;
 
 function Line(props) {
+  const [showSnack, setShowSnack] = useState(false);
+
   let textarea = null;
 
   const textareaRef = useCallback(node => {
@@ -118,7 +122,15 @@ function Line(props) {
     if (props.result.empty) {
       return;
     } else if (props.result.success !== undefined) {
-      return (<div className="result success" onClick={() => navigator.clipboard.writeText(props.result.success)}>{props.result.success}</div>);
+      return (
+        <div className="result success"
+          onClick={() => {
+            navigator.clipboard.writeText(props.result.success);
+            setShowSnack(true);
+          }}>
+          {props.result.success}
+        </div >
+      );
     } else if (props.result.error !== undefined) {
       return (<div className="result error">{props.result.error}</div>);
     }
@@ -135,6 +147,7 @@ function Line(props) {
         <pre ariea-hidden="true" className="highlight">{props.highlight}</pre>
       </div>
       {result}
+      <Snackbar open={showSnack} onClose={() => setShowSnack(false)} autoHideDuration={4000} message="Copied to clipboard" />
     </div>
   );
 }

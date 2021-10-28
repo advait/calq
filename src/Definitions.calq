@@ -123,6 +123,9 @@ alias hours      = hr
 unit  day        = 24hr
 alias days       = day
 
+unit  week       = 7 days
+alias weeks      = week
+
 unit  month      = 30 days
 alias months     = month
 
@@ -165,16 +168,47 @@ alias carats     = carat
 alias ct         = carat
 
 
-# Area (length^2)
+# Current (Amps)
 # ---------------------------------------------------------------
-unit  acre       = 4840 yd^2
-alias acres      = acre
+unit  A
+alias amp        = A
 
-unit  perch      = 1 rod^2
-alias perches    = perch
 
-unit  rood       = 1 furlong*rod
-alias roods      = rood
+# Temperature (Kelvin)
+# ---------------------------------------------------------------
+# TODO(advait): Implement Celsius and Farenheit (non-linear conversions)
+unit  K
+alias kelvin     = K
+
+
+# Amount of substance (Mol)
+# ---------------------------------------------------------------
+unit  mol        = 6.02214076e23
+alias mole       = mol
+
+
+# Light intensity (Candela)
+# ---------------------------------------------------------------
+unit  cd
+alias candela    = cd
+
+
+# Currency (non-SI)
+# ---------------------------------------------------------------
+unit  USD
+alias dollar     = USD
+alias dollars    = USD
+
+# TODO(advait): Load currency conversions dynamically
+unit  BTC        = 58,522.30 USD
+unit  ETH        = 3,949.02 USD
+unit  XMR        = 264.78 USD
+unit  DOGE       = 0.24 USD
+
+
+# ---------------------------------------------------------------
+# Below are derived (non-base units)
+# ---------------------------------------------------------------
 
 
 # Scalar constants
@@ -247,12 +281,151 @@ unit lakh        = 100 thousand
 unit crore       = 10 million
 
 
-# Speed
+# Area (length^2)
+# ---------------------------------------------------------------
+unit  acre       = 4840 yd^2
+alias acres      = acre
+
+unit  perch      = 1 rod^2
+alias perches    = perch
+
+unit  rood       = 1 furlong*rod
+alias roods      = rood
+
+unit  sqft       = ft^2
+
+
+# Volume (length^3)
+# ---------------------------------------------------------------
+unit  L          = 1e-3 m^3
+unit  l          = L
+alias liter      = l
+alias liters     = l
+alias litres     = l
+
+unit  gal        = 231 inch^3
+alias gallon     = gal
+alias gallons    = gal
+
+unit  quart      = gal/4
+alias quarts     = quart
+
+unit  pint       = quart/2
+alias pints      = pint
+
+unit  cup        = pint/2
+alias cups       = pint/2
+
+unit  floz       = cup/8
+
+unit  tbsp       = floz/2
+alias tablespoon = tbsp
+alias tablespoons = tbsp
+
+unit  tsp        = tbsp/3
+alias teaspoon   = tsp
+alias teaspoons  = tsp
+
+unit  shot       = 1.5 floz
+alias shots      = shot
+
+unit  barrel     = 42 gal
+alias barrels    = barrel
+
+unit  cord       = 128 ft^3
+alias cords      = cord
+
+unit  peck       = 2 gal
+alias pecks      = peck
+alias pk         = peck
+
+unit  bushel     = 4 peck
+alias bushels    = bushel
+
+
+# Speed (length/time)
 # ---------------------------------------------------------------
 c = 299792458 m/s
 mph = miles/h
 kph = km/h
 
-kts = nauticalmile/h
-knots = kts
-knot = kts
+unit kts = nauticalmile/h
+alias knots = kts
+alias knot = kts
+
+
+# Acceleration (length/time^2)
+# ---------------------------------------------------------------
+G = 9.80665 m/s^2
+
+
+# Charge (current*time)
+# ---------------------------------------------------------------
+unit  C          = A*s
+alias coulomb    = C
+alias coulombs   = C
+
+
+# Force (mass*acceleration)
+# ---------------------------------------------------------------
+unit  N          = kg*m/s^2
+alias newton     = N
+alias newtons    = N
+
+unit  dyn        = 1e-5 N
+alias dyne       = dyn
+
+unit  lbf        = lb*G
+
+unit  kip        = 1000 lbf
+
+
+# Energy (force*distance)
+# ---------------------------------------------------------------
+unit  J          = N*m
+alias joule      = J
+alias joules     = J
+
+unit  erg        = 1e-7 J
+
+unit  cal        = 4.184 J
+alias calorie    = cal
+alias calories   = cal
+
+
+# Power (energy/time)
+# ---------------------------------------------------------------
+unit  W          = J/s
+alias watt       = W
+alias watts      = W
+
+unit  hp         = 33,000 ft*lbf/min
+alias horsepower = hp
+
+
+# Electromotive Force (energy/charge)
+# ---------------------------------------------------------------
+unit  V          = J/C
+alias volt       = V
+alias volts      = V
+
+
+# Resistance (emf/current)
+# ---------------------------------------------------------------
+# TODO(advait): Support unicode variable names
+#unit  Ω          = V/A
+unit  ohm        = V/A
+alias ohms       = ohm
+
+
+# Pressure (force/distance^2)
+# ---------------------------------------------------------------
+unit  Pa         = N/m^2
+alias pascal     = Pa
+alias pascals    = Pa
+
+unit  bar        = 100,000 Pa
+
+unit  inHg       = 3386.389 Pa
+
+unit  psi        = lbf/inch^2

@@ -34,7 +34,7 @@ const MainAppBar = (props) => (
     <Container maxWidth="md">
       <Toolbar disableGutters={true}>
         <Button
-          variant="contained"
+          variant="outlined"
           startIcon={<CreateIcon />}
           onClick={props.onClear}
           sx={{ marginRight: "1em" }}>Clear</Button>

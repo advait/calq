@@ -151,7 +151,7 @@ eval (Fn2 { name: "assertEqual", p1, p2 }) = do
   else
     lift $ Left (show value1 <> " ≠ " <> show value2)
 
-eval (Fn2 { name: "^", p1, p2 }) = do
+eval expr@(Fn2 { name: "^", p1, p2 }) = do
   e1 <- eval p1
   e2@{ scalar, units } <- eval p2
   let
@@ -159,9 +159,11 @@ eval (Fn2 { name: "^", p1, p2 }) = do
 
     pow = Math.floor $ BigNumber.toNumber scalar
   if units /= mempty then
-    lift $ Left ("Cannot raise powers with units: " <> show e2)
+    lift $ Left ("Cannot raise powers with units: " <> show expr)
   else if pow < scalar' then
-    lift $ Left ("Cannot raise non-integer powers" <> show e2)
+    lift $ Left ("Cannot raise non-integer powers: " <> show expr)
+  else if (abs pow) > 100.0 then
+    lift $ Left ("Cannot raise to powers of more than 100: "<> show expr)
   else
     pure $ power e1 (Int.floor pow)
 

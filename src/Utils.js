@@ -1,7 +1,7 @@
 "use strict";
 
 var fs = require("fs");
-var bn = require("bignumber.js");
+var bn = require("Decimal.js");
 
 exports.debugLog = function (a) {
   console.log(a);
@@ -19,21 +19,21 @@ exports.undefinedLog = function (message) {
   throw new Error(message);
 }
 
-exports.bigNumberFormatFixed = function (n) {
+exports.decimalFormatFixed = function (n) {
   return function (b) {
     return b.toFormat(n);
   }
 };
 
-exports.bigNumberFixed = function (n) {
+exports.decimalFixed = function (n) {
   return function (b) {
     var ret = b.toFixed(n);
     return b.toFixed(n);
   }
 };
 
-exports.parseBigNumber = function (s) {
-  return bn.BigNumber(s);
+exports.parseDecimal = function (s) {
+  return bn.Decimal(s);
 }
 
 exports.definitionsFile = fs.readFileSync("src/Definitions.calq", "utf-8");

@@ -3,16 +3,16 @@ module Utils where
 import Prelude
 import Data.Array (mapWithIndex)
 import Data.Array as Array
-import Data.BigNumber (BigNumber)
+import Decimal (Decimal)
 import Data.Tuple (Tuple(..))
 
--- | Format `BigNumber with a fixed number of decial places`
-foreign import bigNumberFormatFixed :: Int -> BigNumber -> String
+-- | Format `Decimal with a fixed number of decial places`
+foreign import decimalFormatFixed :: Int -> Decimal -> String
 
--- | Provide a fixed number of decimal places for `BigNumber`
-foreign import bigNumberFixed :: Int -> BigNumber -> BigNumber
+-- | Provide a fixed number of decimal places for `Decimal`
+foreign import decimalFixed :: Int -> Decimal -> Decimal
 
-foreign import parseBigNumber :: String -> BigNumber
+foreign import parseDecimal :: String -> Decimal
 
 foreign import debugLog :: forall a. a -> a
 

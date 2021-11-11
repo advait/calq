@@ -3,7 +3,7 @@ module Tokenizer where
 import Prelude
 import Control.Alt ((<|>))
 import Data.Array as Array
-import Data.Char.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace)
+import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace)
 import Data.Either (Either)
 import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..))

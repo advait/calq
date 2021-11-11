@@ -8,6 +8,7 @@ import Data.Group (class Group, ginverse)
 import Data.Group as Group
 import Data.Map (Map)
 import Data.Map as Map
+import Data.Monoid (class Monoid)
 import Data.Newtype (class Newtype)
 import Data.Newtype as Newtype
 import Data.String as String
@@ -53,7 +54,7 @@ instance showExponentialsString :: Show (Exponentials String) where
         "/" -> "1" <> result
         _ -> result
 else instance showExponentials :: (Ord a, Show a) => Show (Exponentials a) where
-  show e@(Exponentials m) = show $ show `map` e
+  show e = show $ show `map` e
 
 cancel :: forall a. Ord a => Exponentials a -> Exponentials a
 cancel = Newtype.over Exponentials $ Map.filter ((/=) 0)
@@ -66,7 +67,7 @@ instance semigroupExponentials :: Ord a => Semigroup (Exponentials a) where
   append (Exponentials e1) (Exponentials e2) = cancel $ Exponentials $ Map.unionWith (+) e1 e2
 
 instance monoidExponentials :: Ord a => Monoid (Exponentials a) where
-  mempty = Exponentials mempty
+  mempty = Exponentials Map.empty
 
 instance groupExponentials :: Ord a => Group (Exponentials a) where
   ginverse :: forall a. Exponentials a -> Exponentials a

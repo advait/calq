@@ -2,18 +2,18 @@ module Expression where
 
 import Prelude
 import Data.Array as Array
-import Data.BigNumber (BigNumber)
+import Decimal (Decimal)
 import Data.NonEmpty ((:|))
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (Gen)
 import Test.QuickCheck.Gen as Gen
-import Utils (bigNumberFixed, bigNumberFormatFixed, parseBigNumber)
+import Utils (decimalFixed, decimalFormatFixed, parseDecimal)
 
 -- | Represents an expression that can be evaluated.
 data Expr
-  = Scalar BigNumber
+  = Scalar Decimal
   | Name String
   | Fn1 { name :: String, p1 :: Expr }
   | Fn2 { name :: String, p1 :: Expr, p2 :: Expr }
@@ -55,16 +55,16 @@ type ConcreteUnit
 
 -- | Our interpreter evaluates expressions into these values.
 type Value
-  = { scalar :: BigNumber, units :: Exponentials ConcreteUnit }
+  = { scalar :: Decimal, units :: Exponentials ConcreteUnit }
 
 scalar1 :: Value
-scalar1 = { scalar: parseBigNumber "1", units: mempty }
+scalar1 = { scalar: parseDecimal "1", units: mempty }
 
-prettyBigNum :: BigNumber -> String
+prettyBigNum :: Decimal -> String
 prettyBigNum n
-  | n - (bigNumberFixed 0 n) < parseBigNumber ".01" = bigNumberFormatFixed 0 n
-  | n - (bigNumberFixed 1 n) < parseBigNumber ".01" = bigNumberFormatFixed 1 n
-  | otherwise = bigNumberFormatFixed 2 n
+  | n - (decimalFixed 0 n) < parseDecimal ".01" = decimalFormatFixed 0 n
+  | n - (decimalFixed 1 n) < parseDecimal ".01" = decimalFormatFixed 1 n
+  | otherwise = decimalFormatFixed 2 n
 
 prettyValue :: Value -> String
 prettyValue { scalar, units }
@@ -72,17 +72,17 @@ prettyValue { scalar, units }
   | otherwise = prettyBigNum scalar <> " " <> show units
 
 singletonUnit :: ConcreteUnit -> Value
-singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
+singletonUnit unit = { scalar: parseDecimal "1", units: Exponentials.singleton unit }
 
 -- | TODO(advait): See if we can move Arbitrary to the test package.
 instance arbitraryExpr :: Arbitrary Expr where
   arbitrary = genExpr 3
 
-genBigNumber :: Gen BigNumber
-genBigNumber = parseBigNumber <$> show <$> (arbitrary :: Gen Int)
+genDecimal :: Gen Decimal
+genDecimal = parseDecimal <$> show <$> (arbitrary :: Gen Int)
 
 genScalar :: Gen Expr
-genScalar = Scalar <$> genBigNumber
+genScalar = Scalar <$> genDecimal
 
 genName :: Gen Expr
 genName = Name <$> Gen.elements ("ft" :| [ "pi", "m", "advait" ])

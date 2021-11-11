@@ -8,7 +8,6 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Data.Typelevel.Undefined (undefined)
 import Expression (prettyValue)
 import Interpreter (Interpreter, eval, runInterpreter)
 import React.Basic (JSX)
@@ -18,7 +17,7 @@ import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
 import Unsafe.Coerce (unsafeCoerce)
-import Utils (undefinedLog)
+import Utils (undefined, undefinedLog)
 
 type EditorResult
   = { highlights :: Array (Array JSX)

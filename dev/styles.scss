@@ -123,5 +123,13 @@ $editor-line-height: 20px;
 
   .result.success:hover .copy-icon {
     visibility: visible;
+    animation-name: delayedFadeIn;
+    animation-duration: 0.5s;
+  }
+
+  @keyframes delayedFadeIn {
+    0% { opacity: 0; }
+    80% { opacity: 0; }
+    100% { opacity: 1;}
   }
 }

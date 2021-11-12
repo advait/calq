@@ -78,6 +78,7 @@ export default function Editor(props: EditorProps) {
           key={i}
           focusOffset={focus.line === i ? focus.offset : null}
           highlight={highlights[i]}
+          showHint={lines.length === 1 && lines[0].length === 0}
           onEnter={onEnter}
           onBackspace0={onBackspace0}
           onUpDown={onUpDown} />
@@ -154,6 +155,7 @@ function Line(props) {
           value={props.line}
           ref={textareaRef}
           onKeyDown={onKeyDown} />
+        {!props.showHint ? null : <span className="start-hint highlight">Click to begin editing</span>}
         <pre ariea-hidden="true" className="highlight">{props.highlight}</pre>
       </div>
       {result}

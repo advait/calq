@@ -62,6 +62,14 @@ $editor-line-height: 20px;
     line-height: inherit;
   }
 
+  textarea:focus + .start-hint {
+    display: none;
+  }
+
+  .start-hint {
+    opacity: 0.5;
+  }
+
   .highlight {
     padding: 0;
     margin: 0;

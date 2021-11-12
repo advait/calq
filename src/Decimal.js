@@ -1,13 +1,11 @@
 const Decimal = require("decimal.js");
 
-exports.parseDecimalImpl = function (Left, Right, s) {
-  var x;
+exports.parseDecimalImpl = Left => Right => s => {
   try {
-    x = new Decimal(s);
+    return Right(new Decimal(s));
   } catch (e) {
     return Left(e);
   }
-  return Right(x);
 };
 
 exports.parseDecimalUnsafe = s => new Decimal(s);

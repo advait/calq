@@ -5798,10 +5798,10 @@ source-map@~0.7.2:
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.7.3.tgz#5302f8169031735226544092e64981f751750383"
   integrity sha512-CkCj6giN3S+n9qrYiBTX5gystlENnRW5jZeNLHpe6aue+SrHcG5VYwujhW9s4dY31mEGsxBDrHR6oI69fTXsaQ==
 
-spago@^0.17.0:
-  version "0.17.0"
-  resolved "https://registry.npmjs.org/spago/-/spago-0.17.0.tgz"
-  integrity sha512-9cc+dD3kdqSwlfCmtGTu4ptgtuj8tMWQfP8FpmqN7ap68p2L4AWAUnRoN5txYRTD2cygt+CAMNBuk3QxNHGOWw==
+spago@0.20.3:
+  version "0.20.3"
+  resolved "https://registry.yarnpkg.com/spago/-/spago-0.20.3.tgz#f72a096456f580f6eb64fc850c371f8cb97b139f"
+  integrity sha512-R4CWLP5IbaWoNIpS1QAUuDK2LKlKYqT5gBKVZL7ILilvCwdwS72u3NbGZbvx7VCRRZz4lG7zXUkqKNow7zh6wQ==
   dependencies:
     request "^2.88.0"
     tar "^4.4.8"

@@ -7,18 +7,9 @@ exports.debugLog = function (a) {
   return a;
 }
 
-exports.debugLogAlt = function (a) {
-  console.log(a);
-  return function (b) {
-    return b;
-  };
-};
-
 exports.undefined = undefined;
 
-exports.undefinedLog = function (message) {
-  throw new Error(message);
-}
+exports.undefinedLog = message => { throw new Error(message) };
 
 exports.definitionsFile = fs.readFileSync("src/Definitions.calq", "utf-8");
 

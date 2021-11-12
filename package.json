@@ -32,7 +32,7 @@
     "purescript-psa": "^0.8.0",
     "purty": "^7.0.0",
     "sass": "^1.30.0",
-    "spago": "^0.17.0"
+    "spago": "0.20.3"
   },
   "alias": {
     "fs": false

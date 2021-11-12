@@ -7,11 +7,6 @@ import Data.Tuple (Tuple(..))
 
 foreign import debugLog :: forall a. a -> a
 
-foreign import debugLogAlt :: forall a b. a -> b -> b
-
-debugLogShow :: forall a. Show a => a -> a
-debugLogShow a = debugLogAlt (show a) a
-
 foreign import undefined :: forall a. a
 
 foreign import undefinedLog :: forall a. String -> a

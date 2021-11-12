@@ -292,7 +292,7 @@ alias perches    = perch
 unit  rood       = 1 furlong*rod
 alias roods      = rood
 
-unit  sqft       = ft^2
+sqft       = ft^2
 
 
 # Volume (length^3)

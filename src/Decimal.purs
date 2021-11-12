@@ -2,7 +2,6 @@ module Decimal where
 
 import Prelude hiding (mod)
 import Data.Either (Either(..))
-import Data.Function.Uncurried (Fn3, runFn3)
 import Data.Int as Int
 import Data.Ord (abs)
 import Effect.Exception (Error)

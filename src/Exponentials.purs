@@ -22,7 +22,7 @@ newtype Exponentials a
 derive instance newtypeExponentials :: Newtype (Exponentials a) _
 
 instance showExponentialsString :: Show (Exponentials String) where
-  show e@(Exponentials m) =
+  show e =
     let
       showPower :: Tuple String Int -> String
       showPower (Tuple a 1) = a

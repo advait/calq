@@ -83,7 +83,7 @@ tokenExprParser =
     numberParser :: Parser TokenStream Expr
     numberParser =
       let
-        num' (NumberTk n) = true
+        num' (NumberTk _) = true
 
         num' _ = false
       in
@@ -107,7 +107,7 @@ tokenExprParser =
 
     bindAliasParser :: Parser TokenStream Expr
     bindAliasParser = do
-      prefix <- tk $ ReservedTk AliasTk
+      _ <- tk $ ReservedTk AliasTk
       name <- nameParser
       _ <- tk $ PunctuationTk Equals
       target <- nameParser
@@ -115,7 +115,7 @@ tokenExprParser =
 
     bindRootUnitParser :: Parser TokenStream Expr
     bindRootUnitParser = do
-      prefix <- tk $ ReservedTk UnitTk
+      _ <- tk $ ReservedTk UnitTk
       name <- nameParser
       pure $ BindRootUnit { name }
 
@@ -141,7 +141,7 @@ tokenExprParser =
       , [ let
             -- If the second parameter is a negative scalar (e.g. 4-4),
             -- we should interpret as "4 - 4" instead of "4 * -4".
-            buildImplicitMultiplication p1 p2@(Scalar n)
+            buildImplicitMultiplication p1 (Scalar n)
               | Decimal.isNegative n = Fn2 { name: "-", p1, p2: Scalar $ negate n }
 
             -- If the second parameter is anything else, we should interpretet as implicit multiplication.

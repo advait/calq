@@ -12,7 +12,6 @@ You can edit this file as you like.
   , "exceptions"
   , "foldable-traversable"
   , "formatters"
-  , "functions"
   , "group"
   , "integers"
   , "lists"

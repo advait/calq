@@ -139,7 +139,7 @@ eval (Fn1 { name: "negate", p1 }) = do
   { scalar, units } <- eval p1
   pure { scalar: negate scalar, units }
 
-eval (Fn1 { name, p1 }) = do
+eval (Fn1 { name, p1: _ }) = do
   lift $ Left $ "Unknown function: " <> show name
 
 -- | Asserts that the two expressions are the same.
@@ -153,7 +153,7 @@ eval (Fn2 { name: "assertEqual", p1, p2 }) = do
 
 eval expr@(Fn2 { name: "^", p1, p2 }) = do
   e1 <- eval p1
-  e2@{ scalar, units } <- eval p2
+  { scalar, units } <- eval p2
   let
     pow = Decimal.floor scalar
   if units /= mempty then
@@ -193,7 +193,7 @@ eval (Fn2 { name: "+", p1, p2 }) = do
 eval (Fn2 { name: "-", p1, p2 }) = do
   eval $ Fn2 { name: "+", p1, p2: Fn1 { name: "negate", p1: p2 } }
 
-eval (Fn2 { name, p1, p2 }) = do
+eval (Fn2 { name, p1: _, p2: _ }) = do
   lift $ Left $ "Unknown function: " <> show name
 
 times :: Value -> Value -> Value
@@ -230,7 +230,7 @@ reduce :: Value -> Interpreter Value
 reduce { scalar: startScalar, units: startUnits } =
   let
     foldFn :: Value -> Tuple ConcreteUnit Int -> Interpreter Value
-    foldFn acc@{ scalar, units } (Tuple newUnit newPower) = do
+    foldFn acc (Tuple newUnit newPower) = do
       value <- dereferenceName newUnit Reduced
       pure $ acc `times` (value `power` newPower)
   in

@@ -1,4 +1,4 @@
-Calq
+calq
 ====
 
-Calq is a calculator for humans.
+calq is a calculator for humans.

@@ -142,7 +142,7 @@ unit  g
 alias gram       = g
 alias grams      = g
 
-unit  lbs        = 0.45359237kg
+unit  lbs        = 0.45359237 kg
 alias lb         = lbs
 alias pound      = lbs
 alias pounds     = lbs
@@ -161,9 +161,9 @@ alias grains     = grain
 unit  troypound  = 5760 grain
 alias troypounds = troypound
 
-unit  troyounce  = 1/12 troypound
+unit  troyounce  = (1/12) troypound
 
-unit  carat      = 2/10 gram
+unit  carat      = (2/10) gram
 alias carats     = carat
 alias ct         = carat
 
@@ -413,7 +413,7 @@ alias volts      = V
 # Resistance (emf/current)
 # ---------------------------------------------------------------
 # TODO(advait): Support unicode variable names
-#unit  Ω          = V/A
+#unit  Ω         = V/A
 unit  ohm        = V/A
 alias ohms       = ohm
 

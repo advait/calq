@@ -22,7 +22,7 @@ newtype Exponentials a
 derive instance newtypeExponentials :: Newtype (Exponentials a) _
 
 instance showExponentialsString :: Show (Exponentials String) where
-  show e@(Exponentials m) =
+  show e =
     let
       showPower :: Tuple String Int -> String
       showPower (Tuple a 1) = a
@@ -53,7 +53,7 @@ instance showExponentialsString :: Show (Exponentials String) where
         "/" -> "1" <> result
         _ -> result
 else instance showExponentials :: (Ord a, Show a) => Show (Exponentials a) where
-  show e@(Exponentials m) = show $ show `map` e
+  show e = show $ show `map` e
 
 cancel :: forall a. Ord a => Exponentials a -> Exponentials a
 cancel = Newtype.over Exponentials $ Map.filter ((/=) 0)
@@ -66,7 +66,7 @@ instance semigroupExponentials :: Ord a => Semigroup (Exponentials a) where
   append (Exponentials e1) (Exponentials e2) = cancel $ Exponentials $ Map.unionWith (+) e1 e2
 
 instance monoidExponentials :: Ord a => Monoid (Exponentials a) where
-  mempty = Exponentials mempty
+  mempty = Exponentials Map.empty
 
 instance groupExponentials :: Ord a => Group (Exponentials a) where
   ginverse :: forall a. Exponentials a -> Exponentials a

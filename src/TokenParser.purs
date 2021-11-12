@@ -4,7 +4,8 @@ import Prelude
 import Control.Alt ((<|>))
 import Control.Monad.State (gets, put)
 import Data.Array as Array
-import Data.BigNumber as BigNumber
+import Decimal as Decimal
+import Decimal (parseDecimalUnsafe)
 import Data.Maybe (Maybe(..), optional)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
@@ -13,7 +14,6 @@ import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
 import Text.Parsing.Parser.Combinators (choice, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
-import Utils (parseBigNumber)
 
 tk :: forall m. Monad m => TokenType -> ParserT TokenStream m TokenType
 tk token = do
@@ -48,7 +48,7 @@ nameParser :: forall m. Monad m => ParserT TokenStream m String
 nameParser = show <$> matchToken name'
   where
   name' :: TokenType -> Boolean
-  name' (NameTk name) = true
+  name' (NameTk _) = true
 
   name' _ = false
 
@@ -83,7 +83,7 @@ tokenExprParser =
     numberParser :: Parser TokenStream Expr
     numberParser =
       let
-        num' (NumberTk n) = true
+        num' (NumberTk _) = true
 
         num' _ = false
       in
@@ -91,7 +91,7 @@ tokenExprParser =
           n <- show <$> matchToken num'
           let
             withoutCommas = replaceAll (Pattern ",") (Replacement "") n
-          pure $ Scalar $ parseBigNumber withoutCommas
+          pure $ Scalar $ parseDecimalUnsafe withoutCommas
 
     bindParser :: Parser TokenStream Expr
     bindParser = do
@@ -107,7 +107,7 @@ tokenExprParser =
 
     bindAliasParser :: Parser TokenStream Expr
     bindAliasParser = do
-      prefix <- tk $ ReservedTk AliasTk
+      _ <- tk $ ReservedTk AliasTk
       name <- nameParser
       _ <- tk $ PunctuationTk Equals
       target <- nameParser
@@ -115,7 +115,7 @@ tokenExprParser =
 
     bindRootUnitParser :: Parser TokenStream Expr
     bindRootUnitParser = do
-      prefix <- tk $ ReservedTk UnitTk
+      _ <- tk $ ReservedTk UnitTk
       name <- nameParser
       pure $ BindRootUnit { name }
 
@@ -141,8 +141,8 @@ tokenExprParser =
       , [ let
             -- If the second parameter is a negative scalar (e.g. 4-4),
             -- we should interpret as "4 - 4" instead of "4 * -4".
-            buildImplicitMultiplication p1 p2@(Scalar n)
-              | BigNumber.isNegative n = Fn2 { name: "-", p1, p2: Scalar $ negate n }
+            buildImplicitMultiplication p1 (Scalar n)
+              | Decimal.isNegative n = Fn2 { name: "-", p1, p2: Scalar $ negate n }
 
             -- If the second parameter is anything else, we should interpretet as implicit multiplication.
             buildImplicitMultiplication p1 p2 = Fn2 { name: "*", p1, p2 }

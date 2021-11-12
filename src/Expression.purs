@@ -1,19 +1,18 @@
 module Expression where
 
 import Prelude
+import Data.Array (unsafeIndex)
 import Data.Array as Array
-import Data.BigNumber (BigNumber)
-import Data.NonEmpty ((:|))
+import Decimal (Decimal, toDecimalPlaces, fromInt, pointZeroOne)
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
+import Partial.Unsafe (unsafePartial)
 import Test.QuickCheck.Arbitrary (class Arbitrary, arbitrary)
-import Test.QuickCheck.Gen (Gen)
-import Test.QuickCheck.Gen as Gen
-import Utils (bigNumberFixed, bigNumberFormatFixed, parseBigNumber)
+import Test.QuickCheck.Gen (Gen, chooseInt)
 
 -- | Represents an expression that can be evaluated.
 data Expr
-  = Scalar BigNumber
+  = Scalar Decimal
   | Name String
   | Fn1 { name :: String, p1 :: Expr }
   | Fn2 { name :: String, p1 :: Expr, p2 :: Expr }
@@ -55,16 +54,16 @@ type ConcreteUnit
 
 -- | Our interpreter evaluates expressions into these values.
 type Value
-  = { scalar :: BigNumber, units :: Exponentials ConcreteUnit }
+  = { scalar :: Decimal, units :: Exponentials ConcreteUnit }
 
 scalar1 :: Value
-scalar1 = { scalar: parseBigNumber "1", units: mempty }
+scalar1 = { scalar: one, units: mempty }
 
-prettyBigNum :: BigNumber -> String
+prettyBigNum :: Decimal -> String
 prettyBigNum n
-  | n - (bigNumberFixed 0 n) < parseBigNumber ".01" = bigNumberFormatFixed 0 n
-  | n - (bigNumberFixed 1 n) < parseBigNumber ".01" = bigNumberFormatFixed 1 n
-  | otherwise = bigNumberFormatFixed 2 n
+  | n - (toDecimalPlaces 0 n) < pointZeroOne = show $ toDecimalPlaces 0 n
+  | n - (toDecimalPlaces 1 n) < pointZeroOne = show $ toDecimalPlaces 1 n
+  | otherwise = show $ toDecimalPlaces 2 n
 
 prettyValue :: Value -> String
 prettyValue { scalar, units }
@@ -72,30 +71,40 @@ prettyValue { scalar, units }
   | otherwise = prettyBigNum scalar <> " " <> show units
 
 singletonUnit :: ConcreteUnit -> Value
-singletonUnit unit = { scalar: parseBigNumber "1", units: Exponentials.singleton unit }
+singletonUnit unit = { scalar: one, units: Exponentials.singleton unit }
 
 -- | TODO(advait): See if we can move Arbitrary to the test package.
 instance arbitraryExpr :: Arbitrary Expr where
   arbitrary = genExpr 3
 
-genBigNumber :: Gen BigNumber
-genBigNumber = parseBigNumber <$> show <$> (arbitrary :: Gen Int)
+genDecimal :: Gen Decimal
+genDecimal = fromInt <$> (arbitrary :: Gen Int)
 
 genScalar :: Gen Expr
-genScalar = Scalar <$> genBigNumber
+genScalar = Scalar <$> genDecimal
+
+genSelect :: forall a. Array a -> Gen a
+genSelect choices = do
+  n <- chooseInt zero (Array.length choices - 1)
+  pure $ unsafePartial $ unsafeIndex choices n
+
+genOneOf :: forall a. Array (Gen a) -> Gen a
+genOneOf choices = do
+  n <- chooseInt zero (Array.length choices - 1)
+  unsafePartial $ unsafeIndex choices n
 
 genName :: Gen Expr
-genName = Name <$> Gen.elements ("ft" :| [ "pi", "m", "advait" ])
+genName = Name <$> genSelect [ "ft", "pi", "m", "advait" ]
 
 -- | A concrete value is a non-recursive value.
 genConcrete :: Gen Expr
-genConcrete = Gen.oneOf (genScalar :| [ genName ])
+genConcrete = genOneOf [ genScalar, genName ]
 
 genInfix :: Int -> Gen Expr
 genInfix maxDepth
   | maxDepth <= 0 = genConcrete
   | otherwise = do
-    name <- Gen.elements ("*" :| infixNames)
+    name <- genSelect $ [ "*" ] <> infixNames
     p1 <- genExpr (maxDepth - 1)
     p2 <- genExpr (maxDepth - 1)
     pure $ Fn2 { name, p1, p2 }
@@ -105,4 +114,4 @@ genInfix maxDepth
 genExpr :: Int -> Gen Expr
 genExpr maxDepth
   | maxDepth <= 0 = genConcrete
-  | otherwise = Gen.oneOf (genInfix maxDepth :| [])
+  | otherwise = genOneOf [ genInfix maxDepth ]

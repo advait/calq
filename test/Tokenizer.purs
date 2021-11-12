@@ -39,4 +39,4 @@ numberParser = f <$> tokenStreamParser
   f :: Array TokenType -> String
   f [ (NumberTk first) ] = first
 
-  f other = "Failed to parse"
+  f _ = "Failed to parse"

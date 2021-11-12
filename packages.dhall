@@ -104,44 +104,7 @@ in  upstream
       }
 -------------------------------
 -}
-
 let upstream =
-      https://github.com/purescript/package-sets/releases/download/psc-0.13.8-20201206/packages.dhall sha256:c9ffd7577fb8ee2197309591d7ccc0f506ee37b9078866f0ef159f5abbb1b32b
+      https://github.com/purescript/package-sets/releases/download/psc-0.14.5-20211111/packages.dhall sha256:7ed6350fe897a93926d16298e37d2324aabbe5eca99810204719dc3632fb555f
 
 in  upstream
-  with sorted-arrays =
-      { dependencies =
-          [ "newtype"
-          , "console"
-          , "arrays"
-          , "maybe"
-          , "foldable-traversable"
-          , "prelude"
-          , "partial"
-          ]
-      , repo =
-          "https://github.com/advait/purescript-sorted-arrays.git"
-      , version =
-          -- Use custom version until changes get merged upstream
-          -- https://github.com/vladciobanu/purescript-sorted-arrays/pull/2
-          "cfc532deedafa8b594f6edf715bdaf63417dbada"
-      }
-  with bignumber =
-      { dependencies =
-          [ "row-extra"
-          , "tuples-native"
-          ]
-      , repo =
-          "https://github.com/athanclark/purescript-bignumber.git"
-      , version =
-          "v1.0.1"
-      }
-  with bulma =
-      { dependencies =
-          [ "generics-rep"
-          ]
-      , repo =
-          "https://github.com/sectore/purescript-bulma.git"
-      , version =
-          "v2.0.0"
-      }

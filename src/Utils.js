@@ -1,7 +1,6 @@
 "use strict";
 
 var fs = require("fs");
-var bn = require("Decimal.js");
 
 exports.debugLog = function (a) {
   console.log(a);
@@ -15,25 +14,10 @@ exports.debugLogAlt = function (a) {
   };
 };
 
+exports.undefined = undefined;
+
 exports.undefinedLog = function (message) {
   throw new Error(message);
-}
-
-exports.decimalFormatFixed = function (n) {
-  return function (b) {
-    return b.toFormat(n);
-  }
-};
-
-exports.decimalFixed = function (n) {
-  return function (b) {
-    var ret = b.toFixed(n);
-    return b.toFixed(n);
-  }
-};
-
-exports.parseDecimal = function (s) {
-  return bn.Decimal(s);
 }
 
 exports.definitionsFile = fs.readFileSync("src/Definitions.calq", "utf-8");

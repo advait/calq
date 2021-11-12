@@ -5,6 +5,7 @@ import Control.Alt ((<|>))
 import Control.Monad.State (gets, put)
 import Data.Array as Array
 import Decimal as Decimal
+import Decimal (parseDecimalUnsafe)
 import Data.Maybe (Maybe(..), optional)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
@@ -13,7 +14,6 @@ import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
 import Text.Parsing.Parser.Combinators (choice, try)
 import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
 import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
-import Utils (parseDecimal)
 
 tk :: forall m. Monad m => TokenType -> ParserT TokenStream m TokenType
 tk token = do
@@ -48,7 +48,7 @@ nameParser :: forall m. Monad m => ParserT TokenStream m String
 nameParser = show <$> matchToken name'
   where
   name' :: TokenType -> Boolean
-  name' (NameTk name) = true
+  name' (NameTk _) = true
 
   name' _ = false
 
@@ -91,7 +91,7 @@ tokenExprParser =
           n <- show <$> matchToken num'
           let
             withoutCommas = replaceAll (Pattern ",") (Replacement "") n
-          pure $ Scalar $ parseDecimal withoutCommas
+          pure $ Scalar $ parseDecimalUnsafe withoutCommas
 
     bindParser :: Parser TokenStream Expr
     bindParser = do

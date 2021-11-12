@@ -3,17 +3,17 @@ module Tokenizer where
 import Prelude
 import Control.Alt ((<|>))
 import Data.Array as Array
-import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDigit, isHexDigit, isOctDigit, isSpace)
+import Data.CodePoint.Unicode (isAlpha, isAlphaNum, isDecDigit, isHexDigit, isOctDigit, isSpace)
 import Data.Either (Either)
 import Data.Foldable (oneOf)
 import Data.Maybe (Maybe(..))
-import Data.String (joinWith, length)
-import Data.String.CodeUnits as String
+import Data.String (CodePoint, codePointFromChar, fromCodePointArray, joinWith, length)
+import Data.String.CodePoints as CodePoints
 import Expression (infixNames)
 import Text.Parsing.Parser (ParseError, Parser, fail, runParser)
 import Text.Parsing.Parser as Parser
 import Text.Parsing.Parser.Combinators (choice, try)
-import Text.Parsing.Parser.String (satisfy, string)
+import Text.Parsing.Parser.String (satisfy, satisfyCodePoint, string)
 
 -- | First we parse the input into Tokens to make it easier for subsequent expression parsing.
 -- | The tokenizer allows us to more easily handle whitespace subtleties (e.g. "4 m" == "4*m").
@@ -72,15 +72,18 @@ tokenStreamParser :: Parser String TokenStream
 tokenStreamParser = parser
   where
   -- | Zero or more.
-  many :: Parser String Char -> Parser String String
-  many p = String.fromCharArray <$> Array.many p
+  many :: Parser String CodePoint -> Parser String String
+  many p = fromCodePointArray <$> Array.many p
 
   -- | One or more.
-  some :: Parser String Char -> Parser String String
-  some p = String.fromCharArray <$> Array.some p
+  some :: Parser String CodePoint -> Parser String String
+  some p = fromCodePointArray <$> Array.some p
 
-  oneOfChar :: Array Char -> Parser String Char
-  oneOfChar cs = satisfy (\c -> Array.elem c cs)
+  oneOfChar' :: Array Char -> Parser String Char
+  oneOfChar' cs = satisfy (\c -> Array.elem c cs)
+
+  oneOfChar :: Array Char -> Parser String CodePoint
+  oneOfChar cs = codePointFromChar <$> (oneOfChar' cs)
 
   -- | Tries p and falls back to the empty string.
   optional :: Parser String String -> Parser String String
@@ -91,7 +94,7 @@ tokenStreamParser = parser
   newline = NewlineTk <$ oneOfChar [ '\n' ]
 
   punctuation = do
-    c <- oneOfChar [ '(', ')', ',', '=' ]
+    c <- oneOfChar' [ '(', ')', ',', '=' ]
     case c of
       '(' -> pure $ PunctuationTk OpenParen
       ')' -> pure $ PunctuationTk CloseParen
@@ -103,12 +106,12 @@ tokenStreamParser = parser
     where
     hex = do
       prefix <- string "0x" <|> string "0X"
-      body <- many $ satisfy isHexDigit
+      body <- many $ satisfyCodePoint isHexDigit
       pure $ prefix <> body
 
     oct = do
       prefix <- string "0o" <|> string "0O"
-      body <- many $ satisfy isOctDigit
+      body <- many $ satisfyCodePoint isOctDigit
       pure $ prefix <> body
 
     bin = do
@@ -120,19 +123,19 @@ tokenStreamParser = parser
     where
     sci = do
       prefix <- optional $ string "-"
-      preDecimal <- many $ satisfy isDigit
-      postDecimal <- optional $ string "." <> (some $ satisfy isDigit)
+      preDecimal <- many $ satisfyCodePoint isDecDigit
+      postDecimal <- optional $ string "." <> (some $ satisfyCodePoint isDecDigit)
       e <- do
-        e' <- String.singleton <$> oneOfChar [ 'e', 'E' ]
-        sign <- optional (String.singleton <$> oneOfChar [ '+', '-' ])
-        value <- some $ satisfy isDigit
+        e' <- CodePoints.singleton <$> oneOfChar [ 'e', 'E' ]
+        sign <- optional (CodePoints.singleton <$> oneOfChar [ '+', '-' ])
+        value <- some $ satisfyCodePoint isDecDigit
         pure $ e' <> sign <> value
       pure $ prefix <> preDecimal <> postDecimal <> e
 
     withCommas = do
       prefix <- optional $ string "-"
       let
-        digitP = String.singleton <$> satisfy isDigit
+        digitP = CodePoints.singleton <$> satisfyCodePoint isDecDigit
       headGroup <- choice (try <$> [ digitP <> digitP <> digitP, digitP <> digitP, digitP ])
       let
         groupP = do
@@ -144,16 +147,16 @@ tokenStreamParser = parser
         optional
           ( do
               dot <- string "."
-              decimal <- many $ satisfy isDigit
+              decimal <- many $ satisfyCodePoint isDecDigit
               pure $ dot <> decimal
           )
       pure $ prefix <> headGroup <> tailGroups <> postDecimal
 
     withoutCommas = do
       prefix <- optional $ string "-"
-      preDecimal <- many $ satisfy isDigit
+      preDecimal <- many $ satisfyCodePoint isDecDigit
       dot <- optional $ string "."
-      postDecimal <- many $ satisfy isDigit
+      postDecimal <- many $ satisfyCodePoint isDecDigit
       if length preDecimal + length postDecimal == 0 then
         fail $ "Invalid number '" <> prefix <> dot <> "'"
       else
@@ -165,10 +168,10 @@ tokenStreamParser = parser
   numberOrInfix = (try number) <|> infixP
 
   name = do
-    head <- satisfy isAlpha <|> oneOfChar [ '_', '"', '\'' ]
-    body <- many $ (satisfy isAlphaNum <|> oneOfChar [ '_', '"', '\'' ])
+    head <- satisfyCodePoint isAlpha <|> oneOfChar [ '_', '"', '\'' ]
+    body <- many $ (satisfyCodePoint isAlphaNum <|> oneOfChar [ '_', '"', '\'' ])
     let
-      s = String.singleton head <> body
+      s = CodePoints.singleton head <> body
     case s of
       "unit" -> pure $ ReservedTk UnitTk
       "alias" -> pure $ ReservedTk AliasTk
@@ -178,10 +181,10 @@ tokenStreamParser = parser
 
   comment = do
     start <- string "#"
-    body <- many $ satisfy ((/=) '\n')
+    body <- many $ satisfyCodePoint ((/=) (codePointFromChar '\n'))
     pure $ CommentTk $ start <> body
 
-  unknown = UnknownTk <$> some (satisfy (not <<< isSpace))
+  unknown = UnknownTk <$> some (satisfyCodePoint (not <<< isSpace))
 
   parser =
     Array.many $ oneOf

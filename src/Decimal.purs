@@ -1,9 +1,10 @@
 module Decimal where
 
-import Prelude
+import Prelude hiding (mod)
 import Data.Either (Either(..))
-import Data.Function.Uncurried (Fn3, runFn3, Fn2, runFn2, Fn5, runFn5)
-import Data.Ord (class Ord)
+import Data.Function.Uncurried (Fn3, runFn3)
+import Data.Int as Int
+import Data.Ord (abs)
 import Effect.Exception (Error)
 
 foreign import data Decimal :: Type
@@ -17,6 +18,11 @@ parseDecimal :: String -> Either Error Decimal
 parseDecimal = runFn3 parseDecimalImpl Left Right
 
 foreign import parseDecimalUnsafe :: String -> Decimal
+
+fromInt :: Int -> Decimal
+fromInt = parseDecimalUnsafe <<< show
+
+foreign import toNumber :: Decimal -> Number
 
 foreign import toString :: Decimal -> String
 
@@ -38,7 +44,11 @@ instance ordDecimal :: Ord Decimal where
 
 foreign import plus :: Decimal -> Decimal -> Decimal
 
+foreign import minus :: Decimal -> Decimal -> Decimal
+
 foreign import times :: Decimal -> Decimal -> Decimal
+
+foreign import dividedBy :: Decimal -> Decimal -> Decimal
 
 instance semiringDecimal :: Semiring Decimal where
   add = plus
@@ -46,7 +56,36 @@ instance semiringDecimal :: Semiring Decimal where
   mul = times
   one = parseDecimalUnsafe "1"
 
-foreign import minus :: Decimal -> Decimal -> Decimal
-
 instance ringDecimal :: Ring Decimal where
   sub = minus
+
+isNegative :: Decimal -> Boolean
+isNegative d = d < zero
+
+foreign import floor :: Decimal -> Decimal
+
+foreign import pow :: Decimal -> Decimal -> Decimal
+
+-- | Returns whether this is a valid power (computationally possible).
+canPow :: Decimal -> Boolean
+canPow d = (abs d) <= (parseDecimalUnsafe "100")
+
+powInt :: Decimal -> Int -> Decimal
+powInt d e = pow d $ fromInt e
+
+foreign import mod :: Decimal -> Decimal -> Decimal
+
+instance commutativeRing :: CommutativeRing Decimal
+
+instance divisionRing :: DivisionRing Decimal where
+  recip d = one / d
+
+instance euclideanRingDecimal :: EuclideanRing Decimal where
+  degree = Int.floor <<< toNumber <<< floor <<< abs
+  div = dividedBy
+  mod = mod
+
+foreign import toDecimalPlaces :: Int -> Decimal -> Decimal
+
+pointZeroOne :: Decimal
+pointZeroOne = parseDecimalUnsafe "0.01"

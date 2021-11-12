@@ -4,7 +4,6 @@ import Prelude
 import Control.Monad.State (StateT, evalStateT, execStateT, lift)
 import Control.Monad.State as State
 import Data.Array as Array
-import Decimal as Decimal
 import Data.Either (Either(..))
 import Data.Foldable (traverse_)
 import Data.Group as Group
@@ -18,15 +17,16 @@ import Data.Ord (abs)
 import Data.String (Pattern(..))
 import Data.String as String
 import Data.Tuple (Tuple(..))
+import Decimal (canPow, toNumber, parseDecimalUnsafe)
+import Decimal as Decimal
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Expression (Expr(..), Value, ConcreteUnit, singletonUnit)
-import Math as Math
 import Text.Parsing.Parser (runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType, removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
-import Utils (parseDecimal, undefinedLog)
+import Utils (undefinedLog)
 import Utils as Utils
 
 -- | Our Interpreter evaluated Exprs into Values.
@@ -155,17 +155,15 @@ eval expr@(Fn2 { name: "^", p1, p2 }) = do
   e1 <- eval p1
   e2@{ scalar, units } <- eval p2
   let
-    scalar' = Decimal.toNumber scalar
-
-    pow = Math.floor $ Decimal.toNumber scalar
+    pow = Decimal.floor scalar
   if units /= mempty then
     lift $ Left ("Cannot raise powers with units: " <> show expr)
-  else if pow < scalar' then
+  else if pow < scalar then
     lift $ Left ("Cannot raise non-integer powers: " <> show expr)
-  else if (abs pow) > 100.0 then
+  else if not $ canPow pow then
     lift $ Left ("Cannot raise to powers of more than 100: " <> show expr)
   else
-    pure $ power e1 (Int.floor pow)
+    pure $ power e1 (Int.floor $ toNumber pow)
 
 eval (Fn2 { name: "*", p1, p2 }) = do
   e1 <- eval p1
@@ -180,7 +178,7 @@ eval (Fn2 { name: "/", p1, p2 }) = do
 eval (Fn2 { name: "in", p1, p2 }) = do
   e1 <- eval p1 >>= reduce
   { scalar: desiredScalar, units: desiredUnits } <- eval p2
-  when (desiredScalar /= parseDecimal "1") (lift $ Left $ "Cannot cast to a numeric unit")
+  when (desiredScalar /= one) (lift $ Left $ "Cannot cast to a numeric unit")
   cast e1 desiredUnits
 
 eval (Fn2 { name: "+", p1, p2 }) = do
@@ -209,7 +207,7 @@ dividedBy { scalar: s1, units: u1 } { scalar: s2, units: u2 } =
 
 power :: Value -> Int -> Value
 power { scalar, units } n =
-  { scalar: scalar `Decimal.pow` (parseDecimal $ show n)
+  { scalar: scalar `Decimal.powInt` n
   , units: Group.power units n
   }
 
@@ -217,13 +215,13 @@ power { scalar, units } n =
 approxEqual :: Value -> Value -> Boolean
 approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
   | u1 /= u2 = false
-  | s1 == (parseDecimal "0") = s1 == s2
-  | otherwise = (abs (s1 - s2) / s1) < (parseDecimal "1e-5")
+  | s1 == zero = s1 == s2
+  | otherwise = (abs (s1 - s2) / s1) < (parseDecimalUnsafe "1e-5")
 
 -- | Casts the given value to the given unit.
 cast :: Value -> Exponentials ConcreteUnit -> Interpreter Value
 cast value desiredUnits = do
-  { scalar, units } <- reduce $ value `dividedBy` { scalar: parseDecimal "1", units: desiredUnits }
+  { scalar, units } <- reduce $ value `dividedBy` { scalar: one, units: desiredUnits }
   when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
   pure { scalar, units: desiredUnits }
 
@@ -259,7 +257,7 @@ mergeConvertible ev@{ scalar: _, units } =
       isConvertible <- convertible u1 u2
       if isConvertible then do
         let
-          unitsToMerge = { scalar: parseDecimal "1", units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
+          unitsToMerge = { scalar: one, units: Exponentials.power u1 p1 <> Exponentials.power u2 p2 }
         conversionFactor <- reduce $ unitsToMerge
         mergeConvertible $ ev `dividedBy` unitsToMerge `times` conversionFactor
       else
@@ -296,7 +294,12 @@ execDefinitions startState input =
 
 -- | Initial state after the Definitions.calq file is executed.
 initState :: InterpreterState
-initState = execDefinitions mempty Utils.definitionsFile
+initState = execDefinitions emptyState Utils.definitionsFile
+  where
+  emptyState =
+    { bindings: Map.empty
+    , prefixes: Nil
+    }
 
 -- | Runs the interpreter, providing the evaluated value.
 runInterpreter :: forall a. Interpreter a -> Either String a

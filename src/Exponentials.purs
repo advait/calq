@@ -8,7 +8,6 @@ import Data.Group (class Group, ginverse)
 import Data.Group as Group
 import Data.Map (Map)
 import Data.Map as Map
-import Data.Monoid (class Monoid)
 import Data.Newtype (class Newtype)
 import Data.Newtype as Newtype
 import Data.String as String

@@ -3,16 +3,7 @@ module Utils where
 import Prelude
 import Data.Array (mapWithIndex)
 import Data.Array as Array
-import Decimal (Decimal)
 import Data.Tuple (Tuple(..))
-
--- | Format `Decimal with a fixed number of decial places`
-foreign import decimalFormatFixed :: Int -> Decimal -> String
-
--- | Provide a fixed number of decimal places for `Decimal`
-foreign import decimalFixed :: Int -> Decimal -> Decimal
-
-foreign import parseDecimal :: String -> Decimal
 
 foreign import debugLog :: forall a. a -> a
 
@@ -20,6 +11,8 @@ foreign import debugLogAlt :: forall a b. a -> b -> b
 
 debugLogShow :: forall a. Show a => a -> a
 debugLogShow a = debugLogAlt (show a) a
+
+foreign import undefined :: forall a. a
 
 foreign import undefinedLog :: forall a. String -> a
 

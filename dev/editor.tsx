@@ -137,7 +137,12 @@ function Line(props) {
         </div >
       );
     } else if (props.result.error !== undefined) {
-      return (<div className="result error">{props.result.error}</div>);
+      return (
+        <div className="result error">
+          <span className="return-icon" >⤷</span>
+          {props.result.error}
+        </div>
+      );
     }
   })();
 

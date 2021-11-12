@@ -32,7 +32,6 @@ const theme = createTheme({
 });
 
 const MainAppBar = (props) => (
-
   <AppBar position="static">
     <Container maxWidth="md">
       <Toolbar disableGutters={true}>
@@ -58,11 +57,15 @@ const initialValue = (() => {
   const hash = (window.location.hash || "#").replace(/^#/, "");
   const urlValue = qs.parse(hash).value;
   history.pushState(null, null, "#"); // Clear hash so users don't re-share stale URL
-  return urlValue || localStorage.getItem("value") || "1 m/s * 3 years\n2 * 2";
+  if (urlValue) {
+    return { value: urlValue, fromHash: true };
+  } else {
+    return { value: localStorage.getItem("value") || "1 m/s * 3 years\n2 * 2", fromHash: false };
+  }
 })();
 
 const MainApp = () => {
-  const [value, setValue_] = useState(initialValue);
+  const [value, setValue_] = useState(initialValue.value);
   const onClear = () => setValue_("");
   const setValue = (v) => {
     localStorage.setItem("value", v);
@@ -77,12 +80,14 @@ const MainApp = () => {
     setShowShowSnack(true);
   };
   const [showShareSnack, setShowShowSnack] = useState(false);
+  const [showHashSnack, setShowHashSnack] = useState(initialValue.fromHash);
 
   return (
     <div className="primary">
       <ThemeProvider theme={theme}>
         <MainAppBar onClear={onClear} onShare={onShare} />
         <Snackbar open={showShareSnack} onClose={() => setShowShowSnack(false)} autoHideDuration={4000} message="Copied link to clipboard" />
+        <Snackbar open={showHashSnack} onClose={() => setShowHashSnack(false)} autoHideDuration={4000} message="Loaded from URL" />
         <Container maxWidth="md" className="main-container">
           <Editor value={value} setValue={setValue} />
         </Container>

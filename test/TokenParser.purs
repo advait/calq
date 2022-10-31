@@ -9,7 +9,7 @@ import Expression (Expr)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import TestUtils (quickCheckParser)
-import Text.Parsing.Parser (Parser, runParser)
+import Parsing (Parser, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), tokenStreamParser)
 

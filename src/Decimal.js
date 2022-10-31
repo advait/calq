@@ -1,6 +1,6 @@
-const Decimal = require("decimal.js");
+import Decimal from "decimal.js";
 
-exports.parseDecimalImpl = Left => Right => s => {
+export const parseDecimalImpl = Left => Right => s => {
   try {
     return Right(new Decimal(s));
   } catch (e) {
@@ -8,28 +8,28 @@ exports.parseDecimalImpl = Left => Right => s => {
   }
 };
 
-exports.parseDecimalUnsafe = s => new Decimal(s);
+export const parseDecimalUnsafe = s => new Decimal(s);
 
-exports.toString = d => d.toString();
+export const toString = d => d.toString();
 
-exports.toNumber = d => d.toNumber();
+export const toNumber = d => d.toNumber();
 
-exports.greaterThan = d => e => d.greaterThan(e);
+export const greaterThan = d => e => d.greaterThan(e);
 
-exports.equals = d => e => d.equals(e);
+export const equals = d => e => d.equals(e);
 
-exports.plus = d => e => d.plus(e);
+export const plus = d => e => d.plus(e);
 
-exports.minus = d => e => d.minus(e);
+export const minus = d => e => d.minus(e);
 
-exports.times = d => e => d.times(e);
+export const times = d => e => d.times(e);
 
-exports.dividedBy = d => e => d.dividedBy(e);
+export const dividedBy = d => e => d.dividedBy(e);
 
-exports.floor = d => d.floor();
+export const floor = d => d.floor();
 
-exports.pow = d => e => d.pow(e);
+export const pow = d => e => d.pow(e);
 
-exports.mod = d => e => d.mod(e);
+export const mod = d => e => d.mod(e);
 
-exports.toDecimalPlaces = n => d => d.toDecimalPlaces(n);
+export const toDecimalPlaces = n => d => d.toDecimalPlaces(n);

@@ -12,12 +12,12 @@ import Expression (prettyValue)
 import Interpreter (Interpreter, eval, runInterpreter)
 import React.Basic (JSX)
 import React.Basic.DOM as DOM
-import Text.Parsing.Parser (parseErrorMessage, runParser)
+import Parsing (parseErrorMessage, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespaceAndComments)
 import Tokenizer as Tokenizer
 import Unsafe.Coerce (unsafeCoerce)
-import Utils (undefined, undefinedLog)
+import Utils (undefined_, undefinedLog)
 
 type EditorResult
   = { highlights :: Array (Array JSX)
@@ -62,7 +62,7 @@ run inputLines =
     evalLine line
       | Maybe.isJust $ findUnknown line = case findUnknown line of
         Just tk -> pure $ ErrorResult $ "Did not understand \"" <> show tk <> "\""
-        _ -> undefined
+        _ -> undefined_
       | otherwise = case runParser line (tokenExprParser <* eof) of
         Left err -> pure $ ErrorResult $ parseErrorMessage err
         Right expr -> SuccessResult <$> (alwaysSucceed $ (prettyValue) <$> eval expr)

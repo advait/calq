@@ -7,7 +7,7 @@ import Effect.Aff (Aff)
 import Effect.Exception (Error, error)
 import Test.QuickCheck (class Arbitrary, Result(..), (===))
 import Test.Spec.QuickCheck (quickCheck)
-import Text.Parsing.Parser (Parser, runParser)
+import Parsing (Parser, runParser)
 
 -- | Runs the given parser or fails the test.
 runParserOrFail ::

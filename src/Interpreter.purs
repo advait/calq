@@ -22,7 +22,7 @@ import Decimal as Decimal
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Expression (Expr(..), Value, ConcreteUnit, singletonUnit)
-import Text.Parsing.Parser (runParser)
+import Parsing (runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType, removeWhitespaceAndComments)
 import Tokenizer as Tokenizer

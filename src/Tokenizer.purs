@@ -10,10 +10,10 @@ import Data.Maybe (Maybe(..))
 import Data.String (CodePoint, codePointFromChar, fromCodePointArray, joinWith, length)
 import Data.String.CodePoints as CodePoints
 import Expression (infixNames)
-import Text.Parsing.Parser (ParseError, Parser, fail, runParser)
-import Text.Parsing.Parser as Parser
-import Text.Parsing.Parser.Combinators (choice, try)
-import Text.Parsing.Parser.String (satisfy, satisfyCodePoint, string)
+import Parsing (ParseError, Parser, fail, runParser)
+import Parsing as Parser
+import Parsing.Combinators (choice, try)
+import Parsing.String (satisfy, satisfyCodePoint, string)
 
 -- | First we parse the input into Tokens to make it easier for subsequent expression parsing.
 -- | The tokenizer allows us to more easily handle whitespace subtleties (e.g. "4 m" == "4*m").

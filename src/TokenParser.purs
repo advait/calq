@@ -1,45 +1,51 @@
-module TokenParser where
+module TokenParser
+  ( eof
+  , matchToken
+  , nameParser
+  , returnP
+  , tk
+  , tokenExprParser
+  ) where
 
 import Prelude
 import Control.Alt ((<|>))
-import Control.Monad.State (gets, put)
 import Data.Array as Array
-import Decimal as Decimal
-import Decimal (parseDecimalUnsafe)
 import Data.Maybe (Maybe(..), optional)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
+import Decimal (parseDecimalUnsafe)
+import Decimal as Decimal
 import Expression (Expr(..))
-import Text.Parsing.Parser (ParseState(..), Parser, ParserT, fail)
-import Text.Parsing.Parser.Combinators (choice, try)
-import Text.Parsing.Parser.Expr (Assoc(..), Operator(..), buildExprParser)
+import Parsing (ParseState(..), Parser, ParserT, Position, fail, getParserT, stateParserT)
+import Parsing.Combinators (choice, try)
+import Parsing.Expr (Assoc(..), Operator(..), buildExprParser)
 import Tokenizer (Punctuation(..), ReservedWord(..), TokenStream, TokenType(..))
+
+-- | Manually set the given return value, stream, and position.
+returnP :: forall m. Monad m => TokenType -> TokenStream -> Position -> ParserT TokenStream m TokenType
+returnP tok stream pos = stateParserT (\_ -> Tuple tok $ ParseState stream pos true)
 
 tk :: forall m. Monad m => TokenType -> ParserT TokenStream m TokenType
 tk token = do
-  Tuple input pos <- gets \(ParseState i pos _) -> Tuple i pos
+  ParseState input pos _ <- getParserT
   case Array.uncons input of
     Just { head, tail }
-      | head == token -> do
-        put $ ParseState tail pos true
-        pure token
+      | head == token -> returnP token tail pos
       | otherwise -> fail $ "Expected '" <> show token <> "' but instead got '" <> show head <> "'"
     Nothing -> fail "Unexpected end"
 
 matchToken :: forall m. Monad m => (TokenType -> Boolean) -> ParserT TokenStream m TokenType
 matchToken predicate = do
-  Tuple input pos <- gets \(ParseState i pos _) -> Tuple i pos
+  ParseState input pos _ <- getParserT
   case Array.uncons input of
     Just { head, tail }
-      | predicate head -> do
-        put $ ParseState tail pos true
-        pure head
+      | predicate head -> returnP head tail pos
       | otherwise -> fail $ "Did not expect \"" <> show head <> "\""
     Nothing -> fail "Unexpected end"
 
 eof :: forall m. Monad m => ParserT TokenStream m Unit
 eof = do
-  input <- gets \(ParseState i _ _) -> i
+  ParseState input _ _ <- getParserT
   case Array.uncons input of
     Just _ -> fail $ "Expected end but got: " <> show input
     Nothing -> pure unit

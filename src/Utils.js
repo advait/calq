@@ -1,16 +1,17 @@
-"use strict";
-
-import * as fs from "fs";
+import definitions from "@src/Definitions.calq?raw";
+import interpreterTest from "@test/InterpreterTest.calq?raw";
 
 export const debugLog = function (a) {
   console.log(a);
   return a;
-}
+};
 
 export const undefined_ = undefined;
 
-export const undefinedLog = message => { throw new Error(message) };
+export const undefinedLog = (message) => {
+  throw new Error(message);
+};
 
-export const definitionsFile = fs.readFileSync("src/Definitions.calq", "utf-8");
+export const definitionsFile = definitions;
 
-export const interpreterTestFile = fs.readFileSync("test/InterpreterTest.calq", "utf-8");
+export const interpreterTestFile = interpreterTest;

@@ -1,7 +1,3 @@
-{-
-Welcome to a Spago project!
-You can edit this file as you like.
--}
 { name = "calq"
 , dependencies =
   [ "aff"
@@ -21,7 +17,6 @@ You can edit this file as you like.
   , "parsing"
   , "partial"
   , "prelude"
-  , "psci-support"
   , "quickcheck"
   , "react-basic"
   , "react-basic-dom"

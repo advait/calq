@@ -21,6 +21,7 @@ export default defineConfig({
     alias: {
       "@src": resolve(__dirname, "./src"),
       "@test": resolve(__dirname, "./test"),
+      "@assets": resolve(__dirname, "./assets"),
     },
   },
   root: "./dev",

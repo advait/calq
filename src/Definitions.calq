@@ -66,6 +66,9 @@ unit  inch   = (1/12) ft
 alias inches = inch
 alias "      = inch
 
+unit  mil    = 0.001 inch
+alias mils   = mil
+
 unit  yard  = 3 ft
 alias yards = yard
 alias yd    = yard

@@ -43,11 +43,11 @@ instance euclideanRingDecimal :: EuclideanRing Decimal where
   div = dividedBy
   mod = mod
 
-foreign import parseDecimalImpl ::
-  (Error -> Either Error Decimal) ->
-  (Decimal -> Either Error Decimal) ->
-  String ->
-  (Either Error Decimal)
+foreign import parseDecimalImpl
+  :: (Error -> Either Error Decimal)
+  -> (Decimal -> Either Error Decimal)
+  -> String
+  -> (Either Error Decimal)
 
 parseDecimal :: String -> Either Error Decimal
 parseDecimal = parseDecimalImpl Left Right

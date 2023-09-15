@@ -12,6 +12,12 @@
     "build:spago": "spago build",
     "serve": "serve dist -l 8080",
     "clean": "rm -rf output dist",
+    "lint:purs": "purs-tidy format-in-place 'engine/**/*.purs'",
+    "lint:ts": "eslint frontend",
+    "lint": "yarn run lint:purs && yarn run lint:ts",
+    "lint:purs:ci": "purs-tidy check 'engine/**/*.purs' && purty --check 'engine/**/*.purs'",
+    "lint:ci": "yarn run lint:purs:ci && yarn run lint:ts",
+    "ci": "yarn run build && yarn run test && yarn run lint:ci",
     "gh-pages": "yarn run clean && yarn run build && echo 'calq.app' > dist/CNAME && gh-pages -d dist/"
   },
   "dependencies": {
@@ -26,15 +32,20 @@
   },
   "devDependencies": {
     "@originjs/vite-plugin-commonjs": "^1.0.3",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
     "@vitejs/plugin-react": "^4.0.4",
+    "eslint": "^8.49.0",
     "gh-pages": "^3.1.0",
     "process": "^0.11.10",
     "purescript": "^0.15.6",
     "purescript-psa": "^0.8.2",
+    "purs-tidy": "^0.10.0",
     "purty": "^7.0.0",
     "sass": "^1.30.0",
     "serve": "^14.2.1",
     "spago": "0.20.9",
+    "typescript": "^5.2.2",
     "vite": "^4.4.9",
     "vite-plugin-ejs": "^1.6.4"
   }

@@ -49,12 +49,10 @@ showWrapped (Name n) = n
 showWrapped e = "(" <> show e <> ")"
 
 -- | Represents a concrete unit like "m" (meters).
-type ConcreteUnit
-  = String
+type ConcreteUnit = String
 
 -- | Our interpreter evaluates expressions into these values.
-type Value
-  = { scalar :: Decimal, units :: Exponentials ConcreteUnit }
+type Value = { scalar :: Decimal, units :: Exponentials ConcreteUnit }
 
 scalar1 :: Value
 scalar1 = { scalar: one, units: mempty }
@@ -104,10 +102,10 @@ genInfix :: Int -> Gen Expr
 genInfix maxDepth
   | maxDepth <= 0 = genConcrete
   | otherwise = do
-    name <- genSelect $ [ "*" ] <> infixNames
-    p1 <- genExpr (maxDepth - 1)
-    p2 <- genExpr (maxDepth - 1)
-    pure $ Fn2 { name, p1, p2 }
+      name <- genSelect $ [ "*" ] <> infixNames
+      p1 <- genExpr (maxDepth - 1)
+      p2 <- genExpr (maxDepth - 1)
+      pure $ Fn2 { name, p1, p2 }
 
 -- | Because expressions are recursive data structures (4 + (3 * 5)), we need to limit their
 -- | depth while generating them otherwise they can be infinitely large.

@@ -33,13 +33,12 @@ import Utils as Utils
 -- | It's possible that evaluations fail (e.g. unknown variables, fractional exponents, bad
 -- | unit casting, etc.). Failures are indicated by (Either String).
 -- | The Interpreter keeps track of variable bindings with a (StateT InterpreterState).
-type Interpreter a
-  = StateT InterpreterState (Either String) a
+type Interpreter a = StateT InterpreterState (Either String) a
 
-type InterpreterState
-  = { bindings :: Map String Binding
-    , prefixes :: List (Tuple String Value)
-    }
+type InterpreterState =
+  { bindings :: Map String Binding
+  , prefixes :: List (Tuple String Value)
+  }
 
 -- | Names map to Bindings which come in different forms.
 data Binding

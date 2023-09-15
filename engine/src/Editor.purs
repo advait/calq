@@ -10,8 +10,6 @@ import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Expression (prettyValue)
 import Interpreter (Interpreter, eval, runInterpreter)
-import React.Basic (JSX)
-import React.Basic.DOM as DOM
 import Parsing (parseErrorMessage, runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType(..), removeWhitespaceAndComments)
@@ -20,7 +18,7 @@ import Unsafe.Coerce (unsafeCoerce)
 import Utils (undefined_, undefinedLog)
 
 type EditorResult =
-  { highlights :: Array (Array JSX)
+  { highlights :: Array (Array Highlight)
   , results :: Array Answer
   }
 
@@ -86,31 +84,33 @@ run inputLines =
           Right r -> r
     }
 
-highlightTokens :: Array TokenType -> Array JSX
+type Highlight =
+  { highlightType :: String
+  , text :: String
+  }
+
+highlightTokens :: Array TokenType -> Array Highlight
 highlightTokens input =
   let
-    span :: String -> String -> JSX
-    span className text = DOM.span { className, children: [ DOM.text text ] }
-
-    convertToken :: TokenType -> JSX
+    convertToken :: TokenType -> Highlight
     convertToken (NewlineTk) = undefinedLog "Cannot render newlines"
 
-    convertToken (WhitespaceTk w) = span "whitespace" w
+    convertToken (WhitespaceTk w) = { highlightType: "whitespace", text: w }
 
-    convertToken p@(PunctuationTk _) = span "punctuation" (show p)
+    convertToken p@(PunctuationTk _) = { highlightType: "punctuation", text: show p }
 
-    convertToken (BaseLiteralTk n) = span "number" n
+    convertToken (BaseLiteralTk n) = { highlightType: "number", text: n }
 
-    convertToken (NumberTk n) = span "number" n
+    convertToken (NumberTk n) = { highlightType: "number", text: n }
 
-    convertToken (InfixTk i) = span "infix" i
+    convertToken (InfixTk i) = { highlightType: "infix", text: i }
 
-    convertToken w@(ReservedTk _) = span "reserved" (show w)
+    convertToken w@(ReservedTk _) = { highlightType: "reserved", text: show w }
 
-    convertToken (NameTk n) = span "name" n
+    convertToken (NameTk n) = { highlightType: "name", text: n }
 
-    convertToken (CommentTk c) = span "comment" c
+    convertToken (CommentTk c) = { highlightType: "comment", text: c }
 
-    convertToken (UnknownTk c) = span "unknown" c
+    convertToken (UnknownTk c) = { highlightType: "unknown", text: c }
   in
     convertToken <$> input

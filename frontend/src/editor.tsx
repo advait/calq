@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Snackbar from "@mui/material/Snackbar";
-import * as EditorPS from "@purs/Editor";
+import * as EditorPS from "@purs-compiled/Editor";
 
 type EditorProps = {
   value: String;

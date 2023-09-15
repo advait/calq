@@ -17,16 +17,15 @@ export default defineConfig({
   server: {
     port: 8080,
   },
+  root: "./frontend/src",
   build: {
-    outDir: "../dist",
+    outDir: "../../dist",
   },
   resolve: {
     alias: {
-      "@src": resolve(__dirname, "./src"),
-      "@test": resolve(__dirname, "./test"),
-      "@assets": resolve(__dirname, "./assets"),
-      "@purs": resolve(__dirname, "./output"),
+      "@engine": resolve(__dirname, "./engine"),
+      "@assets": resolve(__dirname, "./frontend/assets"),
+      "@purs-compiled": resolve(__dirname, "./output"),
     },
   },
-  root: "./dev",
 });

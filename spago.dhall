@@ -30,5 +30,5 @@
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "engine/src/**/*.purs", "engine/test/**/*.purs" ]
 }

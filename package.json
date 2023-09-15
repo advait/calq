@@ -5,7 +5,7 @@
   "author": "Advait Shinde <advait.shinde@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "test": "spago test",
+    "test": "node --loader './test/custom-loader.mjs' test/test-runner.mjs",
     "start": "vite",
     "start:spago": "spago build --watch",
     "build-prod": "rm -rf output dist && yarn run build && ./node_modules/.bin/parcel build dev/index.html",

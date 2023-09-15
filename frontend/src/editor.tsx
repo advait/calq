@@ -1,5 +1,4 @@
-import React, { useCallback, useState } from "react";
-
+import React, { useState, useRef, useEffect } from "react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import Snackbar from "@mui/material/Snackbar";
 import * as EditorPS from "@purs-compiled/Editor";
@@ -16,7 +15,11 @@ type EditorProps = {
  */
 export default function Editor(props: EditorProps) {
   const lines = props.value.split("\n");
-  const [focus, setFocus] = useState({
+  const [showCopySnack, setShowCopySnack] = useState(false);
+  const [focus, setFocus] = useState<{
+    line: number | null;
+    offset: number | null;
+  }>({
     line: lines.length - 1,
     offset: lines[lines.length - 1].length,
   });
@@ -61,13 +64,12 @@ export default function Editor(props: EditorProps) {
 
   // When either the up or down key is pressed
   const onUpDown = (i: number, up: boolean, selectionStart: number) => {
-    const targetLine = up ? i - 1 : i + 1;
-    if (targetLine < 0 || targetLine >= lines.length) {
-      return;
-    }
+    let targetLine = up ? i - 1 : i + 1;
+    targetLine = Math.max(Math.min(targetLine, lines.length - 1), 0);
+    const offset = Math.min(lines[targetLine].length, selectionStart);
     setFocus({
       line: targetLine,
-      offset: Math.min(lines[targetLine].length, selectionStart),
+      offset,
     });
   };
 
@@ -76,18 +78,25 @@ export default function Editor(props: EditorProps) {
       {lines.map((line, i) => (
         <Line
           i={i}
+          key={`key${i}`}
           onValueChanged={onValueChanged}
           line={line}
           result={results[i]}
-          key={i}
           focusOffset={focus.line === i ? focus.offset : null}
           highlight={highlights[i]}
           showHint={lines.length === 1 && lines[0].length === 0}
           onEnter={onEnter}
           onBackspace0={onBackspace0}
           onUpDown={onUpDown}
+          showCopySnack={() => setShowCopySnack(true)}
         />
       ))}
+      <Snackbar
+        open={showCopySnack}
+        onClose={() => setShowCopySnack(false)}
+        autoHideDuration={4000}
+        message="Copied to clipboard"
+      />
     </div>
   );
 }
@@ -98,22 +107,20 @@ const KEY_UP = 38;
 const KEY_DOWN = 40;
 
 function Line(props) {
-  const [showSnack, setShowSnack] = useState(false);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  let textarea = null;
-
-  const textareaRef = useCallback((node) => {
-    textarea = node;
-    if (!textarea || props.focusOffset === null) {
+  useEffect(() => {
+    const textArea = textAreaRef.current;
+    if (!textArea || props.focusOffset === null) {
       return;
     }
-    textarea.setSelectionRange(props.focusOffset, props.focusOffset);
-    textarea.focus();
-  });
+    textArea.setSelectionRange(props.focusOffset, props.focusOffset);
+    textArea.focus();
+  }, [props.focusOffset]);
 
   const onKeyDown = (e) => {
-    const selectionStart = (textarea && textarea.selectionStart) || 0;
-    const selectionEnd = (textarea && textarea.selectionEnd) || 0;
+    const selectionStart = textAreaRef.current?.selectionStart || 0;
+    const selectionEnd = textAreaRef.current?.selectionEnd || 0;
     if (e.keyCode == KEY_ENTER) {
       props.onEnter(props.i, selectionStart, selectionEnd);
       e.preventDefault();
@@ -139,10 +146,9 @@ function Line(props) {
           className="result success"
           onClick={() => {
             navigator.clipboard.writeText(props.result.success);
-            setShowSnack(true);
+            props.showCopySnack();
           }}
         >
-          {/* <KeyboardReturnIcon className="return-icon" /> */}
           <span className="return-icon">⤷</span>
           {props.result.success}
           <ContentCopyIcon className="copy-icon" />
@@ -164,23 +170,21 @@ function Line(props) {
         <textarea
           onChange={(e) => props.onValueChanged(e, props.i)}
           value={props.line}
-          ref={textareaRef}
+          ref={textAreaRef}
           onKeyDown={onKeyDown}
         />
         {!props.showHint ? null : (
           <span className="start-hint highlight">Click to begin editing</span>
         )}
         <pre ariea-hidden="true" className="highlight">
-          {props.highlight}
+          {props.highlight.map((h, i) => (
+            <span key={`key${i}`} className={h.highlightType}>
+              {h.text}
+            </span>
+          ))}
         </pre>
       </div>
       {result}
-      <Snackbar
-        open={showSnack}
-        onClose={() => setShowSnack(false)}
-        autoHideDuration={4000}
-        message="Copied to clipboard"
-      />
     </div>
   );
 }

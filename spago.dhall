@@ -18,8 +18,6 @@
   , "partial"
   , "prelude"
   , "quickcheck"
-  , "react-basic"
-  , "react-basic-dom"
   , "spec"
   , "spec-discovery"
   , "spec-quickcheck"

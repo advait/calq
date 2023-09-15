@@ -16,8 +16,7 @@ import Utils (undefinedLog)
 
 -- | Represents a collection of values that are raised to positive or negative integer exponents.
 -- | Transparently handles eliminating zero-power values.
-newtype Exponentials a
-  = Exponentials (Map a Int)
+newtype Exponentials a = Exponentials (Map a Int)
 
 derive instance newtypeExponentials :: Newtype (Exponentials a) _
 
@@ -90,7 +89,7 @@ map f e =
   Exponentials
     $ Map.fromFoldable
     $ (\(Tuple k v) -> Tuple (f k) v)
-    <$> (toArray e)
+        <$> (toArray e)
 
 -- | Wraps a single value a, denoting a^1.
 singleton :: forall a. a -> Exponentials a

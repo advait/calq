@@ -19,10 +19,10 @@ import Tokenizer as Tokenizer
 import Unsafe.Coerce (unsafeCoerce)
 import Utils (undefined_, undefinedLog)
 
-type EditorResult
-  = { highlights :: Array (Array JSX)
-    , results :: Array Answer
-    }
+type EditorResult =
+  { highlights :: Array (Array JSX)
+  , results :: Array Answer
+  }
 
 data Answer
   = EmptyLine
@@ -61,11 +61,11 @@ run inputLines =
 
     evalLine line
       | Maybe.isJust $ findUnknown line = case findUnknown line of
-        Just tk -> pure $ ErrorResult $ "Did not understand \"" <> show tk <> "\""
-        _ -> undefined_
+          Just tk -> pure $ ErrorResult $ "Did not understand \"" <> show tk <> "\""
+          _ -> undefined_
       | otherwise = case runParser line (tokenExprParser <* eof) of
-        Left err -> pure $ ErrorResult $ parseErrorMessage err
-        Right expr -> SuccessResult <$> (alwaysSucceed $ (prettyValue) <$> eval expr)
+          Left err -> pure $ ErrorResult $ parseErrorMessage err
+          Right expr -> SuccessResult <$> (alwaysSucceed $ (prettyValue) <$> eval expr)
 
     -- | Convert the answer into the JS object.
     answerToJS (EmptyLine) = unsafeCoerce $ { empty: true }

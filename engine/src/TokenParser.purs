@@ -128,7 +128,8 @@ tokenExprParser =
     exprParserBase :: Parser TokenStream Expr
     exprParserBase =
       choice $ try
-        <$> [ parenParser
+        <$>
+          [ parenParser
           , fn2Parser
           , fn1Parser
           , bindParser

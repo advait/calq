@@ -5,7 +5,7 @@ import Snackbar from "@mui/material/Snackbar";
 import * as EditorPS from "@purs-compiled/Editor";
 
 type EditorProps = {
-  value: String;
+  value: string;
   setValue: (string) => void;
 };
 

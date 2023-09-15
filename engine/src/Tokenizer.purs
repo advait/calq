@@ -65,8 +65,7 @@ data ReservedWord
 
 derive instance eqReservedWord :: Eq ReservedWord
 
-type TokenStream
-  = Array TokenType
+type TokenStream = Array TokenType
 
 tokenStreamParser :: Parser String TokenStream
 tokenStreamParser = parser
@@ -188,7 +187,8 @@ tokenStreamParser = parser
 
   parser =
     Array.many $ oneOf
-      $ [ whitespace
+      $
+        [ whitespace
         , newline
         , punctuation
         , baseLiteral

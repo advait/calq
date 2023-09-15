@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import * as qs from "qs";
 import AppBar from '@mui/material/AppBar';
 import Container from '@mui/material/Container';
@@ -96,9 +96,6 @@ const MainApp = () => {
   );
 }
 
-function main() {
-  ReactDOM.render((<MainApp />), document.getElementById('react-container'));
-}
-
-console.log('Starting app');
-main();
+const container = document.getElementById('react-container');
+const root = createRoot(container);
+root.render(<MainApp  />);

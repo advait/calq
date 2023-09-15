@@ -1,14 +1,12 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState } from "react";
 
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import KeyboardReturnIcon from '@mui/icons-material/KeyboardReturn';
-import Snackbar from '@mui/material/Snackbar';
-
-const EditorPS = require('../output/Editor');
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import Snackbar from "@mui/material/Snackbar";
+import * as EditorPS from "@purs/Editor";
 
 type EditorProps = {
-  value: String,
-  setValue: (string) => void,
+  value: String;
+  setValue: (string) => void;
 };
 
 /**
@@ -18,13 +16,16 @@ type EditorProps = {
  */
 export default function Editor(props: EditorProps) {
   const lines = props.value.split("\n");
-  const [focus, setFocus] = useState({ line: lines.length - 1, offset: lines[lines.length - 1].length })
+  const [focus, setFocus] = useState({
+    line: lines.length - 1,
+    offset: lines[lines.length - 1].length,
+  });
 
   const setLines = (l: string[]) => {
     const newValue = l.join("\n");
     localStorage.setItem("value", newValue);
     props.setValue(newValue);
-  }
+  };
 
   const { highlights, results } = EditorPS.run(lines);
 
@@ -64,7 +65,10 @@ export default function Editor(props: EditorProps) {
     if (targetLine < 0 || targetLine >= lines.length) {
       return;
     }
-    setFocus({ line: targetLine, offset: Math.min(lines[targetLine].length, selectionStart) });
+    setFocus({
+      line: targetLine,
+      offset: Math.min(lines[targetLine].length, selectionStart),
+    });
   };
 
   return (
@@ -81,7 +85,8 @@ export default function Editor(props: EditorProps) {
           showHint={lines.length === 1 && lines[0].length === 0}
           onEnter={onEnter}
           onBackspace0={onBackspace0}
-          onUpDown={onUpDown} />
+          onUpDown={onUpDown}
+        />
       ))}
     </div>
   );
@@ -97,7 +102,7 @@ function Line(props) {
 
   let textarea = null;
 
-  const textareaRef = useCallback(node => {
+  const textareaRef = useCallback((node) => {
     textarea = node;
     if (!textarea || props.focusOffset === null) {
       return;
@@ -112,7 +117,11 @@ function Line(props) {
     if (e.keyCode == KEY_ENTER) {
       props.onEnter(props.i, selectionStart, selectionEnd);
       e.preventDefault();
-    } else if (e.keyCode == KEY_BACKSPACE && selectionStart == 0 && selectionEnd == 0) {
+    } else if (
+      e.keyCode == KEY_BACKSPACE &&
+      selectionStart == 0 &&
+      selectionEnd == 0
+    ) {
       props.onBackspace0(props.i);
       e.preventDefault();
     } else if (e.keyCode == KEY_UP || e.keyCode == KEY_DOWN) {
@@ -126,21 +135,23 @@ function Line(props) {
       return;
     } else if (props.result.success !== undefined) {
       return (
-        <div className="result success"
+        <div
+          className="result success"
           onClick={() => {
             navigator.clipboard.writeText(props.result.success);
             setShowSnack(true);
-          }}>
+          }}
+        >
           {/* <KeyboardReturnIcon className="return-icon" /> */}
-          <span className="return-icon" >⤷</span>
+          <span className="return-icon">⤷</span>
           {props.result.success}
           <ContentCopyIcon className="copy-icon" />
-        </div >
+        </div>
       );
     } else if (props.result.error !== undefined) {
       return (
         <div className="result error">
-          <span className="return-icon" >⤷</span>
+          <span className="return-icon">⤷</span>
           {props.result.error}
         </div>
       );
@@ -151,15 +162,25 @@ function Line(props) {
     <div className="editor-line">
       <div className="editable">
         <textarea
-          onChange={e => props.onValueChanged(e, props.i)}
+          onChange={(e) => props.onValueChanged(e, props.i)}
           value={props.line}
           ref={textareaRef}
-          onKeyDown={onKeyDown} />
-        {!props.showHint ? null : <span className="start-hint highlight">Click to begin editing</span>}
-        <pre ariea-hidden="true" className="highlight">{props.highlight}</pre>
+          onKeyDown={onKeyDown}
+        />
+        {!props.showHint ? null : (
+          <span className="start-hint highlight">Click to begin editing</span>
+        )}
+        <pre ariea-hidden="true" className="highlight">
+          {props.highlight}
+        </pre>
       </div>
       {result}
-      <Snackbar open={showSnack} onClose={() => setShowSnack(false)} autoHideDuration={4000} message="Copied to clipboard" />
+      <Snackbar
+        open={showSnack}
+        onClose={() => setShowSnack(false)}
+        autoHideDuration={4000}
+        message="Copied to clipboard"
+      />
     </div>
   );
 }

@@ -25,6 +25,7 @@ export default defineConfig({
       "@src": resolve(__dirname, "./src"),
       "@test": resolve(__dirname, "./test"),
       "@assets": resolve(__dirname, "./assets"),
+      "@purs": resolve(__dirname, "./output"),
     },
   },
   root: "./dev",

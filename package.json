@@ -13,9 +13,9 @@
     "serve": "serve dist -l 8080",
     "clean": "rm -rf output dist",
     "lint:purs": "purs-tidy format-in-place 'engine/**/*.purs'",
+    "lint:purs:ci": "purs-tidy check 'engine/**/*.purs'",
     "lint:ts": "eslint frontend",
     "lint": "yarn run lint:purs && yarn run lint:ts",
-    "lint:purs:ci": "purs-tidy check 'engine/**/*.purs' && purty --check 'engine/**/*.purs'",
     "lint:ci": "yarn run lint:purs:ci && yarn run lint:ts",
     "ci": "yarn run build && yarn run test && yarn run lint:ci",
     "gh-pages": "yarn run clean && yarn run build && echo 'calq.app' > dist/CNAME && gh-pages -d dist/"

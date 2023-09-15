@@ -1126,11 +1126,6 @@ aproba@^1.1.1:
   resolved "https://registry.yarnpkg.com/aproba/-/aproba-1.2.0.tgz#6802e6264efd18c790a1b0d517f0f2627bf2c94a"
   integrity sha512-Y9J6ZjXtoYh8RnXVCMOU/ttDmk1aBjunq9vO0ta5x85WDQiQfUF9sIPBITdbiiIVcBo03Hi3jMxigBtsddlXRw==
 
-arch@^2.1.1:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/arch/-/arch-2.2.0.tgz#1bc47818f305764f23ab3306b0bfc086c5a29d11"
-  integrity sha512-Of/R0wqp83cgHozfIYLbBMnej79U/SVGOOyuB3VVFv1NRM/PSFMK12x9KVtiYzJqmnU5WR2qp0Z5rHb7sWGnFQ==
-
 array-union@^1.0.1:
   version "1.0.2"
   resolved "https://registry.npmjs.org/array-union/-/array-union-1.0.2.tgz"
@@ -2917,12 +2912,11 @@ pumpify@^1.3.3:
     inherits "^2.0.3"
     pump "^2.0.0"
 
-purescript-installer@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/purescript-installer/-/purescript-installer-0.3.1.tgz#27f465929b059c2906b90afd948dfcc9e2de10c4"
-  integrity sha512-pMQd7O5s6THqvVnSJ+CiC3E4ZkzzfOB2r+I8fLaDtqiNXFzRj806c1XzNJNIsn91mR5/gJDA5lgqxFjO9dZafg==
+purescript-installer@^0.3.5:
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/purescript-installer/-/purescript-installer-0.3.5.tgz#df0cdae97832284a48b5386249931decc5662aeb"
+  integrity sha512-w04BBvW4BSQlspLsZ9Bs5vtUBZqvC4bC+FizC5GUp2/rpmYvXJ0CTf79Q3MKo2A8p1ZjqbhCI+SqdTQ30UZUIQ==
   dependencies:
-    arch "^2.1.1"
     byline "^5.0.0"
     cacache "^11.3.2"
     chalk "^2.4.2"
@@ -2947,12 +2941,12 @@ purescript-psa@^0.8.2:
   resolved "https://registry.yarnpkg.com/purescript-psa/-/purescript-psa-0.8.2.tgz#ee20c40f02cd0c5ed6dd3dd93ef02d9c466f17bc"
   integrity sha512-4Olf0aQQrNCfcDLXQI3gJgINEQ+3U+4QPLmQ2LHX2L/YOXSwM7fOGIUs/wMm/FQnwERUyQmHKQTJKB4LIjE2fg==
 
-purescript@^0.15.6:
-  version "0.15.6"
-  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.15.6.tgz#a2c056dc8dec8a171c9080bae94b2a15efb68ca5"
-  integrity sha512-JRNSIvps/HQvGjJLMasCT8H871BqhJHnkuEup5x7MSaNgVEhuvQIpUz5K9TrVSdbTl7PZJScMqrVi3PqBR3p6Q==
+purescript@^0.15.10:
+  version "0.15.10"
+  resolved "https://registry.yarnpkg.com/purescript/-/purescript-0.15.10.tgz#e4bcd182b95ef2c7ce9f634ce242a8dc8f8eba06"
+  integrity sha512-USvNla7eWMsIcbcQJ6jNiHduiXzKT+d3Cc9hjTffZ/9fHHZaMUf+k4TXbh+/OtecDEfPu736Ky51VX4bRj4iiA==
   dependencies:
-    purescript-installer "^0.3.1"
+    purescript-installer "^0.3.5"
 
 purty@^7.0.0:
   version "7.0.0"

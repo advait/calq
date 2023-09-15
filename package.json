@@ -5,11 +5,13 @@
   "author": "Advait Shinde <advait.shinde@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "dev": "vite",
+    "dev:spago": "spago build --watch",
     "test": "node --loader './test/custom-loader.mjs' test/test-runner.mjs",
-    "start": "vite",
-    "start:spago": "spago build --watch",
-    "build-prod": "rm -rf output dist && yarn run build && ./node_modules/.bin/parcel build dev/index.html",
-    "gh-pages": "yarn run build-prod && echo 'calq.app' > dist/CNAME && ./node_modules/.bin/gh-pages -d dist/"
+    "build": "yarn run build:spago && vite build",
+    "build:spago": "spago build",
+    "clean": "rm -rf output dist",
+    "gh-pages": "yarn run clean && yarn run build && echo 'calq.app' > dist/CNAME && gh-pages -d dist/"
   },
   "dependencies": {
     "@emotion/react": "^11.5.0",

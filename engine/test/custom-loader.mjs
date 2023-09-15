@@ -1,25 +1,23 @@
 /**
- * Custom node module loader for Spago that handles ESM raw string modules.
+ * Custom node module loader for Spago that handles ESM raw string modules. Note that this
+ * isn't required for production as vite understands these import statements natively.
  */
 import { readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath, URL } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(__dirname, "../");
+const projectRoot = path.resolve(__dirname, "../../");
 
 /**
- * Resolves custom specifiers, e.g., "@src", "@test", and "?raw".
+ * Resolves custom specifiers, e.g., "@engine" and "?raw".
  */
 export function resolve(specifier, context, nextResolve) {
   let resolvedPath = specifier;
   let isCustomPath = false;
 
-  if (specifier.startsWith("@src")) {
-    resolvedPath = path.join(projectRoot, "src", specifier.substring(5));
-    isCustomPath = true;
-  } else if (specifier.startsWith("@test")) {
-    resolvedPath = path.join(projectRoot, "test", specifier.substring(6));
+  if (specifier.startsWith("@engine")) {
+    resolvedPath = path.join(projectRoot, "./engine", specifier.substring(8));
     isCustomPath = true;
   }
 

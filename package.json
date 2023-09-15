@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "vite",
     "dev:spago": "spago build --watch",
-    "test": "node --loader './test/custom-loader.mjs' test/test-runner.mjs",
+    "test": "yarn build:spago && node --loader './engine/test/custom-loader.mjs' ./engine/test/test-runner.mjs",
     "build": "yarn run build:spago && vite build",
     "build:spago": "spago build",
+    "serve": "serve dist -l 8080",
     "clean": "rm -rf output dist",
     "gh-pages": "yarn run clean && yarn run build && echo 'calq.app' > dist/CNAME && gh-pages -d dist/"
   },
@@ -32,6 +33,7 @@
     "purescript-psa": "^0.8.2",
     "purty": "^7.0.0",
     "sass": "^1.30.0",
+    "serve": "^14.2.1",
     "spago": "0.20.9",
     "vite": "^4.4.9",
     "vite-plugin-ejs": "^1.6.4"

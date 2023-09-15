@@ -24,8 +24,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@engine": resolve(__dirname, "./engine"),
-      "@assets": resolve(__dirname, "./frontend/assets"),
       "@purs-compiled": resolve(__dirname, "./output"),
+      "@assets": resolve(__dirname, "./frontend/assets"),
     },
   },
 });

@@ -132,39 +132,57 @@ function Line(props) {
   };
 
   const result = (() => {
-    if (props.result.empty) {
-      return;
-    } else if (props.result.success !== undefined) {
-      return (
-        <Box
-          className="result success"
-          onClick={() => {
-            navigator.clipboard.writeText(props.result.success);
-            toast({
-              title: "Link copied to clipboard",
-              status: "success",
-              duration: 4000,
-              isClosable: true,
-            });
-          }}
-        >
-          <span className="return-icon">⤷</span>
-          {props.result.success}
-          <CopyIcon className="copy-icon" />
-        </Box>
-      );
-    } else if (props.result.error !== undefined) {
-      return (
-        <Box className="result error">
-          <span className="return-icon">⤷</span>
-          {props.result.error}
-        </Box>
-      );
+    if (
+      props.result.empty ||
+      (props.result.success !== undefined && props.result.error !== undefined)
+    ) {
+      return null;
     }
+    return (
+      <Box
+        className="mono"
+        cursor="pointer"
+        sx={{
+          "& .copy-icon": {
+            opacity: 0,
+            visibility: "hidden",
+            transition: "visibility 0s, opacity 0s 0.4s",
+          },
+          "&:hover .copy-icon": {
+            opacity: 1,
+            visibility: "visible",
+            animation: "fadein 0.4s ease-in-out 0.3s forwards",
+          },
+        }}
+        onClick={() => {
+          navigator.clipboard.writeText(props.result.success);
+          toast({
+            title: "Copied to clipboard",
+            duration: 4000,
+            isClosable: true,
+          });
+        }}
+      >
+        <Text as="span" ml={2} mr={2}>
+          ⤷
+        </Text>
+        {props.result.success || props.result.error}
+        <CopyIcon ml={2} className="copy-icon" />
+      </Box>
+    );
   })();
 
   return (
-    <Box className="editor-line" lineHeight={1} mb={4}>
+    <Box
+      lineHeight={1}
+      p={2}
+      bgColor="row.bg.normal"
+      sx={{
+        "&:focus-within": {
+          bgColor: "row.bg.selected",
+        },
+      }}
+    >
       <Box
         position="relative"
         lineHeight={1}
@@ -185,32 +203,29 @@ function Line(props) {
           width="100%"
           color="transparent"
           border="none"
-          fontFamily="mono"
-          fontWeight="bold"
           overflow="hidden"
           resize="none"
           outline="none"
           boxShadow="none"
-          lineHeight="inherit"
+          className="mono"
+          fontSize="lg"
           sx={{
             "caret-color": "black",
-            "&:focus,&:focus-visible": {
+            "&:focus, &:focus-visible": {
               border: "none",
               outline: "none",
               boxShadow: "none",
             },
           }}
         />
-        {!props.showHint ? null : (
-          <Text className="start-hint highlight">Click to begin editing</Text>
-        )}
+        {props.showHint && <Text className="mono">Click to begin editing</Text>}
         <pre ariea-hidden="true">
           {props.highlight.map((h, i) => (
             <Highlight {...h} key={`key${i}`} />
           ))}
         </pre>
       </Box>
-      <Text fontFamily="mono">{result}</Text>
+      {result}
     </Box>
   );
 }
@@ -238,8 +253,7 @@ const Highlight: React.FC<{ text: string; highlightType: string }> = ({
       padding={0}
       top={0}
       left={0}
-      fontFamily="mono"
-      fontWeight="regular"
+      className="mono"
     >
       {text}
     </Text>

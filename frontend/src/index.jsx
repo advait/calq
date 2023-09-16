@@ -14,29 +14,42 @@ const theme = extendTheme({
   styles: {
     global: {
       body: {
-        fontSize: "lg"
+        bgColor: "gray.100"
+      },
+      ".mono": {
+        fontFamily: "mono",
+        fontWeight: "normal",
+        fontSize: "lg",
+        height: "1lh",
+      },
+    }
+  },
+  colors: {
+    row: {
+      bg: {
+        normal: "var(--chakra-colors-gray-200)",
+        selected: "var(--chakra-colors-gray-300)",
       }
     }
   }
 });
 
 const MainAppBar = (props) => (
-  <Container bg="gray.100" pt={2} pb={2} width="lg">
+  <Container bg="gray.100" pt={2} pb={2}>
     <HStack >
-      <IconButton
-        variant="outlined"
+      <Button
         aria-label="clear"
-        icon={<EditIcon />}
+        leftIcon={<EditIcon />}
         onClick={props.onClear}
         mr={1}
       >
         Clear
-      </IconButton>
-      <IconButton
-        icon={<ExternalLinkIcon />}
+      </Button>
+      <Button
+        leftIcon={<ExternalLinkIcon />}
         onClick={props.onShare}>
         Share
-      </IconButton>
+      </Button>
       <Spacer />
       <Text variant="h6" mr={1}>
         calq
@@ -99,7 +112,10 @@ const MainApp = () => {
     <div className="primary">
       <ChakraProvider theme={theme}>
         <MainAppBar onClear={onClear} onShare={onShare} />
-        <Editor value={value} setValue={setValue} />
+        <Container>
+          <Editor value={value} setValue={setValue} />
+
+        </Container>
       </ChakraProvider>
     </div>
   );

@@ -28,6 +28,7 @@ const theme = extendTheme({
     row: {
       bg: {
         normal: "var(--chakra-colors-gray-200)",
+        hover: "var(--chakra-colors-gray-300)",
         selected: "var(--chakra-colors-gray-300)",
       }
     }

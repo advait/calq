@@ -178,6 +178,9 @@ function Line(props) {
       p={2}
       bgColor="row.bg.normal"
       sx={{
+        "&:hover": {
+          bgColor: "row.bg.hover",
+        },
         "&:focus-within": {
           bgColor: "row.bg.selected",
         },

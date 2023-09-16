@@ -215,10 +215,17 @@ function Line(props) {
               border: "none",
               outline: "none",
               boxShadow: "none",
+              "+ .hint": {
+                visibility: "hidden",
+              },
             },
           }}
         />
-        {props.showHint && <Text className="mono">Click to begin editing</Text>}
+        {props.showHint && (
+          <Text className="mono hint" color="gray.400">
+            Click to begin editing
+          </Text>
+        )}
         <pre ariea-hidden="true">
           {props.highlight.map((h, i) => (
             <Highlight {...h} key={`key${i}`} />

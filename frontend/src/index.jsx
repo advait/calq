@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Box, Button, ChakraProvider, Container, extendTheme, HStack, IconButton, Link, useToast, Spacer, Text } from '@chakra-ui/react'
-import { EditIcon, ExternalLinkIcon } from '@chakra-ui/icons';
+import { Box, Button, ChakraProvider, Container, extendTheme, Heading, HStack, IconButton, Link, useToast, Spacer, Text } from '@chakra-ui/react'
+import { LiaGithub, LiaShareSquare, LiaTrashAltSolid } from "react-icons/lia";
 import * as qs from "qs";
 
 import Editor from "./editor";
@@ -39,25 +39,24 @@ const MainAppBar = (props) => (
     <HStack >
       <Button
         aria-label="clear"
-        leftIcon={<EditIcon />}
+        leftIcon={<LiaTrashAltSolid />}
         onClick={props.onClear}
         mr={1}
       >
         Clear
       </Button>
       <Button
-        leftIcon={<ExternalLinkIcon />}
+        leftIcon={<LiaShareSquare />}
         onClick={props.onShare}>
         Share
       </Button>
       <Spacer />
-      <Text variant="h6" mr={1}>
+      <Heading as="h1" size="l" mr={1}>
         calq
-      </Text>
+      </Heading>
       <Link href="https://github.com/advait/calq" target="_blank">
         <IconButton aria-label="github">
-          {/* <GithubIcon color="primary" /> */}
-          GH
+          <LiaGithub size="2em"/>
         </IconButton>
       </Link>
     </HStack>

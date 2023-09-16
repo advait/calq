@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import Snackbar from "@mui/material/Snackbar";
+import { useToast, Box, Textarea, Text } from "@chakra-ui/react";
+import { CopyIcon } from "@chakra-ui/icons";
+import { css } from "@emotion/css";
 import * as EditorPS from "@purs-compiled/Editor";
 
 type EditorProps = {
@@ -15,7 +16,6 @@ type EditorProps = {
  */
 export default function Editor(props: EditorProps) {
   const lines = props.value.split("\n");
-  const [showCopySnack, setShowCopySnack] = useState(false);
   const [focus, setFocus] = useState<{
     line: number | null;
     offset: number | null;
@@ -88,15 +88,8 @@ export default function Editor(props: EditorProps) {
           onEnter={onEnter}
           onBackspace0={onBackspace0}
           onUpDown={onUpDown}
-          showCopySnack={() => setShowCopySnack(true)}
         />
       ))}
-      <Snackbar
-        open={showCopySnack}
-        onClose={() => setShowCopySnack(false)}
-        autoHideDuration={4000}
-        message="Copied to clipboard"
-      />
     </div>
   );
 }
@@ -108,6 +101,7 @@ const KEY_DOWN = 40;
 
 function Line(props) {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const toast = useToast();
 
   useEffect(() => {
     const textArea = textAreaRef.current;
@@ -142,49 +136,112 @@ function Line(props) {
       return;
     } else if (props.result.success !== undefined) {
       return (
-        <div
+        <Box
           className="result success"
           onClick={() => {
             navigator.clipboard.writeText(props.result.success);
-            props.showCopySnack();
+            toast({
+              title: "Link copied to clipboard",
+              status: "success",
+              duration: 4000,
+              isClosable: true,
+            });
           }}
         >
           <span className="return-icon">⤷</span>
           {props.result.success}
-          <ContentCopyIcon className="copy-icon" />
-        </div>
+          <CopyIcon className="copy-icon" />
+        </Box>
       );
     } else if (props.result.error !== undefined) {
       return (
-        <div className="result error">
+        <Box className="result error">
           <span className="return-icon">⤷</span>
           {props.result.error}
-        </div>
+        </Box>
       );
     }
   })();
 
   return (
-    <div className="editor-line">
-      <div className="editable">
-        <textarea
+    <Box className="editor-line" lineHeight={1} mb={4}>
+      <Box
+        position="relative"
+        lineHeight={1}
+        overflow="hidden"
+        height="1lh"
+        mb={2}
+      >
+        <Textarea
           onChange={(e) => props.onValueChanged(e, props.i)}
           value={props.line}
           ref={textAreaRef}
           onKeyDown={onKeyDown}
+          rows={1}
+          position="absolute"
+          top={0}
+          left={0}
+          padding={0}
+          width="100%"
+          color="transparent"
+          border="none"
+          fontFamily="mono"
+          fontWeight="bold"
+          overflow="hidden"
+          resize="none"
+          outline="none"
+          boxShadow="none"
+          lineHeight="inherit"
+          sx={{
+            "caret-color": "black",
+            "&:focus,&:focus-visible": {
+              border: "none",
+              outline: "none",
+              boxShadow: "none",
+            },
+          }}
         />
         {!props.showHint ? null : (
-          <span className="start-hint highlight">Click to begin editing</span>
+          <Text className="start-hint highlight">Click to begin editing</Text>
         )}
-        <pre ariea-hidden="true" className="highlight">
+        <pre ariea-hidden="true">
           {props.highlight.map((h, i) => (
-            <span key={`key${i}`} className={h.highlightType}>
-              {h.text}
-            </span>
+            <Highlight {...h} key={`key${i}`} />
           ))}
         </pre>
-      </div>
-      {result}
-    </div>
+      </Box>
+      <Text fontFamily="mono">{result}</Text>
+    </Box>
   );
 }
+
+const Highlight: React.FC<{ text: string; highlightType: string }> = ({
+  text,
+  highlightType,
+}) => {
+  const colorMap = {
+    comment: "green",
+    number: "text",
+    name: "blue",
+    punctuation: "gray.800",
+    reserved: "yellow.800",
+    infix: "aqua.800",
+    unknown: "red.800",
+  };
+
+  return (
+    <Text
+      color={colorMap[highlightType] || "red.100"}
+      as="span"
+      lineHeight={1}
+      margin={0}
+      padding={0}
+      top={0}
+      left={0}
+      fontFamily="mono"
+      fontWeight="regular"
+    >
+      {text}
+    </Text>
+  );
+};

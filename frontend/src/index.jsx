@@ -1,63 +1,54 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
+import { Box, Button, ChakraProvider, Container, extendTheme, HStack, IconButton, Link, useToast, Spacer, Text } from '@chakra-ui/react'
+import { EditIcon, ExternalLinkIcon } from '@chakra-ui/icons';
 import * as qs from "qs";
-import AppBar from "@mui/material/AppBar";
-import Container from "@mui/material/Container";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import CreateIcon from "@mui/icons-material/Create";
-import ShareIcon from "@mui/icons-material/Share";
-import Link from "@mui/material/Link";
-import IconButton from "@mui/material/IconButton";
-import GithubIcon from "@mui/icons-material/GitHub";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import Snackbar from "@mui/material/Snackbar";
 
 import Editor from "./editor";
 
-const theme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: {
-      main: "#c5c8c6",
-      light: "#fff",
-      dark: "#fff",
-      contrastText: "#1D1F21",
-    },
-    text: {
-      primary: "#c5c8c6",
-    },
+const theme = extendTheme({
+  fonts: {
+    body: "'Roboto', sans-serif",
+    mono: "'Roboto Mono', 'Menlo', 'Monaco', 'DeJaVu Sans Mono', monospace",
   },
+  styles: {
+    global: {
+      body: {
+        fontSize: "lg"
+      }
+    }
+  }
 });
 
 const MainAppBar = (props) => (
-  <AppBar position="static">
-    <Container maxWidth="md">
-      <Toolbar disableGutters={true}>
-        <Button
-          variant="outlined"
-          startIcon={<CreateIcon />}
-          onClick={props.onClear}
-          sx={{ marginRight: "1em" }}
-        >
-          Clear
-        </Button>
-        <Button startIcon={<ShareIcon />} onClick={props.onShare}>
-          Share
-        </Button>
-        <div style={{ flexGrow: 1 }} />
-        <Typography variant="h6" sx={{ marginRight: "1em" }}>
-          calq
-        </Typography>
-        <Link href="https://github.com/advait/calq" target="_blank">
-          <IconButton aria-label="github">
-            <GithubIcon color="primary" />
-          </IconButton>
-        </Link>
-      </Toolbar>
-    </Container>
-  </AppBar>
+  <Container bg="gray.100" pt={2} pb={2} width="lg">
+    <HStack >
+      <IconButton
+        variant="outlined"
+        aria-label="clear"
+        icon={<EditIcon />}
+        onClick={props.onClear}
+        mr={1}
+      >
+        Clear
+      </IconButton>
+      <IconButton
+        icon={<ExternalLinkIcon />}
+        onClick={props.onShare}>
+        Share
+      </IconButton>
+      <Spacer />
+      <Text variant="h6" mr={1}>
+        calq
+      </Text>
+      <Link href="https://github.com/advait/calq" target="_blank">
+        <IconButton aria-label="github">
+          {/* <GithubIcon color="primary" /> */}
+          GH
+        </IconButton>
+      </Link>
+    </HStack>
+  </Container>
 );
 
 const initialValue = (() => {
@@ -75,6 +66,7 @@ const initialValue = (() => {
 })();
 
 const MainApp = () => {
+  const toast = useToast();
   const [value, setValue_] = useState(initialValue.value);
   const onClear = () => setValue_("");
   const setValue = (v) => {
@@ -87,31 +79,28 @@ const MainApp = () => {
     const hash = qs.stringify({ value: value });
     const url = loc.origin + loc.pathname + "#" + hash;
     navigator.clipboard.writeText(url);
-    setShowShowSnack(true);
+    toast({
+      title: "Copied link to clipboard",
+      status: "success",
+      duration: 4000,
+      isClosable: true,
+    })
   };
-  const [showShareSnack, setShowShowSnack] = useState(false);
-  const [showHashSnack, setShowHashSnack] = useState(initialValue.fromHash);
+  if (initialValue.fromHash) {
+    toast({
+      title: "Loaded from URL",
+      status: "success",
+      duration: 4000,
+      isClosable: true,
+    })
+  }
 
   return (
     <div className="primary">
-      <ThemeProvider theme={theme}>
+      <ChakraProvider theme={theme}>
         <MainAppBar onClear={onClear} onShare={onShare} />
-        <Snackbar
-          open={showShareSnack}
-          onClose={() => setShowShowSnack(false)}
-          autoHideDuration={4000}
-          message="Copied link to clipboard"
-        />
-        <Snackbar
-          open={showHashSnack}
-          onClose={() => setShowHashSnack(false)}
-          autoHideDuration={4000}
-          message="Loaded from URL"
-        />
-        <Container maxWidth="md" className="main-container">
-          <Editor value={value} setValue={setValue} />
-        </Container>
-      </ThemeProvider>
+        <Editor value={value} setValue={setValue} />
+      </ChakraProvider>
     </div>
   );
 };

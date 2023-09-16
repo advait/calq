@@ -3,7 +3,6 @@
 @use "sass:math";
 
 @import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
-@import "./reset.scss";
 
 $family-primary: "Roboto Mono", monospace;
 
@@ -20,15 +19,6 @@ $aqua: #8abeb7;
 $blue: #81a2be;
 $purple: #b294bb;
 
-body {
-  color: $text;
-  background-color: $body-background-color;
-}
-
-.main-container {
-  margin-top: 1em;
-}
-
 $editor-line-height: 20px;
 
 .editor-line {
@@ -36,10 +26,6 @@ $editor-line-height: 20px;
   font-size: $editor-line-height;
   line-height: $editor-line-height;
   margin-bottom: $editor-line-height * 0.5;
-
-  .editable {
-    position: relative;
-  }
 
   textarea {
     position: absolute;

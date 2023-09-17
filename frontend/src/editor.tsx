@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useToast, Box, Textarea, Text } from "@chakra-ui/react";
+import { useToast, Box, Code, Textarea, Text } from "@chakra-ui/react";
 import { CopyIcon } from "@chakra-ui/icons";
 import * as EditorPS from "@purs-compiled/Editor";
+import { monoSx } from "./styles";
 
 type EditorProps = {
   value: string;
@@ -73,7 +74,7 @@ export default function Editor(props: EditorProps) {
   };
 
   return (
-    <div>
+    <Box sx={monoSx}>
       {lines.map((line, i) => (
         <Line
           i={i}
@@ -89,7 +90,7 @@ export default function Editor(props: EditorProps) {
           onUpDown={onUpDown}
         />
       ))}
-    </div>
+    </Box>
   );
 }
 
@@ -139,8 +140,8 @@ function Line(props) {
     }
     return (
       <Box
-        className="mono"
         cursor="pointer"
+        color="tokens.comment"
         sx={{
           "& .copy-icon": {
             opacity: 0,
@@ -165,9 +166,7 @@ function Line(props) {
         <Text as="span" ml={2} mr={2}>
           ⤷
         </Text>
-        <Text as="span" color="tokens.comment">
-          {props.result.success || props.result.error}
-        </Text>
+        {props.result.success || props.result.error}
         <CopyIcon ml={2} className="copy-icon" />
       </Box>
     );
@@ -211,7 +210,6 @@ function Line(props) {
           resize="none"
           outline="none"
           boxShadow="none"
-          className="mono"
           fontSize="lg"
           sx={{
             "caret-color": "black",
@@ -226,15 +224,22 @@ function Line(props) {
           }}
         />
         {props.showHint && (
-          <Text className="mono hint" color="tokens.comment">
+          <Text className="hint" color="tokens.comment">
             Click to begin editing
           </Text>
         )}
-        <pre ariea-hidden="true">
+        <Code
+          as="pre"
+          ariea-hidden="true"
+          sx={monoSx}
+          p={0}
+          m={0}
+          bg="transparent"
+        >
           {props.highlight.map((h, i) => (
             <Highlight {...h} key={`key${i}`} />
           ))}
-        </pre>
+        </Code>
       </Box>
       {result}
     </Box>
@@ -264,7 +269,6 @@ const Highlight: React.FC<{ text: string; highlightType: string }> = ({
       padding={0}
       top={0}
       left={0}
-      className="mono"
     >
       {text}
     </Text>

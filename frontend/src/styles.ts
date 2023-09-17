@@ -11,12 +11,6 @@ export const theme = extendTheme({
         bgColor: "gray.100",
         color: "tokens.foreground",
       },
-      ".mono": {
-        fontFamily: "mono",
-        fontWeight: "normal",
-        fontSize: "lg",
-        height: "1lh",
-      },
     },
   },
   colors: {
@@ -44,3 +38,9 @@ export const theme = extendTheme({
     },
   },
 });
+
+export const monoSx = {
+  fontFamily: "mono",
+  fontWeight: "400",
+  fontSize: "lg",
+};

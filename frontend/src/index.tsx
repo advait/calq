@@ -18,7 +18,7 @@ import * as qs from "qs";
 import Editor from "./editor";
 
 const MainAppBar = (props) => (
-  <Container bg="gray.100" pt={2} pb={2}>
+  <Container bg="row.normal" pt={2} pb={2}>
     <HStack>
       <Button
         aria-label="clear"
@@ -47,7 +47,7 @@ const MainAppBar = (props) => (
 const initialValue = (() => {
   const hash = (window.location.hash || "#").replace(/^#/, "");
   const urlValue = qs.parse(hash).value;
-  history.pushState(null, null, "#"); // Clear hash so users don't re-share stale URL
+  history.pushState(null, "", "#"); // Clear hash so users don't re-share stale URL
   if (urlValue) {
     return { value: urlValue, fromHash: true };
   } else {

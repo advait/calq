@@ -1,20 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  ChangeEvent,
+  KeyboardEventHandler,
+} from "react";
 import { useToast, Box, Code, Textarea, Text } from "@chakra-ui/react";
 import { CopyIcon } from "@chakra-ui/icons";
 import * as EditorPS from "@purs-compiled/Editor";
 import { monoSx } from "./styles";
-
-type EditorProps = {
-  value: string;
-  setValue: (string) => void;
-};
+import { EvalResult, HighlightToken } from "./types";
 
 /**
  * Code editor that works by providing a transprent textarea and overlaying a <pre> which cointains
  * highlighted tokens.
  * Inspired by react-simple-code-editor and simplified for this use case.
  */
-export default function Editor(props: EditorProps) {
+export const Editor: React.FC<{
+  value: string;
+  setValue: (string) => void;
+}> = (props) => {
   const lines = props.value.split("\n");
   const [focus, setFocus] = useState<{
     line: number | null;
@@ -30,28 +35,36 @@ export default function Editor(props: EditorProps) {
     props.setValue(newValue);
   };
 
-  const { highlights, results } = EditorPS.run(lines);
+  const {
+    highlights,
+    results,
+  }: {
+    highlights: HighlightToken[][];
+    results: EvalResult[];
+  } = EditorPS.run(lines);
 
-  const onValueChanged = (e, i) => {
-    const newLines = [...lines];
-    const inserted = e.target.value.split("\n");
-    newLines.splice(i, 1, ...inserted);
-    setLines(newLines);
-    // When the editor value changes, each textarea will manage its own focus/selectionStart
-    setFocus({ line: null, offset: null });
-  };
+  const onValueChanged =
+    (i: number) => (e: ChangeEvent<HTMLTextAreaElement>) => {
+      const newLines = [...lines];
+      const inserted = e.target.value.split("\n");
+      newLines.splice(i, 1, ...inserted);
+      setLines(newLines);
+      // When the editor value changes, each textarea will manage its own focus/selectionStart
+      setFocus({ line: null, offset: null });
+    };
 
-  const onEnter = (i: number, selectionStart: number, selectionEnd: number) => {
-    const first = lines[i].substring(0, selectionStart);
-    const second = lines[i].substring(selectionEnd);
-    const newLines = [...lines];
-    newLines.splice(i, 1, first, second);
-    setLines(newLines);
-    setFocus({ line: i + 1, offset: 0 });
-  };
+  const onEnter =
+    (i: number) => (selectionStart: number, selectionEnd: number) => {
+      const first = lines[i].substring(0, selectionStart);
+      const second = lines[i].substring(selectionEnd);
+      const newLines = [...lines];
+      newLines.splice(i, 1, first, second);
+      setLines(newLines);
+      setFocus({ line: i + 1, offset: 0 });
+    };
 
   // When the backspace key is pressed at the cursor is at the beginning of the line
-  const onBackspace0 = (i: number) => {
+  const onBackspace0 = (i: number) => () => {
     if (i == 0) {
       return;
     }
@@ -63,7 +76,7 @@ export default function Editor(props: EditorProps) {
   };
 
   // When either the up or down key is pressed
-  const onUpDown = (i: number, up: boolean, selectionStart: number) => {
+  const onUpDown = (i: number) => (up: boolean, selectionStart: number) => {
     let targetLine = up ? i - 1 : i + 1;
     targetLine = Math.max(Math.min(targetLine, lines.length - 1), 0);
     const offset = Math.min(lines[targetLine].length, selectionStart);
@@ -77,59 +90,39 @@ export default function Editor(props: EditorProps) {
     <Box sx={monoSx}>
       {lines.map((line, i) => (
         <Line
-          i={i}
           key={`key${i}`}
-          onValueChanged={onValueChanged}
           line={line}
           result={results[i]}
           focusOffset={focus.line === i ? focus.offset : null}
-          highlight={highlights[i]}
+          highlightTokens={highlights[i]}
           showHint={lines.length === 1 && lines[0].length === 0}
-          onEnter={onEnter}
-          onBackspace0={onBackspace0}
-          onUpDown={onUpDown}
+          onValueChanged={onValueChanged(i)}
+          onEnter={onEnter(i)}
+          onBackspace0={onBackspace0(i)}
+          onUpDown={onUpDown(i)}
         />
       ))}
     </Box>
   );
-}
+};
 
 const KEY_ENTER = 13;
 const KEY_BACKSPACE = 8;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 
-function Line(props) {
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+const Line: React.FC<{
+  line: string;
+  focusOffset: number | null;
+  result: EvalResult;
+  showHint: boolean;
+  highlightTokens: HighlightToken[];
+  onValueChanged: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  onEnter: (selectionStart: number, selectionEnd: number) => void;
+  onBackspace0: () => void;
+  onUpDown(up: boolean, selectionStart: number): void;
+}> = (props) => {
   const toast = useToast();
-
-  useEffect(() => {
-    const textArea = textAreaRef.current;
-    if (!textArea || props.focusOffset === null) {
-      return;
-    }
-    textArea.setSelectionRange(props.focusOffset, props.focusOffset);
-    textArea.focus();
-  }, [props.focusOffset]);
-
-  const onKeyDown = (e) => {
-    const selectionStart = textAreaRef.current?.selectionStart || 0;
-    const selectionEnd = textAreaRef.current?.selectionEnd || 0;
-    if (e.keyCode == KEY_ENTER) {
-      props.onEnter(props.i, selectionStart, selectionEnd);
-      e.preventDefault();
-    } else if (
-      e.keyCode == KEY_BACKSPACE &&
-      selectionStart == 0 &&
-      selectionEnd == 0
-    ) {
-      props.onBackspace0(props.i);
-      e.preventDefault();
-    } else if (e.keyCode == KEY_UP || e.keyCode == KEY_DOWN) {
-      props.onUpDown(props.i, e.keyCode == KEY_UP, selectionStart);
-      e.preventDefault();
-    }
-  };
 
   const result = (() => {
     if (
@@ -155,7 +148,7 @@ function Line(props) {
           },
         }}
         onClick={() => {
-          navigator.clipboard.writeText(props.result.success);
+          navigator.clipboard.writeText(props.result.success || "");
           toast({
             title: "Copied to clipboard",
             duration: 4000,
@@ -186,69 +179,124 @@ function Line(props) {
         },
       }}
     >
-      <Box
-        position="relative"
-        lineHeight={1}
-        overflow="hidden"
-        height="1lh"
-        mb={2}
-      >
-        <Textarea
-          onChange={(e) => props.onValueChanged(e, props.i)}
-          value={props.line}
-          ref={textAreaRef}
-          onKeyDown={onKeyDown}
-          rows={1}
-          position="absolute"
-          top={0}
-          left={0}
-          padding={0}
-          width="100%"
-          color="transparent"
-          border="none"
-          overflow="hidden"
-          resize="none"
-          outline="none"
-          boxShadow="none"
-          fontSize="lg"
-          sx={{
-            "caret-color": "black",
-            "&:focus, &:focus-visible": {
-              border: "none",
-              outline: "none",
-              boxShadow: "none",
-              "+ .hint": {
-                visibility: "hidden",
-              },
-            },
-          }}
-        />
-        {props.showHint && (
-          <Text className="hint" color="tokens.comment">
-            Click to begin editing
-          </Text>
-        )}
-        <Code
-          as="pre"
-          ariea-hidden="true"
-          sx={monoSx}
-          p={0}
-          m={0}
-          bg="transparent"
-        >
-          {props.highlight.map((h, i) => (
-            <Highlight {...h} key={`key${i}`} />
-          ))}
-        </Code>
-      </Box>
+      <HighlightedTextarea
+        line={props.line}
+        focusOffset={props.focusOffset}
+        showHint={props.showHint}
+        highlightTokens={props.highlightTokens}
+        onValueChanged={props.onValueChanged}
+        onEnter={props.onEnter}
+        onBackspace0={props.onBackspace0}
+        onUpDown={props.onUpDown}
+      />
       {result}
     </Box>
   );
-}
+};
 
-const Highlight: React.FC<{ text: string; highlightType: string }> = ({
+const HighlightedTextarea: React.FC<{
+  line: string;
+  focusOffset: number | null;
+  showHint: boolean;
+  highlightTokens: HighlightToken[];
+  onValueChanged: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  onEnter: (selectionStart: number, selectionEnd: number) => void;
+  onBackspace0: () => void;
+  onUpDown(up: boolean, selectionStart: number): void;
+}> = (props) => {
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+
+  const onKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
+    const selectionStart = textAreaRef.current?.selectionStart || 0;
+    const selectionEnd = textAreaRef.current?.selectionEnd || 0;
+    if (e.keyCode == KEY_ENTER) {
+      props.onEnter(selectionStart, selectionEnd);
+      e.preventDefault();
+    } else if (
+      e.keyCode == KEY_BACKSPACE &&
+      selectionStart == 0 &&
+      selectionEnd == 0
+    ) {
+      props.onBackspace0();
+      e.preventDefault();
+    } else if (e.keyCode == KEY_UP || e.keyCode == KEY_DOWN) {
+      props.onUpDown(e.keyCode == KEY_UP, selectionStart);
+      e.preventDefault();
+    }
+  };
+
+  useEffect(() => {
+    const textArea = textAreaRef.current;
+    if (!textArea || props.focusOffset === null) {
+      return;
+    }
+    textArea.setSelectionRange(props.focusOffset, props.focusOffset);
+    textArea.focus();
+  }, [props.focusOffset]);
+
+  return (
+    <Box
+      position="relative"
+      lineHeight={1}
+      overflow="hidden"
+      height="1lh"
+      mb={2}
+    >
+      <Textarea
+        onChange={(e) => props.onValueChanged(e)}
+        value={props.line}
+        ref={textAreaRef}
+        onKeyDown={onKeyDown}
+        rows={1}
+        position="absolute"
+        top={0}
+        left={0}
+        padding={0}
+        width="100%"
+        color="transparent"
+        border="none"
+        overflow="hidden"
+        resize="none"
+        outline="none"
+        boxShadow="none"
+        fontSize="lg"
+        sx={{
+          "caret-color": "black",
+          "&:focus, &:focus-visible": {
+            border: "none",
+            outline: "none",
+            boxShadow: "none",
+            "+ .hint": {
+              visibility: "hidden",
+            },
+          },
+        }}
+      />
+      {props.showHint && (
+        <Text className="hint" color="tokens.comment">
+          Click to begin editing
+        </Text>
+      )}
+      <Code
+        as="pre"
+        ariea-hidden="true"
+        sx={monoSx}
+        p={0}
+        m={0}
+        bg="transparent"
+      >
+        {props.highlightTokens.map((h, i) => (
+          <HighlightTokenView {...h} key={`key${i}`} />
+        ))}
+      </Code>
+    </Box>
+  );
+};
+
+const HighlightTokenView: React.FC<HighlightToken & { key: string }> = ({
   text,
   highlightType,
+  key,
 }) => {
   const colorMap = {
     comment: "tokens.comment",
@@ -269,6 +317,7 @@ const Highlight: React.FC<{ text: string; highlightType: string }> = ({
       padding={0}
       top={0}
       left={0}
+      key={key}
     >
       {text}
     </Text>

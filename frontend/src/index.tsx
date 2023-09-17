@@ -1,59 +1,25 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Box, Button, ChakraProvider, Container, extendTheme, Heading, HStack, IconButton, Link, useToast, Spacer, Text } from '@chakra-ui/react'
+import {
+  Button,
+  ChakraProvider,
+  Container,
+  Heading,
+  HStack,
+  IconButton,
+  Link,
+  useToast,
+  Spacer,
+} from "@chakra-ui/react";
 import { LiaGithub, LiaShareSquare, LiaTrashAltSolid } from "react-icons/lia";
+import { theme } from "./styles";
 import * as qs from "qs";
 
 import Editor from "./editor";
 
-const theme = extendTheme({
-  fonts: {
-    body: "'Roboto', sans-serif",
-    mono: "'Roboto Mono', 'Menlo', 'Monaco', 'DeJaVu Sans Mono', monospace",
-  },
-  styles: {
-    global: {
-      body: {
-        bgColor: "gray.100",
-        color: "tokens.foreground",
-      },
-      ".mono": {
-        fontFamily: "mono",
-        fontWeight: "normal",
-        fontSize: "lg",
-        height: "1lh",
-      },
-    }
-  },
-  colors: {
-    row: {
-      bg: {
-        normal: "tokens.background",
-        hover: "var(--chakra-colors-gray-300)",
-        selected: "var(--chakra-colors-gray-300)",
-      }
-    },
-    tokens: {
-      foreground : "#4d4d4c",
-      background : "#ffffff",
-      selection : "#d6d6d6",
-      line : "#efefef",
-      comment : "#8e908c",
-      red : "#c82829",
-      orange : "#f5871f",
-      yellow : "#eab700",
-      green : "#718c00",
-      aqua : "#3e999f",
-      blue : "#4271ae",
-      purple : "#8959a8",
-      window : "#efefef",
-    },
-  }
-});
-
 const MainAppBar = (props) => (
   <Container bg="gray.100" pt={2} pb={2}>
-    <HStack >
+    <HStack>
       <Button
         aria-label="clear"
         leftIcon={<LiaTrashAltSolid />}
@@ -62,9 +28,7 @@ const MainAppBar = (props) => (
       >
         Clear
       </Button>
-      <Button
-        leftIcon={<LiaShareSquare />}
-        onClick={props.onShare}>
+      <Button leftIcon={<LiaShareSquare />} onClick={props.onShare}>
         Share
       </Button>
       <Spacer />
@@ -73,7 +37,7 @@ const MainAppBar = (props) => (
       </Heading>
       <Link href="https://github.com/advait/calq" target="_blank">
         <IconButton aria-label="github">
-          <LiaGithub size="2em"/>
+          <LiaGithub size="2em" />
         </IconButton>
       </Link>
     </HStack>
@@ -113,7 +77,7 @@ const MainApp = () => {
       status: "success",
       duration: 4000,
       isClosable: true,
-    })
+    });
   };
   if (initialValue.fromHash) {
     toast({
@@ -121,7 +85,7 @@ const MainApp = () => {
       status: "success",
       duration: 4000,
       isClosable: true,
-    })
+    });
   }
 
   return (
@@ -130,7 +94,6 @@ const MainApp = () => {
         <MainAppBar onClear={onClear} onShare={onShare} />
         <Container>
           <Editor value={value} setValue={setValue} />
-
         </Container>
       </ChakraProvider>
     </div>

@@ -15,10 +15,10 @@ import { LiaGithub, LiaShareSquare, LiaTrashAltSolid } from "react-icons/lia";
 import { theme } from "./styles";
 import * as qs from "qs";
 
-import Editor from "./editor";
+import { EDITOR_WIDTH_CH, Editor } from "./editor";
 
 const MainAppBar = (props) => (
-  <Container bg="row.normal" pt={2} pb={2}>
+  <Container bg="row.normal" pt={2} pb={2} width={`${EDITOR_WIDTH_CH}ch`}>
     <HStack>
       <Button
         aria-label="clear"
@@ -92,9 +92,7 @@ const MainApp = () => {
     <div className="primary">
       <ChakraProvider theme={theme}>
         <MainAppBar onClear={onClear} onShare={onShare} />
-        <Container>
-          <Editor value={value} setValue={setValue} />
-        </Container>
+        <Editor value={value} setValue={setValue} />
       </ChakraProvider>
     </div>
   );

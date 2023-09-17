@@ -5,11 +5,24 @@ import React, {
   ChangeEvent,
   KeyboardEventHandler,
 } from "react";
-import { useToast, Box, Code, Textarea, Text } from "@chakra-ui/react";
+import {
+  useToast,
+  Box,
+  Code,
+  Container,
+  HStack,
+  Textarea,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
 import { CopyIcon } from "@chakra-ui/icons";
 import * as EditorPS from "@purs-compiled/Editor";
 import { monoSx } from "./styles";
 import { EvalResult, HighlightToken } from "./types";
+
+const LINE_MAX_LEN = 40;
+const RESULT_MAX_LEN = 20;
+export const EDITOR_WIDTH_CH = LINE_MAX_LEN + RESULT_MAX_LEN;
 
 /**
  * Code editor that works by providing a transprent textarea and overlaying a <pre> which cointains
@@ -76,20 +89,19 @@ export const Editor: React.FC<{
   };
 
   // When either the up or down key is pressed
-  const onUpDown = (i: number) => (up: boolean, selectionStart: number) => {
+  const onUpDown = (i: number) => (up: boolean, colOffset: number) => {
     let targetLine = up ? i - 1 : i + 1;
     targetLine = Math.max(Math.min(targetLine, lines.length - 1), 0);
-    const offset = Math.min(lines[targetLine].length, selectionStart);
     setFocus({
       line: targetLine,
-      offset,
+      offset: colOffset,
     });
   };
 
   return (
-    <Box sx={monoSx}>
+    <Container sx={monoSx} width={`${LINE_MAX_LEN + RESULT_MAX_LEN}ch`}>
       {lines.map((line, i) => (
-        <Line
+        <EditorRow
           key={`key${i}`}
           line={line}
           result={results[i]}
@@ -102,7 +114,7 @@ export const Editor: React.FC<{
           onUpDown={onUpDown(i)}
         />
       ))}
-    </Box>
+    </Container>
   );
 };
 
@@ -111,7 +123,9 @@ const KEY_BACKSPACE = 8;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 
-const Line: React.FC<{
+type LineVariant = "condensed" | "newline";
+
+const EditorRow: React.FC<{
   line: string;
   focusOffset: number | null;
   result: EvalResult;
@@ -122,53 +136,19 @@ const Line: React.FC<{
   onBackspace0: () => void;
   onUpDown(up: boolean, selectionStart: number): void;
 }> = (props) => {
-  const toast = useToast();
+  const textResult = props.result.success || props.result.error || "";
 
-  const result = (() => {
-    if (
-      props.result.empty ||
-      (props.result.success !== undefined && props.result.error !== undefined)
-    ) {
-      return null;
-    }
-    return (
-      <Box
-        cursor="pointer"
-        color="tokens.comment"
-        sx={{
-          "& .copy-icon": {
-            opacity: 0,
-            visibility: "hidden",
-            transition: "visibility 0s, opacity 0s 0.4s",
-          },
-          "&:hover .copy-icon": {
-            opacity: 1,
-            visibility: "visible",
-            animation: "fadein 0.4s ease-in-out 0.3s forwards",
-          },
-        }}
-        onClick={() => {
-          navigator.clipboard.writeText(props.result.success || "");
-          toast({
-            title: "Copied to clipboard",
-            duration: 4000,
-            isClosable: true,
-          });
-        }}
-      >
-        <Text as="span" ml={2} mr={2}>
-          ⤷
-        </Text>
-        {props.result.success || props.result.error}
-        <CopyIcon ml={2} className="copy-icon" />
-      </Box>
-    );
-  })();
+  let variant: LineVariant = "condensed";
+  if (props.line.length > LINE_MAX_LEN || textResult.length > RESULT_MAX_LEN) {
+    variant = "newline";
+  }
+
+  const RowContainer = variant == "condensed" ? HStack : VStack;
 
   return (
-    <Box
+    <RowContainer
       lineHeight={1}
-      p={2}
+      p={1}
       bgColor="row.bg.normal"
       sx={{
         "&:hover": {
@@ -180,6 +160,7 @@ const Line: React.FC<{
       }}
     >
       <HighlightedTextarea
+        variant={variant}
         line={props.line}
         focusOffset={props.focusOffset}
         showHint={props.showHint}
@@ -189,12 +170,13 @@ const Line: React.FC<{
         onBackspace0={props.onBackspace0}
         onUpDown={props.onUpDown}
       />
-      {result}
-    </Box>
+      <ResultView variant={variant} result={textResult} />
+    </RowContainer>
   );
 };
 
 const HighlightedTextarea: React.FC<{
+  variant: LineVariant;
   line: string;
   focusOffset: number | null;
   showHint: boolean;
@@ -240,7 +222,7 @@ const HighlightedTextarea: React.FC<{
       lineHeight={1}
       overflow="hidden"
       height="1lh"
-      mb={2}
+      width={props.variant == "condensed" ? `${LINE_MAX_LEN}ch` : "100%"}
     >
       <Textarea
         onChange={(e) => props.onValueChanged(e)}
@@ -321,5 +303,49 @@ const HighlightTokenView: React.FC<HighlightToken & { key: string }> = ({
     >
       {text}
     </Text>
+  );
+};
+
+const ResultView: React.FC<{
+  variant: LineVariant;
+  result: string;
+}> = (props) => {
+  const toast = useToast();
+  if (!props.result) {
+    return;
+  }
+  return (
+    <Box
+      width={props.variant == "condensed" ? `${RESULT_MAX_LEN}ch` : "100%"}
+      alignSelf="flex-end"
+      cursor="pointer"
+      color="tokens.comment"
+      sx={{
+        "& .copy-icon": {
+          opacity: 0,
+          visibility: "hidden",
+          transition: "visibility 0s, opacity 0s 0.4s",
+        },
+        "&:hover .copy-icon": {
+          opacity: 1,
+          visibility: "visible",
+          animation: "fadein 0.4s ease-in-out 0.3s forwards",
+        },
+      }}
+      onClick={() => {
+        navigator.clipboard.writeText(props.result);
+        toast({
+          title: "Copied to clipboard",
+          duration: 4000,
+          isClosable: true,
+        });
+      }}
+    >
+      <Text as="span" ml={2} mr={2}>
+        ⤷
+      </Text>
+      {props.result}
+      <CopyIcon ml={2} className="copy-icon" />
+    </Box>
   );
 };

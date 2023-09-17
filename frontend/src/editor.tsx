@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useToast, Box, Textarea, Text } from "@chakra-ui/react";
 import { CopyIcon } from "@chakra-ui/icons";
-import { css } from "@emotion/css";
 import * as EditorPS from "@purs-compiled/Editor";
 
 type EditorProps = {
@@ -166,7 +165,9 @@ function Line(props) {
         <Text as="span" ml={2} mr={2}>
           ⤷
         </Text>
-        {props.result.success || props.result.error}
+        <Text as="span" color="tokens.comment">
+          {props.result.success || props.result.error}
+        </Text>
         <CopyIcon ml={2} className="copy-icon" />
       </Box>
     );
@@ -225,7 +226,7 @@ function Line(props) {
           }}
         />
         {props.showHint && (
-          <Text className="mono hint" color="gray.400">
+          <Text className="mono hint" color="tokens.comment">
             Click to begin editing
           </Text>
         )}
@@ -245,13 +246,13 @@ const Highlight: React.FC<{ text: string; highlightType: string }> = ({
   highlightType,
 }) => {
   const colorMap = {
-    comment: "green",
-    number: "text",
-    name: "blue",
-    punctuation: "gray.800",
-    reserved: "yellow.800",
-    infix: "aqua.800",
-    unknown: "red.800",
+    comment: "tokens.comment",
+    number: "tokens.aqua",
+    name: "tokens.blue",
+    punctuation: "tokens.purple",
+    reserved: "tokens.orange",
+    infix: "tokens.foreground",
+    unknown: "tokens.red",
   };
 
   return (

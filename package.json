@@ -25,7 +25,6 @@
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.1",
     "@chakra-ui/system": "^2.6.1",
-    "@emotion/css": "^11.11.2",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@fontsource-variable/roboto-mono": "^5.0.9",

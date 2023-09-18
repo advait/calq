@@ -11,43 +11,76 @@ import {
   Link,
   useToast,
   Spacer,
+  Tooltip,
 } from "@chakra-ui/react";
-import { LiaGithub, LiaShareSquare, LiaTrashAltSolid } from "react-icons/lia";
+import {
+  BiAddToQueue,
+  BiHelpCircle,
+  BiLogoGithub,
+  BiShareAlt,
+} from "react-icons/bi";
 import { theme } from "./styles";
 import qs from "qs";
 
 import { EDITOR_WIDTH, Editor } from "./editor";
 
-const MainAppBar = (props) => (
-  <Box bg="navbar.bg" mb={2}>
-    <Container
-      bg="row.normal"
-      pt={2}
-      pb={2}
-      pl={0}
-      pr={0}
-      minWidth={EDITOR_WIDTH}
-    >
-      <HStack>
-        <Button leftIcon={<LiaTrashAltSolid />} onClick={props.onClear} mr={1}>
-          Clear
-        </Button>
-        <Button leftIcon={<LiaShareSquare />} onClick={props.onShare}>
-          Share
-        </Button>
-        <Spacer />
-        <Heading as="h1" size="l" mr={1}>
-          calq
-        </Heading>
-        <Link href="https://github.com/advait/calq" target="_blank">
-          <IconButton aria-label="github">
-            <LiaGithub size="2em" />
+const MainAppBar = (props) => {
+  const toast = useToast();
+  return (
+    <Box bg="navbar.bg" mb={0}>
+      <Container
+        bg="row.normal"
+        pt={2}
+        pb={2}
+        pl={0}
+        pr={0}
+        minWidth={EDITOR_WIDTH}
+      >
+        <HStack mb={6}>
+          <Tooltip label="calq is a unit calculator for humans">
+            <Heading as="h1" size="md" mr={6} pl={1} fontFamily="mono">
+              calq
+            </Heading>
+          </Tooltip>
+          <Tooltip label="Clear editor">
+            <Button
+              leftIcon={<BiAddToQueue />}
+              onClick={props.onClear}
+              mr={1}
+              fontWeight="normal"
+            >
+              New
+            </Button>
+          </Tooltip>
+          <Tooltip label="Copy share link">
+            <Button
+              leftIcon={<BiShareAlt />}
+              onClick={props.onShare}
+              fontWeight="normal"
+            >
+              Share
+            </Button>
+          </Tooltip>
+          <Spacer />
+          <IconButton
+            aria-label="help"
+            color="token.foreground"
+            boxSize={8}
+            onClick={() => toast({ title: "Help coming soon" })}
+          >
+            <BiHelpCircle />
           </IconButton>
-        </Link>
-      </HStack>
-    </Container>
-  </Box>
-);
+          <Link href="https://github.com/advait/calq" target="_blank">
+            <IconButton aria-label="github" color="token.foreground">
+              <BiLogoGithub size="2em" />
+            </IconButton>
+          </Link>
+        </HStack>
+        <HStack></HStack>
+      </Container>
+    </Box>
+  );
+};
 
 const initialValue = (() => {
   const hash = (window.location.hash || "#").replace(/^#/, "");
@@ -67,7 +100,7 @@ const MainApp = () => {
   const toast = useToast();
   const [value, setValue_] = useState(initialValue.value);
   const onClear = () => setValue_("");
-  const setValue = (v) => {
+  const setValue = (v: string) => {
     localStorage.setItem("value", v);
     setValue_(v);
   };
@@ -94,12 +127,10 @@ const MainApp = () => {
   }
 
   return (
-    <div className="primary">
-      <ChakraProvider theme={theme}>
-        <MainAppBar onClear={onClear} onShare={onShare} />
-        <Editor value={value} setValue={setValue} />
-      </ChakraProvider>
-    </div>
+    <ChakraProvider theme={theme}>
+      <MainAppBar onClear={onClear} onShare={onShare} />
+      <Editor value={value} setValue={setValue} />
+    </ChakraProvider>
   );
 };
 

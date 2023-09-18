@@ -2,6 +2,7 @@ import React, {
   useState,
   useRef,
   useEffect,
+  useMemo,
   ChangeEvent,
   KeyboardEventHandler,
 } from "react";
@@ -23,7 +24,7 @@ import { EvalResult, HighlightToken } from "./types";
 const LINE_MAX_LEN = 40;
 const LINE_MIN_WIDTH = "400px";
 const RESULT_MAX_LEN = 20;
-const RESULT_MIN_WIDTH = "200px";
+export const RESULT_MIN_WIDTH = "200px";
 export const EDITOR_WIDTH = "600px";
 
 /**
@@ -46,7 +47,6 @@ export const Editor: React.FC<{
 
   const setLines = (l: string[]) => {
     const newValue = l.join("\n");
-    localStorage.setItem("value", newValue);
     props.setValue(newValue);
   };
 
@@ -56,7 +56,7 @@ export const Editor: React.FC<{
   }: {
     highlights: HighlightToken[][];
     results: EvalResult[];
-  } = EditorPS.run(lines);
+  } = useMemo(() => EditorPS.run(lines), [lines]);
 
   const onValueChanged =
     (i: number) => (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -65,7 +65,7 @@ export const Editor: React.FC<{
       newLines.splice(i, 1, ...inserted);
       setLines(newLines);
       // When the editor value changes, each textarea will manage its own focus/selectionStart
-      // setFocus({ line: null, offset: null });
+      setFocus({ line: null, offset: null });
     };
 
   const onEnter =
@@ -104,6 +104,7 @@ export const Editor: React.FC<{
     <Container sx={monoSx} width={EDITOR_WIDTH} p={0}>
       {lines.map((line, i) => (
         <EditorRow
+          i={i}
           key={`key${i}`}
           line={line}
           result={results[i]}
@@ -128,6 +129,7 @@ const KEY_DOWN = 40;
 type LineVariant = "condensed" | "newline";
 
 const EditorRow: React.FC<{
+  i: number;
   line: string;
   focusOffset: number | null;
   result: EvalResult;
@@ -161,6 +163,7 @@ const EditorRow: React.FC<{
       }}
     >
       <HighlightedTextarea
+        i={props.i}
         variant={variant}
         line={props.line}
         focusOffset={props.focusOffset}
@@ -177,6 +180,7 @@ const EditorRow: React.FC<{
 };
 
 const HighlightedTextarea: React.FC<{
+  i: number;
   variant: LineVariant;
   line: string;
   focusOffset: number | null;
@@ -210,6 +214,7 @@ const HighlightedTextarea: React.FC<{
 
   useEffect(() => {
     const textArea = textAreaRef.current;
+    console.log("focusing", props.i, props.focusOffset);
     if (!textArea || props.focusOffset === null) {
       return;
     }
@@ -330,11 +335,7 @@ const ResultView: React.FC<{
   };
   const onCopyClicked = () => {
     navigator.clipboard.writeText(props.result);
-    toast({
-      title: "Copied to clipboard",
-      duration: 4000,
-      isClosable: true,
-    });
+    toast({ title: "Copied to clipboard" });
   };
 
   if (props.variant == "condensed") {

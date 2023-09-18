@@ -22,17 +22,25 @@
     "gh-pages": "yarn run clean && yarn run build && echo 'calq.app' > dist/CNAME && gh-pages -d dist/"
   },
   "dependencies": {
-    "@emotion/react": "^11.5.0",
-    "@emotion/styled": "^11.3.0",
-    "@mui/icons-material": "^5.0.5",
-    "@mui/material": "^5.0.5",
+    "@chakra-ui/icons": "^2.1.1",
+    "@chakra-ui/react": "^2.8.1",
+    "@chakra-ui/system": "^2.6.1",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@fontsource-variable/roboto-mono": "^5.0.9",
+    "@fontsource/roboto": "^5.0.8",
     "decimal.js": "^10.3.1",
+    "framer-motion": "^10.16.4",
     "qs": "^6.10.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.11.0"
   },
   "devDependencies": {
     "@originjs/vite-plugin-commonjs": "^1.0.3",
+    "@types/qs": "^6.9.8",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
     "@vitejs/plugin-react": "^4.0.4",
@@ -44,7 +52,6 @@
     "purescript-psa": "^0.8.2",
     "purs-tidy": "^0.10.0",
     "purty": "^7.0.0",
-    "sass": "^1.67.0",
     "serve": "^14.2.1",
     "spago": "0.21.0",
     "typescript": "^5.2.2",

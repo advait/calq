@@ -21,8 +21,10 @@ import { monoSx } from "./styles";
 import { EvalResult, HighlightToken } from "./types";
 
 const LINE_MAX_LEN = 40;
+const LINE_MIN_WIDTH = "400px";
 const RESULT_MAX_LEN = 20;
-export const EDITOR_WIDTH_CH = LINE_MAX_LEN + RESULT_MAX_LEN;
+const RESULT_MIN_WIDTH = "200px";
+export const EDITOR_WIDTH = "600px";
 
 /**
  * Code editor that works by providing a transprent textarea and overlaying a <pre> which cointains
@@ -99,7 +101,7 @@ export const Editor: React.FC<{
   };
 
   return (
-    <Container sx={monoSx} width={`${LINE_MAX_LEN + RESULT_MAX_LEN}ch`}>
+    <Container sx={monoSx} width={EDITOR_WIDTH} p={0}>
       {lines.map((line, i) => (
         <EditorRow
           key={`key${i}`}
@@ -147,9 +149,8 @@ const EditorRow: React.FC<{
 
   return (
     <RowContainer
-      lineHeight={1}
-      p={1}
       bgColor="row.bg.normal"
+      spacing={0}
       sx={{
         "&:hover": {
           bgColor: "row.bg.hover",
@@ -221,8 +222,8 @@ const HighlightedTextarea: React.FC<{
       position="relative"
       lineHeight={1}
       overflow="hidden"
-      height="1lh"
-      width={props.variant == "condensed" ? `${LINE_MAX_LEN}ch` : "100%"}
+      p={1}
+      width={props.variant == "condensed" ? LINE_MIN_WIDTH : "100%"}
     >
       <Textarea
         onChange={(e) => props.onValueChanged(e)}
@@ -231,19 +232,21 @@ const HighlightedTextarea: React.FC<{
         onKeyDown={onKeyDown}
         rows={1}
         position="absolute"
-        top={0}
-        left={0}
-        padding={0}
+        top={1}
+        left={1}
+        m={0}
+        p={0}
         width="100%"
         color="transparent"
         border="none"
         overflow="hidden"
         resize="none"
+        spellCheck={false}
         outline="none"
         boxShadow="none"
-        fontSize="lg"
         sx={{
-          "caret-color": "black",
+          ...monoSx,
+          caretColor: "black",
           "&:focus, &:focus-visible": {
             border: "none",
             outline: "none",
@@ -262,10 +265,11 @@ const HighlightedTextarea: React.FC<{
       <Code
         as="pre"
         ariea-hidden="true"
-        sx={monoSx}
-        p={0}
-        m={0}
         bg="transparent"
+        sx={monoSx}
+        m={0}
+        p={0}
+        width="100%"
       >
         {props.highlightTokens.map((h, i) => (
           <HighlightTokenView {...h} key={`key${i}`} />
@@ -278,7 +282,6 @@ const HighlightedTextarea: React.FC<{
 const HighlightTokenView: React.FC<HighlightToken & { key: string }> = ({
   text,
   highlightType,
-  key,
 }) => {
   const colorMap = {
     comment: "tokens.comment",
@@ -299,7 +302,6 @@ const HighlightTokenView: React.FC<HighlightToken & { key: string }> = ({
       padding={0}
       top={0}
       left={0}
-      key={key}
     >
       {text}
     </Text>
@@ -314,38 +316,58 @@ const ResultView: React.FC<{
   if (!props.result) {
     return;
   }
-  return (
-    <Box
-      width={props.variant == "condensed" ? `${RESULT_MAX_LEN}ch` : "100%"}
-      alignSelf="flex-end"
-      cursor="pointer"
-      color="tokens.comment"
-      sx={{
-        "& .copy-icon": {
-          opacity: 0,
-          visibility: "hidden",
-          transition: "visibility 0s, opacity 0s 0.4s",
-        },
-        "&:hover .copy-icon": {
-          opacity: 1,
-          visibility: "visible",
-          animation: "fadein 0.4s ease-in-out 0.3s forwards",
-        },
-      }}
-      onClick={() => {
-        navigator.clipboard.writeText(props.result);
-        toast({
-          title: "Copied to clipboard",
-          duration: 4000,
-          isClosable: true,
-        });
-      }}
-    >
-      <Text as="span" ml={2} mr={2}>
-        ⤷
-      </Text>
-      {props.result}
-      <CopyIcon ml={2} className="copy-icon" />
-    </Box>
-  );
+  const condensed = props.variant == "condensed";
+  const hoverSx = {
+    "& .copy-icon": {
+      opacity: 0,
+      visibility: "hidden",
+      transition: "visibility 0s, opacity 0s 0.4s",
+    },
+    "&:hover .copy-icon": {
+      opacity: 1,
+      visibility: "visible",
+      animation: "fadein 0.4s ease-in-out 0.3s forwards",
+    },
+  };
+  const onCopyClicked = () => {
+    navigator.clipboard.writeText(props.result);
+    toast({
+      title: "Copied to clipboard",
+      duration: 4000,
+      isClosable: true,
+    });
+  };
+
+  if (condensed) {
+    return (
+      <Box
+        width={RESULT_MIN_WIDTH}
+        cursor="pointer"
+        color="tokens.comment"
+        sx={{ ...monoSx, ...hoverSx }}
+        onClick={onCopyClicked}
+      >
+        {props.result}
+        <CopyIcon ml={3} className="copy-icon" />
+      </Box>
+    );
+  } else {
+    return (
+      <Box
+        width="100%"
+        cursor="pointer"
+        color="tokens.comment"
+        sx={{ ...monoSx, ...hoverSx }}
+        onClick={onCopyClicked}
+      >
+        <Box minWidth={RESULT_MIN_WIDTH} float="right" textAlign="left">
+          {props.result}
+          <CopyIcon ml={3} className="copy-icon" />
+        </Box>
+        <Text as="span" mr={2} float="right">
+          ⤷
+        </Text>
+      </Box>
+    );
+  }
 };

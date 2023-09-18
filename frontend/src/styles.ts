@@ -14,10 +14,13 @@ export const theme = extendTheme({
     },
   },
   colors: {
+    navbar: {
+      bg: "var(--chakra-colors-gray-100)",
+    },
     row: {
       bg: {
-        normal: "tokens.background",
-        hover: "var(--chakra-colors-gray-300)",
+        bg: "var(--chakra-colors-gray-50)",
+        hover: "var(--chakra-colors-gray-200)",
         selected: "var(--chakra-colors-gray-300)",
       },
     },
@@ -43,4 +46,5 @@ export const monoSx = {
   fontFamily: "mono",
   fontWeight: "400",
   fontSize: "lg",
+  lineHeight: "normal",
 };

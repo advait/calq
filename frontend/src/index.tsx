@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Button,
+  Box,
   ChakraProvider,
   Container,
   Heading,
@@ -15,33 +16,37 @@ import { LiaGithub, LiaShareSquare, LiaTrashAltSolid } from "react-icons/lia";
 import { theme } from "./styles";
 import * as qs from "qs";
 
-import { EDITOR_WIDTH_CH, Editor } from "./editor";
+import { EDITOR_WIDTH, Editor } from "./editor";
 
 const MainAppBar = (props) => (
-  <Container bg="row.normal" pt={2} pb={2} width={`${EDITOR_WIDTH_CH}ch`}>
-    <HStack>
-      <Button
-        aria-label="clear"
-        leftIcon={<LiaTrashAltSolid />}
-        onClick={props.onClear}
-        mr={1}
-      >
-        Clear
-      </Button>
-      <Button leftIcon={<LiaShareSquare />} onClick={props.onShare}>
-        Share
-      </Button>
-      <Spacer />
-      <Heading as="h1" size="l" mr={1}>
-        calq
-      </Heading>
-      <Link href="https://github.com/advait/calq" target="_blank">
-        <IconButton aria-label="github">
-          <LiaGithub size="2em" />
-        </IconButton>
-      </Link>
-    </HStack>
-  </Container>
+  <Box bg="navbar.bg" mb={2}>
+    <Container
+      bg="row.normal"
+      pt={2}
+      pb={2}
+      pl={0}
+      pr={0}
+      minWidth={EDITOR_WIDTH}
+    >
+      <HStack>
+        <Button leftIcon={<LiaTrashAltSolid />} onClick={props.onClear} mr={1}>
+          Clear
+        </Button>
+        <Button leftIcon={<LiaShareSquare />} onClick={props.onShare}>
+          Share
+        </Button>
+        <Spacer />
+        <Heading as="h1" size="l" mr={1}>
+          calq
+        </Heading>
+        <Link href="https://github.com/advait/calq" target="_blank">
+          <IconButton aria-label="github">
+            <LiaGithub size="2em" />
+          </IconButton>
+        </Link>
+      </HStack>
+    </Container>
+  </Box>
 );
 
 const initialValue = (() => {

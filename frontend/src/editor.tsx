@@ -33,7 +33,7 @@ export const EDITOR_WIDTH = "600px";
  */
 export const Editor: React.FC<{
   value: string;
-  setValue: (string) => void;
+  setValue: (value: string) => void;
 }> = (props) => {
   const lines = props.value.split("\n");
   const [focus, setFocus] = useState<{
@@ -65,7 +65,7 @@ export const Editor: React.FC<{
       newLines.splice(i, 1, ...inserted);
       setLines(newLines);
       // When the editor value changes, each textarea will manage its own focus/selectionStart
-      setFocus({ line: null, offset: null });
+      // setFocus({ line: null, offset: null });
     };
 
   const onEnter =
@@ -287,19 +287,19 @@ const HighlightTokenView: React.FC<HighlightToken & { key: string }> = ({
     comment: "tokens.comment",
     number: "tokens.aqua",
     name: "tokens.blue",
-    punctuation: "tokens.purple",
     reserved: "tokens.orange",
-    infix: "tokens.foreground",
+    punctuation: "tokens.comment",
+    infix: "tokens.comment",
     unknown: "tokens.red",
   };
 
   return (
     <Text
-      color={colorMap[highlightType] || "red.100"}
+      color={colorMap[highlightType] || colorMap.unknown}
       as="span"
       lineHeight={1}
-      margin={0}
-      padding={0}
+      m={0}
+      p={0}
       top={0}
       left={0}
     >
@@ -316,7 +316,6 @@ const ResultView: React.FC<{
   if (!props.result) {
     return;
   }
-  const condensed = props.variant == "condensed";
   const hoverSx = {
     "& .copy-icon": {
       opacity: 0,
@@ -338,7 +337,7 @@ const ResultView: React.FC<{
     });
   };
 
-  if (condensed) {
+  if (props.variant == "condensed") {
     return (
       <Box
         width={RESULT_MIN_WIDTH}

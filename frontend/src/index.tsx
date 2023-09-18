@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { LiaGithub, LiaShareSquare, LiaTrashAltSolid } from "react-icons/lia";
 import { theme } from "./styles";
-import * as qs from "qs";
+import qs from "qs";
 
 import { EDITOR_WIDTH, Editor } from "./editor";
 
@@ -51,7 +51,7 @@ const MainAppBar = (props) => (
 
 const initialValue = (() => {
   const hash = (window.location.hash || "#").replace(/^#/, "");
-  const urlValue = qs.parse(hash).value;
+  const urlValue = qs.parse(hash).value as string;
   history.pushState(null, "", "#"); // Clear hash so users don't re-share stale URL
   if (urlValue) {
     return { value: urlValue, fromHash: true };
@@ -104,5 +104,8 @@ const MainApp = () => {
 };
 
 const container = document.getElementById("react-container");
+if (!container) {
+  throw new Error("Unable to find root element");
+}
 const root = createRoot(container);
 root.render(<MainApp />);

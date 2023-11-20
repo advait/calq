@@ -35,7 +35,7 @@
     "@originjs/vite-plugin-commonjs": "^1.0.3",
     "@typescript-eslint/eslint-plugin": "^6.7.0",
     "@typescript-eslint/parser": "^6.7.0",
-    "@vitejs/plugin-react": "^4.0.4",
+    "@vitejs/plugin-react": "^4.2.0",
     "eslint": "^8.49.0",
     "gh-pages": "^6.0.0",
     "prettier": "^3.0.3",

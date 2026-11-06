@@ -1,5 +1,4 @@
 allowBuilds:
-  '@parcel/watcher': false
   cpu-features: false
   purescript: true
   ssh2: false

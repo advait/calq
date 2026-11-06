@@ -13,3 +13,5 @@
 /prod/
 /*.log
 /.spec-results
+/test-results/
+/playwright-report/

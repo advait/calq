@@ -1,190 +1,146 @@
-import React, { useState, useRef, useEffect } from "react";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import Snackbar from "@mui/material/Snackbar";
+import { Fragment, useLayoutEffect, useMemo, useRef } from "react";
+import type { MouseEvent, RefObject } from "react";
 import * as EditorPS from "@purs-compiled/Editor";
+import type { Answer, Highlight } from "@purs-compiled/Editor";
+import { Icon } from "./icons";
 
 type EditorProps = {
+  inputRef: RefObject<HTMLTextAreaElement | null>;
   value: string;
-  setValue: (string) => void;
+  initialCaret: "start" | "end";
+  onChange: (value: string) => void;
+  onCopyResult: (result: string) => void;
+  onShowError: (error: string) => void;
 };
 
 /**
- * Code editor that works by providing a transprent textarea and overlaying a <pre> which cointains
- * highlighted tokens.
- * Inspired by react-simple-code-editor and simplified for this use case.
+ * One native textarea holds the whole document, so selection, undo, paste, IME and mobile
+ * keyboards behave like any text field. Its text is transparent; a grid behind it renders each
+ * line highlighted, with that line's result in a second column. The textarea spans every row of
+ * the first column, so both wrap at the same width and stay aligned line for line.
  */
 export default function Editor(props: EditorProps) {
+  const textArea = props.inputRef;
   const lines = props.value.split("\n");
-  const [showCopySnack, setShowCopySnack] = useState(false);
-  const [focus, setFocus] = useState<{
-    line: number | null;
-    offset: number | null;
-  }>({
-    line: lines.length - 1,
-    offset: lines[lines.length - 1].length,
-  });
+  const { highlights, results } = useMemo(
+    () => EditorPS.run(props.value.split("\n")),
+    [props.value],
+  );
 
-  const setLines = (l: string[]) => {
-    const newValue = l.join("\n");
-    localStorage.setItem("value", newValue);
-    props.setValue(newValue);
-  };
-
-  const { highlights, results } = EditorPS.run(lines);
-
-  const onValueChanged = (e, i) => {
-    const newLines = [...lines];
-    const inserted = e.target.value.split("\n");
-    newLines.splice(i, 1, ...inserted);
-    setLines(newLines);
-    // When the editor value changes, each textarea will manage its own focus/selectionStart
-    setFocus({ line: null, offset: null });
-  };
-
-  const onEnter = (i: number, selectionStart: number, selectionEnd: number) => {
-    const first = lines[i].substring(0, selectionStart);
-    const second = lines[i].substring(selectionEnd);
-    const newLines = [...lines];
-    newLines.splice(i, 1, first, second);
-    setLines(newLines);
-    setFocus({ line: i + 1, offset: 0 });
-  };
-
-  // When the backspace key is pressed at the cursor is at the beginning of the line
-  const onBackspace0 = (i: number) => {
-    if (i == 0) {
+  // Resume a saved document at its end; read a shared one from the top.
+  const grid = useRef<HTMLDivElement>(null);
+  const initialCaret = useRef(props.initialCaret);
+  useLayoutEffect(() => {
+    const el = textArea.current;
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (initialCaret.current === "start") {
+      el.setSelectionRange(0, 0);
       return;
     }
-    const newLines = [...lines];
-    newLines[i - 1] = newLines[i - 1] + newLines[i];
-    newLines.splice(i, 1);
-    setLines(newLines);
-    setFocus({ line: i - 1, offset: lines[i - 1].length });
-  };
+    el.setSelectionRange(el.value.length, el.value.length);
+    grid.current?.lastElementChild?.scrollIntoView({ block: "nearest" });
+  }, [textArea]);
 
-  // When either the up or down key is pressed
-  const onUpDown = (i: number, up: boolean, selectionStart: number) => {
-    let targetLine = up ? i - 1 : i + 1;
-    targetLine = Math.max(Math.min(targetLine, lines.length - 1), 0);
-    const offset = Math.min(lines[targetLine].length, selectionStart);
-    setFocus({
-      line: targetLine,
-      offset,
-    });
+  // Clicking the empty space below the document puts the caret at its end.
+  const onMouseDown = (e: MouseEvent) => {
+    const el = textArea.current;
+    if (!el || e.target !== e.currentTarget) return;
+    e.preventDefault();
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
   };
 
   return (
-    <div>
-      {lines.map((line, i) => (
-        <Line
-          i={i}
-          key={`key${i}`}
-          onValueChanged={onValueChanged}
-          line={line}
-          result={results[i]}
-          focusOffset={focus.line === i ? focus.offset : null}
-          highlight={highlights[i]}
-          showHint={lines.length === 1 && lines[0].length === 0}
-          onEnter={onEnter}
-          onBackspace0={onBackspace0}
-          onUpDown={onUpDown}
-          showCopySnack={() => setShowCopySnack(true)}
+    <div className="editor" onMouseDown={onMouseDown}>
+      <div className="editor-grid" ref={grid}>
+        <textarea
+          ref={textArea}
+          className="editor-input"
+          style={{ gridRow: `1 / span ${lines.length}` }}
+          value={props.value}
+          onChange={(e) => props.onChange(e.target.value)}
+          placeholder="Type a calculation…"
+          aria-label="calq document"
+          spellCheck={false}
+          autoCapitalize="off"
+          autoComplete="off"
+          autoCorrect="off"
+          rows={1}
         />
-      ))}
-      <Snackbar
-        open={showCopySnack}
-        onClose={() => setShowCopySnack(false)}
-        autoHideDuration={4000}
-        message="Copied to clipboard"
-      />
+        {lines.map((line, i) => (
+          <Fragment key={i}>
+            <div
+              className="editor-line"
+              style={{ gridRow: i + 1 }}
+              aria-hidden="true"
+            >
+              <Highlighted line={line} highlights={highlights[i]} />
+            </div>
+            <Result
+              row={i + 1}
+              answer={results[i]}
+              onCopy={props.onCopyResult}
+              onShowError={props.onShowError}
+            />
+          </Fragment>
+        ))}
+      </div>
     </div>
   );
 }
 
-const KEY_ENTER = 13;
-const KEY_BACKSPACE = 8;
-const KEY_UP = 38;
-const KEY_DOWN = 40;
-
-function Line(props) {
-  const textAreaRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    const textArea = textAreaRef.current;
-    if (!textArea || props.focusOffset === null) {
-      return;
-    }
-    textArea.setSelectionRange(props.focusOffset, props.focusOffset);
-    textArea.focus();
-  }, [props.focusOffset]);
-
-  const onKeyDown = (e) => {
-    const selectionStart = textAreaRef.current?.selectionStart || 0;
-    const selectionEnd = textAreaRef.current?.selectionEnd || 0;
-    if (e.keyCode == KEY_ENTER) {
-      props.onEnter(props.i, selectionStart, selectionEnd);
-      e.preventDefault();
-    } else if (
-      e.keyCode == KEY_BACKSPACE &&
-      selectionStart == 0 &&
-      selectionEnd == 0
-    ) {
-      props.onBackspace0(props.i);
-      e.preventDefault();
-    } else if (e.keyCode == KEY_UP || e.keyCode == KEY_DOWN) {
-      props.onUpDown(props.i, e.keyCode == KEY_UP, selectionStart);
-      e.preventDefault();
-    }
-  };
-
-  const result = (() => {
-    if (props.result.empty) {
-      return;
-    } else if (props.result.success !== undefined) {
-      return (
-        <div
-          className="result success"
-          onClick={() => {
-            navigator.clipboard.writeText(props.result.success);
-            props.showCopySnack();
-          }}
-        >
-          <span className="return-icon">⤷</span>
-          {props.result.success}
-          <ContentCopyIcon className="copy-icon" />
-        </div>
-      );
-    } else if (props.result.error !== undefined) {
-      return (
-        <div className="result error">
-          <span className="return-icon">⤷</span>
-          {props.result.error}
-        </div>
-      );
-    }
-  })();
-
+function Highlighted(props: { line: string; highlights: Highlight[] }) {
+  // The overlay must contain exactly the textarea's text or the two drift apart. Fall back to
+  // plain text if the tokenizer ever renders a token differently from its source.
+  const rendered = props.highlights.map((h) => h.text).join("");
+  if (rendered !== props.line) return <>{props.line}</>;
   return (
-    <div className="editor-line">
-      <div className="editable">
-        <textarea
-          onChange={(e) => props.onValueChanged(e, props.i)}
-          value={props.line}
-          ref={textAreaRef}
-          onKeyDown={onKeyDown}
-        />
-        {!props.showHint ? null : (
-          <span className="start-hint highlight">Click to begin editing</span>
-        )}
-        <pre ariea-hidden="true" className="highlight">
-          {props.highlight.map((h, i) => (
-            <span key={`key${i}`} className={h.highlightType}>
-              {h.text}
-            </span>
-          ))}
-        </pre>
-      </div>
-      {result}
-    </div>
+    <>
+      {props.highlights.map((h, i) => (
+        <span key={i} className={h.highlightType}>
+          {h.text}
+        </span>
+      ))}
+    </>
   );
+}
+
+function Result(props: {
+  row: number;
+  answer: Answer;
+  onCopy: (result: string) => void;
+  onShowError: (error: string) => void;
+}) {
+  const style = { gridRow: props.row };
+  if ("success" in props.answer) {
+    const value = props.answer.success;
+    return (
+      <button
+        type="button"
+        className="result success"
+        style={style}
+        title={`${value} (click to copy)`}
+        onClick={() => props.onCopy(value)}
+      >
+        <Icon name="copy" />
+        <span className="result-text">{value}</span>
+      </button>
+    );
+  }
+  if ("error" in props.answer) {
+    const error = props.answer.error;
+    return (
+      <button
+        type="button"
+        className="result error"
+        style={style}
+        title={error}
+        onClick={() => props.onShowError(error)}
+      >
+        <span className="result-text">{error}</span>
+      </button>
+    );
+  }
+  return <div className="result" style={style} />;
 }

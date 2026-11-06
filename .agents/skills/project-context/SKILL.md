@@ -17,15 +17,17 @@ documents people already have.
 - `engine/`: PureScript interpreter (tokenizer, parser, evaluator). Package manifest
   `engine/spago.yaml`; workspace and registry package set in `spago.yaml`. Compiles to `output/`.
 - `engine/src/Definitions.calq`: every unit, alias and constant, written in calq itself.
-- `frontend/`: React + MUI app, bundled by Vite (`vite.config.js`), which imports the compiled
-  engine through the `@purs-compiled` alias.
+- `frontend/`: React app with no UI library, bundled by Vite (`vite.config.js`), which imports
+  the compiled engine through the `@purs-compiled` alias.
+- `e2e/`: Playwright tests of the built app (`playwright.config.ts`).
 - `design.md`: the engine's concepts (axes, units, aliases).
 
 ## One-way
 
-- **Share links.** `#value=<qs-encoded document>` (`frontend/src/index.jsx`, `initialValue` and
-  `onShare`). Links are already shared in the wild; old links must keep loading.
-- **Saved documents.** `localStorage` key `"value"` (`index.jsx`, `frontend/src/editor.tsx`).
+- **Share links.** `#value=<URL-encoded document>` (`frontend/src/share.ts`). Links made by older
+  versions (qs-encoded) are already shared in the wild and must keep loading; `e2e/` tests both
+  formats.
+- **Saved documents.** `localStorage` key `"value"` (`frontend/src/main.tsx`).
   Changing the key or format loses every returning user's document.
 - **Meaning of existing documents.** Renaming or removing a unit or alias in `Definitions.calq`, or
   changing syntax, breaks documents and links that use it. Additions are safe.

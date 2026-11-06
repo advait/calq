@@ -19,7 +19,13 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
       - run: pnpm run ci
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
       - uses: actions/upload-artifact@v7
         if: github.event_name == 'push'
         with:

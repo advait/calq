@@ -24,9 +24,15 @@ runs (`.github/workflows/node.js.yml`). Run `pnpm lint` first to apply formattin
 
 ## Frontend (`frontend/`)
 
-- ESLint flat config (`eslint.config.mjs`: `@eslint/js` + `typescript-eslint` recommended) and
-  Prettier defaults; `pnpm lint:ts` fixes, `lint:ts:ci` checks.
-- There is no `tsc` step; TypeScript is used only through the ESLint parser.
+- React with no UI library: the app bar, buttons, toast and icons are ours (`main.tsx`,
+  `toast.tsx`, `icons.tsx`), styled in plain CSS (`styles.css`, native nesting and custom
+  properties). Add a dependency only when writing it ourselves is clearly worse.
+- The editor is one transparent `<textarea>` over a highlighted overlay (`editor.tsx`). Both
+  must lay text out identically: any font, spacing or wrapping property set on one goes on the
+  shared `.editor-input, .editor-line` rule in `styles.css`.
+- `pnpm typecheck` runs `tsc` in strict mode over `frontend/src` and `e2e/`. The engine's JS
+  shape is declared in `frontend/src/purs.d.ts`; keep it in step with `engine/src/Editor.purs`.
   `typescript-eslint` caps `typescript` below 6.1, so `typescript` stays on `~6.0` until it
   supports newer.
-- MUI components and `@mui/icons-material` for UI; styles in `frontend/src/styles.scss`.
+- ESLint flat config (`eslint.config.mjs`: `@eslint/js` + `typescript-eslint` recommended) and
+  Prettier defaults; `pnpm lint:ts` fixes, `lint:ts:ci` checks.

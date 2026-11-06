@@ -7,10 +7,12 @@ description: How a calq change lands on master and reaches calq.app, and who may
 
 Status: implemented
 
-- **Trunk.** Changes land on `master` (no branch protection). Agents work on a branch, then push
-  to `master` directly, but only after the maintainer explicitly says to push or land it in the
-  current conversation. Without that go-ahead, commit on a branch, push nothing, and hand back the
-  SHA with the evidence. A go-ahead covers the change it was given for, not later ones.
+- **Trunk.** Changes land on `master` (no branch protection). Asking for a change is asking for
+  it to ship: don't ask again before merging. Work on a branch, open a pull request so CI runs,
+  and once CI is green and any required review below is done, fast-forward `master` to the PR
+  head (`git push origin <sha>:master`), then do the after-landing checks. Stop and ask only when
+  the maintainer said to hold, CI fails in a way you can't fix, or review finds a `fix` you can't
+  resolve.
 - **Review.** The contract default holds: a diff touching share links, saved documents or the
   meaning of existing units (see the **project-context** skill) is reviewed by a model that did
   not write it before landing.

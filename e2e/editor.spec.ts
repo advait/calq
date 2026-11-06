@@ -165,6 +165,27 @@ test.describe("layout", () => {
   });
 });
 
+test.describe("first visit", () => {
+  test("a new visitor sees the example, and every line of it works", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(editor(page)).toHaveValue(/^# Welcome to calq/);
+    await expect(page.locator(".result.error")).toHaveCount(0);
+    const answers = await page
+      .locator(".result.success")
+      .evaluateAll((els) => els.map((e) => e.textContent));
+    expect(answers).toContain("709.76 ml");
+    expect(answers.length).toBeGreaterThanOrEqual(12);
+  });
+
+  test("a saved document wins over the example", async ({ page }) => {
+    await open(page, "1 + 1");
+    await page.reload();
+    await expect(editor(page)).toHaveValue("1 + 1");
+  });
+});
+
 test.describe("editing", () => {
   test("typing on load appends to the document and evaluates live", async ({
     page,

@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/hero.png" alt="calq evaluating a road-trip budget with miles, mph, gallons and USD" width="760" />
+  <img src="docs/hero.png" alt="calq evaluating unit conversions, a road-trip budget, a salary, and physics and data calculations" width="760" />
 </p>
 
 ## What it does

@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Editor from "./editor";
+import example from "./example.calq?raw";
 import { Icon } from "./icons";
 import { SettingsButton, enginePlaces, useSettings } from "./settings";
 import { readSharedValue, shareUrl } from "./share";
@@ -8,7 +9,8 @@ import * as storage from "./storage";
 import { useToast } from "./toast";
 
 const STORAGE_KEY = "value";
-const DEFAULT_VALUE = "1 m/s * 3 years\n2 * 2";
+// What a first-time visitor sees: a tour of what calq can do.
+const DEFAULT_VALUE = example.trimEnd();
 
 /**
  * Reads a shared document from the URL hash, then drops the hash so a reload or a re-share

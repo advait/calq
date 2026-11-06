@@ -1,0 +1,19 @@
+# Welcome to calq, a notepad that does math with units.
+# Edit anything. Click an answer to copy it.
+
+1 m/s * 3 years in km
+5 ft + 3 inches in cm
+3 cups in ml
+
+# Name things, then build on them
+distance = 420 miles
+speed = 65 mph
+distance / speed in hours
+fuel = distance / (32 miles/gallon)
+fuel * 4.29 USD/gallon
+
+# Money, science and data
+40 hr * 52 * 25 USD/hr
+π * (6 inch)^2 in cm^2
+c * 1 ms in km
+1 GB / (100 Mbit/s) in s

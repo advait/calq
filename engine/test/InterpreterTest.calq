@@ -54,3 +54,12 @@ assertEqual(1 kilobyte in B, 1000 B)
 assertEqual(3 cups in ml, 709.76 ml)
 assertEqual(1 cup in tablespoons, 16 tbsp)
 assertEqual(2 cups in pints, 1 pint)
+
+# An alias for an expression acts as a unit with that definition
+assertEqual(1 cup in cups, 1 cups)
+assertEqual(2 cups in pints, 1 pint)
+alias dozen = 12
+assertEqual(reduce(3 dozen), 36)
+alias halfft = ft/2
+assertEqual(4 halfft in ft, 2 ft)
+assertEqual(1 kilohalfft in ft, 500 ft)

@@ -118,7 +118,7 @@ tokenExprParser =
       _ <- tk $ ReservedTk AliasTk
       name <- nameParser
       _ <- tk $ PunctuationTk Equals
-      target <- nameParser
+      target <- tokenExprParser
       pure $ BindAlias { name, target }
 
     bindRootUnitParser :: Parser TokenStream Expr

@@ -116,9 +116,16 @@ eval (BindUnit { name, expr }) = do
   _ <- createBinding name $ UnitBinding value
   pure $ singletonUnit name
 
-eval (BindAlias { name, target }) = do
+eval (BindAlias { name, target: Name target }) = do
   _ <- createBinding name $ NamedAlias target
   pure $ singletonUnit target
+
+-- | An alias for an expression (e.g. "alias cups = pint/2") has no single name to show, so it
+-- | acts as a unit with that definition: 3 cups shows as 3 cups and converts like a cup.
+eval (BindAlias { name, target }) = do
+  value <- eval target
+  _ <- createBinding name $ UnitBinding value
+  pure $ singletonUnit name
 
 eval (BindVariable { name, expr }) = do
   value <- eval expr

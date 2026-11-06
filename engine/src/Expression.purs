@@ -20,7 +20,7 @@ data Expr
   | BindPrefix { name :: String, expr :: Expr }
   | BindRootUnit { name :: String }
   | BindUnit { name :: String, expr :: Expr }
-  | BindAlias { name :: String, target :: String }
+  | BindAlias { name :: String, target :: Expr }
   | BindVariable { name :: String, expr :: Expr }
 
 derive instance eqExpr :: Eq Expr
@@ -38,7 +38,7 @@ instance showExpr :: Show Expr where
   show (BindPrefix { name, expr }) = "prefix " <> name <> " = " <> show expr
   show (BindRootUnit { name }) = "unit " <> name
   show (BindUnit { name, expr }) = "unit " <> name <> " = " <> show expr
-  show (BindAlias { name, target }) = "alias " <> name <> " = " <> target
+  show (BindAlias { name, target }) = "alias " <> name <> " = " <> show target
   show (BindVariable { name, expr }) = name <> " = " <> show expr
 
 -- | Wraps the expression in parentheses if it's a compound expression.

@@ -342,7 +342,7 @@ unit  pint       = quart/2
 alias pints      = pint
 
 unit  cup        = pint/2
-alias cups       = cup
+alias cups       = pint/2
 
 unit  floz       = cup/8
 

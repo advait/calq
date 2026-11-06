@@ -38,7 +38,7 @@ export function resolve(specifier, context, nextResolve) {
 /**
  * Custom loader that reads .calq files as raw string modules.
  */
-export async function load(url, context, nextLoad) {
+export function load(url, context, nextLoad) {
   if (url.endsWith(".calq")) {
     const content = readFileSync(fileURLToPath(url), "utf-8");
     return {

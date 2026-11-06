@@ -1,0 +1,33 @@
+package:
+  name: calq
+  dependencies:
+    - arrays
+    - control
+    - effect
+    - either
+    - exceptions
+    - foldable-traversable
+    - group
+    - integers
+    - lists
+    - maybe
+    - newtype
+    - ordered-collections
+    - parsing
+    - partial
+    - prelude
+    - quickcheck
+    - strings
+    - transformers
+    - tuples
+    - unicode
+    - unsafe-coerce
+  test:
+    main: Test.Main
+    dependencies:
+      - aff
+      - formatters
+      - spec
+      - spec-discovery
+      - spec-node
+      - spec-quickcheck

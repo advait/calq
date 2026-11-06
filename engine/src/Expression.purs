@@ -3,6 +3,7 @@ module Expression where
 import Prelude
 import Data.Array (unsafeIndex)
 import Data.Array as Array
+import Data.Ord (abs)
 import Decimal (Decimal, toDecimalPlaces, fromInt, pointZeroOne)
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
@@ -59,8 +60,8 @@ scalar1 = { scalar: one, units: mempty }
 
 prettyBigNum :: Decimal -> String
 prettyBigNum n
-  | n - (toDecimalPlaces 0 n) < pointZeroOne = show $ toDecimalPlaces 0 n
-  | n - (toDecimalPlaces 1 n) < pointZeroOne = show $ toDecimalPlaces 1 n
+  | abs (n - toDecimalPlaces 0 n) < pointZeroOne = show $ toDecimalPlaces 0 n
+  | abs (n - toDecimalPlaces 1 n) < pointZeroOne = show $ toDecimalPlaces 1 n
   | otherwise = show $ toDecimalPlaces 2 n
 
 prettyValue :: Value -> String

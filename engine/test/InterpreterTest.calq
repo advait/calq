@@ -49,3 +49,8 @@ assertEqual(1 KiB in B, 1024 B)
 assertEqual(1 GiB in MiB, 1024 MiB)
 assertEqual(1 GB / (100 Mbit/s) in s, 80 s)
 assertEqual(1 kilobyte in B, 1000 B)
+
+# Volume
+assertEqual(3 cups in ml, 709.76 ml)
+assertEqual(1 cup in tablespoons, 16 tbsp)
+assertEqual(2 cups in pints, 1 pint)

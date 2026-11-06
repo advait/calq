@@ -10,10 +10,10 @@ module TokenParser
 import Prelude
 import Control.Alt ((<|>))
 import Data.Array as Array
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), optional)
 import Data.String (Pattern(..), Replacement(..), replaceAll)
 import Data.Tuple (Tuple(..))
-import Decimal (parseDecimalUnsafe)
 import Decimal as Decimal
 import Expression (Expr(..))
 import Parsing (ParseState(..), Parser, ParserT, Position, fail, getParserT, stateParserT)
@@ -97,7 +97,9 @@ tokenExprParser =
           n <- show <$> matchToken num'
           let
             withoutCommas = replaceAll (Pattern ",") (Replacement "") n
-          pure $ Scalar $ parseDecimalUnsafe withoutCommas
+          case Decimal.parseDecimal withoutCommas of
+            Left _ -> fail $ "Invalid number " <> show n
+            Right d -> pure $ Scalar d
 
     bindParser :: Parser TokenStream Expr
     bindParser = do

@@ -126,6 +126,8 @@ tokenStreamParser = parser
       prefix <- optional $ string "-"
       preDecimal <- many $ satisfyCodePoint isDecDigit
       postDecimal <- optional $ string "." <> (some $ satisfyCodePoint isDecDigit)
+      -- | A bare exponent like "e3" is a name, not a number.
+      when (length preDecimal + length postDecimal == 0) $ fail "Missing mantissa"
       e <- do
         e' <- CodePoints.singleton <$> oneOfChar [ 'e', 'E' ]
         sign <- optional (CodePoints.singleton <$> oneOfChar [ '+', '-' ])

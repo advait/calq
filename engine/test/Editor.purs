@@ -5,7 +5,10 @@ import Data.Array as Array
 import Data.Foldable (foldMap)
 import Data.String as String
 import Editor (Answer(..), evaluate)
+import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Test.QuickCheck ((===))
+import Test.QuickCheck.Gen (Gen, arrayOf, elements)
+import Data.Array.NonEmpty as NonEmpty
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 import Test.Spec.QuickCheck (quickCheck)
@@ -22,6 +25,11 @@ spec = do
       answers [ "bogus + 1" ] `shouldEqual` [ ErrorResult "Undefined variable \"bogus\"" ]
     it "treats Unicode spaces as whitespace" do
       answers [ "1" <> "\xa0" <> "ft + 1" <> "\x3000" <> "ft in inches" ] `shouldEqual` [ SuccessResult "24 inch" ]
+    it "treats a bare exponent as a name" do
+      answers [ "e3", "1 e3" ]
+        `shouldEqual` [ ErrorResult "Undefined variable \"e3\"", ErrorResult "Undefined variable \"e3\"" ]
+    it "never throws on calculator-like input" do
+      quickCheck $ calqLike <#> \line -> Array.length (answers [ line ]) === 1
     it "keeps evaluating after a failed line" do
       answers [ "x = 2", "bogus", "x * 3" ]
         `shouldEqual` [ SuccessResult "2", ErrorResult "Undefined variable \"bogus\"", SuccessResult "6" ]
@@ -38,3 +46,9 @@ spec = do
         lines =
           [ "1 m/s * 3 years in km", "  x\t= 2e-3 μm  # note", "π * (2 ft)^2", "1,000.50 USD/hr", "IN In in" ]
       Array.fold (foldMap _.text <$> (evaluate lines).highlights) `shouldEqual` Array.fold lines
+
+-- | Strings drawn from calq's own alphabet, which reach far more of the parser than random text.
+calqLike :: Gen String
+calqLike = fromCharArray <$> arrayOf (elements chars)
+  where
+  chars = NonEmpty.cons' '0' $ toCharArray "123456789eE.,+-*/^() \xa0\tinftmxπ#=_"

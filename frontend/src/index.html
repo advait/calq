@@ -6,6 +6,18 @@
     <meta name="theme-color" content="#25282b" />
     <meta name="description" content="calq is a calculator for humans." />
     <title>calq</title>
+    <script>
+      // Set the saved theme before first paint (settings.tsx keeps it in sync after).
+      try {
+        const theme =
+          JSON.parse(localStorage.getItem("settings") || "{}").theme || "dark";
+        const light =
+          theme === "light" ||
+          (theme === "system" &&
+            matchMedia("(prefers-color-scheme: light)").matches);
+        document.documentElement.dataset.theme = light ? "light" : "dark";
+      } catch {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

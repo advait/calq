@@ -27,6 +27,9 @@ runs (`.github/workflows/node.js.yml`). Run `pnpm lint` first to apply formattin
 - React with no UI library: the app bar, buttons, toast and icons are ours (`main.tsx`,
   `toast.tsx`, `icons.tsx`), styled in plain CSS (`styles.css`, native nesting and custom
   properties). Add a dependency only when writing it ourselves is clearly worse.
+- Colours are custom properties on `:root`, overridden for `[data-theme="light"]`; never
+  hard-code a colour. The inline script in `index.html` sets `data-theme` before first paint and
+  must match `applyTheme` in `settings.tsx`.
 - The editor is one transparent `<textarea>` over a highlighted overlay (`editor.tsx`). Both
   must lay text out identically: any font, spacing or wrapping property set on one goes on the
   shared `.editor-input, .editor-line` rule in `styles.css`.

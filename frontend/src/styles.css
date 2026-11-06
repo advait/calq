@@ -15,6 +15,9 @@
   --green: #b5bd68;
   --aqua: #8abeb7;
   --blue: #81a2be;
+  --toast-background: #e8eae9;
+  --toast-text: #1d1f21;
+  --shadow: rgb(0 0 0 / 0.4);
 
   --editor-font-size: 18px;
   --editor-line-height: 32px;
@@ -22,6 +25,25 @@
   --gutter: 24px;
 
   color-scheme: dark;
+}
+
+/* Tomorrow, with its yellow, green and aqua darkened to read on white. */
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --surface: #f6f6f6;
+  --border: #e0e0e0;
+  --text: #4d4d4c;
+  --comment: #8e908c;
+  --red: #c82829;
+  --yellow: #a35f00;
+  --green: #5f7a00;
+  --aqua: #2f7f85;
+  --blue: #4271ae;
+  --toast-background: #2b2d2f;
+  --toast-text: #f0f0f0;
+  --shadow: rgb(0 0 0 / 0.18);
+
+  color-scheme: light;
 }
 
 @media (max-width: 600px) {
@@ -106,7 +128,7 @@ body {
   transition: background-color 120ms;
 
   &:hover {
-    background-color: rgb(197 200 198 / 0.08);
+    background-color: color-mix(in srgb, var(--text) 8%, transparent);
   }
 
   &:focus-visible {
@@ -115,7 +137,7 @@ body {
   }
 
   &.outlined {
-    border-color: rgb(197 200 198 / 0.5);
+    border-color: color-mix(in srgb, var(--text) 50%, transparent);
   }
 }
 
@@ -191,7 +213,7 @@ body {
 
   &::selection {
     color: transparent;
-    background-color: rgb(129 162 190 / 0.35);
+    background-color: color-mix(in srgb, var(--blue) 35%, transparent);
   }
 
   &::placeholder {
@@ -282,6 +304,105 @@ body {
   }
 }
 
+/* Settings */
+
+.settings {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(300px, calc(100vw - 2 * var(--gutter)));
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: var(--surface);
+  color: var(--text);
+  font: 14px/1.4 var(--font-ui);
+  box-shadow: 0 10px 30px var(--shadow);
+
+  h2 {
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--comment);
+  }
+}
+
+.setting {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+
+  & + & {
+    margin-top: 16px;
+  }
+
+  legend,
+  .setting-label {
+    padding: 0;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+}
+
+.select {
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--text);
+  font: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+}
+
+.setting-example {
+  font-family: var(--font-mono);
+  color: var(--comment);
+}
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+
+  label {
+    display: grid;
+    place-items: center;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  label:has(input:checked) {
+    background-color: var(--surface);
+    box-shadow: 0 0 0 1px var(--border);
+    font-weight: 500;
+  }
+
+  label:has(input:focus-visible) {
+    outline: 2px solid var(--blue);
+    outline-offset: -2px;
+  }
+}
+
 /* Toast */
 
 .toast-region {
@@ -295,10 +416,10 @@ body {
 .toast {
   padding: 14px 16px;
   border-radius: 6px;
-  background-color: #e8eae9;
-  color: #1d1f21;
+  background-color: var(--toast-background);
+  color: var(--toast-text);
   font: 14px/1.4 var(--font-ui);
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.4);
+  box-shadow: 0 6px 20px var(--shadow);
   animation: toast-in 180ms ease-out;
 }
 

@@ -68,34 +68,44 @@ test.afterEach(() => {
 });
 
 test.describe("layout", () => {
-  test("overlay draws exactly the textarea's text, pixel for pixel", async ({
-    page,
-  }) => {
-    await open(page, TRICKY);
-    await editor(page).evaluate((el) => (el as HTMLTextAreaElement).blur());
-    await page.addStyleTag({
-      content:
-        ".editor-input { caret-color: transparent !important; } .result { visibility: hidden; }",
+  for (const theme of ["dark", "light"]) {
+    test(`overlay draws exactly the textarea's text, pixel for pixel (${theme})`, async ({
+      page,
+    }) => {
+      await page.goto("/");
+      await page.evaluate(
+        (t) => localStorage.setItem("settings", JSON.stringify({ theme: t })),
+        theme,
+      );
+      await open(page, TRICKY);
+      await editor(page).evaluate((el) => (el as HTMLTextAreaElement).blur());
+      await page.addStyleTag({
+        content:
+          ".editor-input { caret-color: transparent !important; } .result { visibility: hidden; }",
+      });
+      const box = (await editor(page).boundingBox())!;
+      const shot = async (css: string) => {
+        const style = await page.addStyleTag({ content: css });
+        const png = await page.screenshot({
+          clip: box,
+          animations: "disabled",
+        });
+        await style.evaluate((s) => (s as HTMLElement).remove());
+        return png;
+      };
+      const overlay = await shot(
+        ".editor-line, .editor-line * { color: #f0f !important; } .editor-input { color: transparent !important; }",
+      );
+      const textarea = await shot(
+        ".editor-line, .editor-line * { color: transparent !important; } .editor-input { color: #f0f !important; }",
+      );
+      const blank = await shot(
+        ".editor-line, .editor-line *, .editor-input { color: transparent !important; }",
+      );
+      expect(overlay.equals(blank)).toBe(false);
+      expect(overlay.equals(textarea)).toBe(true);
     });
-    const box = (await editor(page).boundingBox())!;
-    const shot = async (css: string) => {
-      const style = await page.addStyleTag({ content: css });
-      const png = await page.screenshot({ clip: box, animations: "disabled" });
-      await style.evaluate((s) => (s as HTMLElement).remove());
-      return png;
-    };
-    const overlay = await shot(
-      ".editor-line, .editor-line * { color: #fff !important; } .editor-input { color: transparent !important; }",
-    );
-    const textarea = await shot(
-      ".editor-line, .editor-line * { color: transparent !important; } .editor-input { color: #fff !important; }",
-    );
-    const blank = await shot(
-      ".editor-line, .editor-line *, .editor-input { color: transparent !important; }",
-    );
-    expect(overlay.equals(blank)).toBe(false);
-    expect(overlay.equals(textarea)).toBe(true);
-  });
+  }
 
   test("textarea never scrolls inside itself", async ({ page }) => {
     await open(page, TRICKY);
@@ -375,5 +385,118 @@ test.describe("sharing", () => {
     await expect(page.getByRole("status")).toHaveText(
       'Undefined variable "bogus"',
     );
+  });
+});
+
+test.describe("settings", () => {
+  const settingsButton = (page: Page) =>
+    page.getByRole("button", { name: "Settings" });
+  const panel = (page: Page) => page.getByRole("dialog", { name: "Settings" });
+
+  test("the popover opens below the app bar and closes on Escape", async ({
+    page,
+  }) => {
+    await open(page, "1 + 1");
+    await expect(panel(page)).toBeHidden();
+    await settingsButton(page).click();
+    await expect(panel(page)).toBeVisible();
+    const box = (await panel(page).boundingBox())!;
+    const bar = (await page.locator(".app-bar").boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(box.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+    await page.keyboard.press("Escape");
+    await expect(panel(page)).toBeHidden();
+  });
+
+  test("clicking outside closes the popover", async ({ page }) => {
+    await open(page, "1 + 1");
+    await settingsButton(page).click();
+    await expect(panel(page)).toBeVisible();
+    const box = (await page.locator(".editor-grid").boundingBox())!;
+    await page.mouse.click(box.x + 5, box.y + 5);
+    await expect(panel(page)).toBeHidden();
+  });
+
+  test("decimal places round every answer and are remembered", async ({
+    page,
+  }) => {
+    await open(page, "1/7\n420 miles / (65 mph) in hours\n1 ft in m");
+    expect(await results(page)).toEqual(["0.14", "6.46 hr", "0.3 m"]);
+    await settingsButton(page).click();
+    await panel(page).getByLabel("Decimal places").selectOption("4");
+    await expect(panel(page)).toContainText("1/7 = 0.1429");
+    expect(await results(page)).toEqual(["0.1429", "6.4615 hr", "0.3048 m"]);
+    await panel(page).getByLabel("Decimal places").selectOption("0");
+    expect(await results(page)).toEqual(["0", "6 hr", "0 m"]);
+    await panel(page).getByLabel("Decimal places").selectOption("all");
+    expect((await results(page))[0]).toBe("0.14285714285714285714");
+    await page.reload();
+    expect((await results(page))[0]).toBe("0.14285714285714285714");
+  });
+
+  test("decimal places don't change what Share copies", async ({ page }) => {
+    await recordClipboard(page);
+    await open(page, "1/7");
+    await settingsButton(page).click();
+    await panel(page).getByLabel("Decimal places").selectOption("6");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Share" }).click();
+    const [link] = await copied(page);
+    expect(link).toMatch(/#value=1%2F7$/);
+  });
+
+  test("the light theme applies at once and survives a reload", async ({
+    page,
+  }) => {
+    await open(page, "1 + 1");
+    const background = () =>
+      page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    expect(await background()).toBe("rgb(29, 31, 33)");
+    await settingsButton(page).click();
+    await panel(page).getByText("Light", { exact: true }).click();
+    expect(await background()).toBe("rgb(255, 255, 255)");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+      "content",
+      "#f6f6f6",
+    );
+    // Hold back the app's script: the theme must already be set before it runs.
+    await page.route("**/assets/*.js", () => {});
+    await page.reload({ waitUntil: "commit" });
+    await page.waitForFunction(() => document.body !== null);
+    expect(
+      await page.evaluate(
+        () => document.getElementById("root")!.childElementCount,
+      ),
+    ).toBe(0);
+    expect(
+      await page.evaluate(() => document.documentElement.dataset.theme),
+    ).toBe("light");
+    expect(await background()).toBe("rgb(255, 255, 255)");
+  });
+
+  test("the system theme follows the OS", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "light" });
+    await open(page, "1 + 1");
+    await settingsButton(page).click();
+    await panel(page).getByText("System", { exact: true }).click();
+    const theme = () =>
+      page.evaluate(() => document.documentElement.dataset.theme);
+    expect(await theme()).toBe("light");
+    await page.emulateMedia({ colorScheme: "dark" });
+    await expect.poll(theme).toBe("dark");
+  });
+
+  test("settings are reachable by keyboard", async ({ page }) => {
+    await open(page, "1/7");
+    await settingsButton(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(panel(page)).toBeVisible();
+    await page.keyboard.press("Tab");
+    await expect(panel(page).getByLabel("Decimal places")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(panel(page)).toBeHidden();
+    await expect(settingsButton(page)).toBeFocused();
   });
 });

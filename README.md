@@ -25,6 +25,8 @@ calq is a notepad that evaluates every line as you type, with each answer beside
 - **Conversions.** End any expression with `in <unit>`.
 - **Comments.** Lines starting with `#` are notes.
 - **Copy.** Click an answer to copy it.
+- **Settings.** The gear sets how many decimal places answers show (0 to 10, or every digit)
+  and the theme (light, dark, or follow the system).
 - **Share.** The Share button copies a link with your whole document in the URL. Your work is also
   saved in the browser between visits.
 

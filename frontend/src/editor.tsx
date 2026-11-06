@@ -8,6 +8,8 @@ type EditorProps = {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   value: string;
   caret: { to: "start" | "end" };
+  /** The most decimal places an answer shows. */
+  places: number;
   onChange: (value: string) => void;
   onCopyResult: (result: string) => void;
   onShowError: (error: string) => void;
@@ -23,8 +25,8 @@ export default function Editor(props: EditorProps) {
   const textArea = props.inputRef;
   const lines = props.value.split("\n");
   const { highlights, results } = useMemo(
-    () => runEngine(2, props.value.split("\n")),
-    [props.value],
+    () => runEngine(props.places, props.value.split("\n")),
+    [props.value, props.places],
   );
 
   // Places the caret when a document is opened: a saved one resumes at its end, a shared one is

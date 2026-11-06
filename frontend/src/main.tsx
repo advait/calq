@@ -2,6 +2,7 @@ import { StrictMode, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Editor from "./editor";
 import { Icon } from "./icons";
+import { SettingsButton, enginePlaces, useSettings } from "./settings";
 import { readSharedValue, shareUrl } from "./share";
 import { useToast } from "./toast";
 
@@ -37,6 +38,7 @@ function App() {
   const [caret, setCaret] = useState<{ to: "start" | "end" }>({
     to: initialShared === null ? "end" : "start",
   });
+  const [settings, updateSettings] = useSettings();
   const input = useRef<HTMLTextAreaElement>(null);
   const toast = useToast();
   const { show } = toast;
@@ -99,6 +101,7 @@ function App() {
           </button>
           <span className="spacer" />
           <h1 className="title">calq</h1>
+          <SettingsButton settings={settings} onChange={updateSettings} />
           <a
             className="icon-button"
             href="https://github.com/advait/calq"
@@ -115,6 +118,7 @@ function App() {
           inputRef={input}
           value={value}
           caret={caret}
+          places={enginePlaces(settings)}
           onChange={onChange}
           onCopyResult={(r) => copy(r, `Copied ${r}`)}
           onShowError={show}

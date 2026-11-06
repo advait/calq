@@ -4,6 +4,7 @@
   "repository": "git@github.com:advait/calq.git",
   "author": "Advait Shinde <advait.shinde@gmail.com>",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "dev:spago": "spago build --watch",

@@ -28,7 +28,9 @@ documents people already have.
   versions (qs-encoded) are already shared in the wild and must keep loading; `e2e/` tests both
   formats.
 - **Saved documents.** `localStorage` key `"value"` (`frontend/src/main.tsx`).
-  Changing the key or format loses every returning user's document.
+  Changing the key or format loses every returning user's document. Settings live under
+  `"settings"` as JSON `{ places, theme }` (`frontend/src/settings.tsx`); unknown or missing
+  fields fall back to the defaults, so new fields are safe but renames are not.
 - **Meaning of existing documents.** Renaming or removing a unit or alias in `Definitions.calq`, or
   changing syntax, breaks documents and links that use it. Additions are safe.
 - **calq.app.** Every push to `master` that passes CI deploys (see the **release** skill).

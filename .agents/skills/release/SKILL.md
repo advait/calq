@@ -14,11 +14,11 @@ Status: implemented
 - **Review.** The contract default holds: a diff touching share links, saved documents or the
   meaning of existing units (see the **project-context** skill) is reviewed by a model that did
   not write it before landing.
-- **CI and deploy.** `.github/workflows/node.js.yml` runs `yarn ci` on every push and pull
+- **CI and deploy.** `.github/workflows/node.js.yml` runs `pnpm run ci` on every push and pull
   request. On a push to `master` that passes, the `deploy` job publishes `dist/` to the
   `gh-pages` branch (with `CNAME` `calq.app`), which GitHub Pages serves. Landing on `master` is
   deploying.
 - **After landing.** Watch the run (`gh run list --branch master --limit 1`, then
   `gh run watch <id>`), confirm `deploy` succeeded, then check calq.app per the **verify** skill.
-- **Manual deploy.** `yarn gh-pages` builds locally and pushes `dist/` to `gh-pages`. Use it only
+- **Manual deploy.** `pnpm gh-pages` builds locally and pushes `dist/` to `gh-pages`. Use it only
   when the maintainer asks.

@@ -6,7 +6,7 @@
         {
             "label": "test",
             "type": "shell",
-            "command": "yarn test",
+            "command": "pnpm test",
             "problemMatcher": [],
             "group": {
                 "kind": "test",

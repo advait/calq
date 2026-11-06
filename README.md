@@ -33,21 +33,21 @@ Every unit calq knows is defined in calq's own language, in
 
 calq is a PureScript engine (`engine/`) behind a React frontend (`frontend/`), built with Vite.
 
-Requirements: Node (version in [`.node-version`](.node-version)) and Yarn via Corepack
-(`corepack enable`).
+Requirements: Node (version in [`.node-version`](.node-version)) and pnpm (version in
+`packageManager` in [`package.json`](package.json)).
 
 ```sh
-yarn install
-yarn build:spago   # compile the engine to output/
-yarn dev           # http://localhost:8080
+pnpm install
+pnpm build:spago   # compile the engine to output/
+pnpm dev           # http://localhost:8080
 ```
 
-| Command     | What it does                                                  |
-| ----------- | ------------------------------------------------------------- |
-| `yarn dev`  | Vite dev server on port 8080 (run `yarn dev:spago` alongside) |
-| `yarn test` | Build the engine and run its spec and QuickCheck suites       |
-| `yarn lint` | Format PureScript (purs-tidy) and TS/JS (ESLint, Prettier)    |
-| `yarn ci`   | Build, test and lint check, the same command CI runs          |
+| Command       | What it does                                                  |
+| ------------- | ------------------------------------------------------------- |
+| `pnpm dev`    | Vite dev server on port 8080 (run `pnpm dev:spago` alongside) |
+| `pnpm test`   | Build the engine and run its spec and QuickCheck suites       |
+| `pnpm lint`   | Format PureScript (purs-tidy) and TS/JS (ESLint, Prettier)    |
+| `pnpm run ci` | Build, test and lint check, the same command CI runs          |
 
 Pushes to `master` that pass CI deploy to [calq.app](https://calq.app) via GitHub Pages.
 

@@ -33,13 +33,15 @@ documents people already have.
 
 ## Tasks
 
-Yarn 1 via Corepack (`packageManager` in `package.json`); Node from `.node-version`, which mise
-picks up. Canonical scripts in `package.json`:
+pnpm, version pinned by `packageManager` in `package.json` (Node 26 ships no corepack; use
+`mise x pnpm@<version> -- pnpm` or a global pnpm). Node from `.node-version`, which mise picks up.
+`pnpm-workspace.yaml` allows only `purescript`'s install script (it downloads `purs`). Canonical
+scripts in `package.json`; use `pnpm run ci`, since `pnpm ci` is pnpm's own clean install:
 
-- `yarn install`, then `yarn build:spago` once per checkout (creates `output/`; the frontend
+- `pnpm install`, then `pnpm build:spago` once per checkout (creates `output/`; the frontend
   imports from it).
-- `yarn dev` (Vite on :8080; pair with `yarn dev:spago` for engine rebuilds), `yarn test`,
-  `yarn lint` (fixes), `yarn ci` (the check CI runs), `yarn build` (to `dist/`).
+- `pnpm dev` (Vite on :8080; pair with `pnpm dev:spago` for engine rebuilds), `pnpm test`,
+  `pnpm lint` (fixes), `pnpm run ci` (the check CI runs), `pnpm build` (to `dist/`).
 
 ## Follow-ups
 

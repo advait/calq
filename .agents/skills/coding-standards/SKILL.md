@@ -7,12 +7,12 @@ description: calq's language rules and the check every diff passes before commit
 
 Status: implemented
 
-The check before every commit is `yarn ci` (build, test, then `lint:ci`), the same command CI
-runs (`.github/workflows/node.js.yml`). Run `yarn lint` first to apply formatting.
+The check before every commit is `pnpm run ci` (build, test, then `lint:ci`), the same command CI
+runs (`.github/workflows/node.js.yml`). Run `pnpm lint` first to apply formatting.
 
 ## PureScript (`engine/`)
 
-- Format with purs-tidy (`.tidyrc.json`); `yarn lint:purs` fixes, `lint:purs:ci` checks.
+- Format with purs-tidy (`.tidyrc.json`); `pnpm lint:purs` fixes, `lint:purs:ci` checks.
 - Dependencies come from the registry package set pinned in `spago.yaml`; add packages to
   `engine/spago.yaml` (`dependencies`, or `test.dependencies` for test-only).
 - JS FFI files sit next to their module (`Decimal.js`, `Utils.js`) and are ES modules.
@@ -25,7 +25,7 @@ runs (`.github/workflows/node.js.yml`). Run `yarn lint` first to apply formattin
 ## Frontend (`frontend/`)
 
 - ESLint flat config (`eslint.config.mjs`: `@eslint/js` + `typescript-eslint` recommended) and
-  Prettier defaults; `yarn lint:ts` fixes, `lint:ts:ci` checks.
+  Prettier defaults; `pnpm lint:ts` fixes, `lint:ts:ci` checks.
 - There is no `tsc` step; TypeScript is used only through the ESLint parser.
   `typescript-eslint` caps `typescript` below 6.1, so `typescript` stays on `~6.0` until it
   supports newer.

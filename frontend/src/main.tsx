@@ -20,12 +20,23 @@ function takeSharedValue(): string | null {
   return shared;
 }
 
+/**
+ * The editor treats only "\n" as a line break, but a browser textarea also breaks lines at "\r"
+ * and other vertical whitespace, which would push its text out of line with the overlay.
+ */
+const normalize = (value: string) =>
+  value.replace(/\r\n?|[\v\f\u0085\u2028\u2029]/g, "\n");
+
 const initialShared = takeSharedValue();
-const initialValue =
-  initialShared ?? localStorage.getItem(STORAGE_KEY) ?? DEFAULT_VALUE;
+const initialValue = normalize(
+  initialShared ?? localStorage.getItem(STORAGE_KEY) ?? DEFAULT_VALUE,
+);
 
 function App() {
   const [value, setValue] = useState(initialValue);
+  const [caret, setCaret] = useState<{ to: "start" | "end" }>({
+    to: initialShared === null ? "end" : "start",
+  });
   const input = useRef<HTMLTextAreaElement>(null);
   const toast = useToast();
   const { show } = toast;
@@ -36,14 +47,16 @@ function App() {
     const onHashChange = () => {
       const shared = takeSharedValue();
       if (shared === null) return;
-      setValue(shared);
+      setValue(normalize(shared));
+      setCaret({ to: "start" });
       show("Loaded from link");
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, [show]);
 
-  const onChange = (v: string) => {
+  const onChange = (raw: string) => {
+    const v = normalize(raw);
     localStorage.setItem(STORAGE_KEY, v);
     setValue(v);
   };
@@ -101,7 +114,7 @@ function App() {
         <Editor
           inputRef={input}
           value={value}
-          initialCaret={initialShared === null ? "end" : "start"}
+          caret={caret}
           onChange={onChange}
           onCopyResult={(r) => copy(r, `Copied ${r}`)}
           onShowError={show}

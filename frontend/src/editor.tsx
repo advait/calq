@@ -7,7 +7,7 @@ import { Icon } from "./icons";
 type EditorProps = {
   inputRef: RefObject<HTMLTextAreaElement | null>;
   value: string;
-  initialCaret: "start" | "end";
+  caret: { to: "start" | "end" };
   onChange: (value: string) => void;
   onCopyResult: (result: string) => void;
   onShowError: (error: string) => void;
@@ -23,24 +23,31 @@ export default function Editor(props: EditorProps) {
   const textArea = props.inputRef;
   const lines = props.value.split("\n");
   const { highlights, results } = useMemo(
-    () => EditorPS.run(props.value.split("\n")),
+    () => runEngine(props.value.split("\n")),
     [props.value],
   );
 
-  // Resume a saved document at its end; read a shared one from the top.
+  // Places the caret when a document is opened: a saved one resumes at its end, a shared one is
+  // read from the top. Each new `caret` object is a new request.
   const grid = useRef<HTMLDivElement>(null);
-  const initialCaret = useRef(props.initialCaret);
   useLayoutEffect(() => {
     const el = textArea.current;
     if (!el) return;
     el.focus({ preventScroll: true });
-    if (initialCaret.current === "start") {
+    if (props.caret.to === "start") {
       el.setSelectionRange(0, 0);
+      window.scrollTo(0, 0);
       return;
     }
     el.setSelectionRange(el.value.length, el.value.length);
-    grid.current?.lastElementChild?.scrollIntoView({ block: "nearest" });
-  }, [textArea]);
+    // The caret ends the last line, which may wrap onto many rows.
+    const rendered = grid.current?.querySelectorAll(".editor-line");
+    const last = rendered?.[rendered.length - 1];
+    const bottom = last?.getBoundingClientRect().bottom ?? 0;
+    if (bottom > window.innerHeight) {
+      window.scrollBy(0, bottom - window.innerHeight + 16);
+    }
+  }, [textArea, props.caret]);
 
   // Clicking the empty space below the document puts the caret at its end.
   const onMouseDown = (e: MouseEvent) => {
@@ -88,6 +95,22 @@ export default function Editor(props: EditorProps) {
       </div>
     </div>
   );
+}
+
+/**
+ * Runs the engine. If it ever throws, the document stays editable and every line says why,
+ * instead of the app going blank.
+ */
+function runEngine(lines: string[]): ReturnType<typeof EditorPS.run> {
+  try {
+    return EditorPS.run(lines);
+  } catch (e) {
+    const error = `calq crashed: ${e instanceof Error ? e.message : String(e)}`;
+    return {
+      highlights: lines.map((text) => [{ highlightType: "name", text }]),
+      results: lines.map(() => ({ error })),
+    };
+  }
 }
 
 function Highlighted(props: { line: string; highlights: Highlight[] }) {

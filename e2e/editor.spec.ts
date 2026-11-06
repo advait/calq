@@ -240,6 +240,42 @@ test.describe("editing", () => {
     await expect(editor(page)).toHaveValue(/^0 \+ 1x\n1 \+ 1/);
   });
 
+  test("a long wrapped last line still opens with the caret on screen", async ({
+    page,
+  }) => {
+    await open(page, "# " + "abc ".repeat(750));
+    const bottom = await page.evaluate(() => {
+      const lines = document.querySelectorAll(".editor-line");
+      return lines[lines.length - 1].getBoundingClientRect().bottom;
+    });
+    const viewport = page.viewportSize()!.height;
+    expect(bottom).toBeGreaterThan(0);
+    expect(bottom).toBeLessThanOrEqual(viewport);
+  });
+
+  test("line breaks other than \\n are normalized", async ({ page }) => {
+    await open(page, "1\r2\r\n3 + 3\u2028x\vy");
+    await expect(editor(page)).toHaveValue("1\n2\n3 + 3\nx\ny");
+    await expect(page.locator(".editor-line")).toHaveCount(5);
+    const { scrollHeight, clientHeight } = await editor(page).evaluate(
+      (el) => ({
+        scrollHeight: el.scrollHeight,
+        clientHeight: el.clientHeight,
+      }),
+    );
+    expect(scrollHeight).toBe(clientHeight);
+  });
+
+  test("an input that once crashed the engine shows an error", async ({
+    page,
+  }) => {
+    await page.goto("/#value=1%C2%A0e3");
+    await expect(editor(page)).toHaveValue("1\u00a0e3");
+    await expect(page.locator(".result.error")).toHaveText(
+      'Undefined variable "e3"',
+    );
+  });
+
   test("the document survives a reload", async ({ page }) => {
     await open(page, "1 + 1");
     await page.keyboard.type(" + 1");
@@ -306,6 +342,23 @@ test.describe("sharing", () => {
     await expect(editor(page)).toHaveValue("1 ft in inches");
     await expect(page.getByRole("status")).toHaveText("Loaded from link");
     expect(new URL(page.url()).hash).toBe("");
+  });
+
+  test("a link pasted into an open tab is read from the top", async ({
+    page,
+  }) => {
+    const long = (tag: string) =>
+      Array.from({ length: 80 }, (_, i) => `${tag}${i} = ${i}`).join("\n");
+    await open(page, long("a"));
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await page.evaluate(
+      (doc) => (window.location.hash = `value=${encodeURIComponent(doc)}`),
+      long("b"),
+    );
+    await expect(editor(page)).toHaveValue(long("b"));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+    await page.keyboard.type("x");
+    await expect(editor(page)).toHaveValue(/^xb0 = 0/);
   });
 
   test("clicking a result copies it", async ({ page }) => {

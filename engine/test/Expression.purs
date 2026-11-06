@@ -34,4 +34,6 @@ spec = do
       at 4 "3.14159265" `shouldEqual` "3.1416"
       at 4 "2.00001" `shouldEqual` "2"
       at 10 "0.1" `shouldEqual` "0.1"
-      at (-1) "1.6" `shouldEqual` "2"
+      at (-1) "1.6" `shouldEqual` "1.6"
+      at (-1) "1e-21" `shouldEqual` "1e-21"
+      at (-1) "1.4285714285714285714e-11" `shouldEqual` "1.4285714285714285714e-11"

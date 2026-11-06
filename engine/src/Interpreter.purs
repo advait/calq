@@ -176,14 +176,15 @@ eval (Fn2 { name: "/", p1, p2 }) = do
 
 eval (Fn2 { name: "in", p1, p2 }) = do
   e1 <- eval p1
+  reduced <- reduce e1
   { scalar: desiredScalar, units: desiredUnits } <- eval p2
   when (desiredScalar /= one) (lift $ Left $ "Cannot cast to a numeric unit")
-  cast e1 desiredUnits
+  castShowing e1 reduced desiredUnits
 
 eval (Fn2 { name: "+", p1, p2 }) = do
   e1@{ scalar: _, units: desiredUnits } <- eval p1
-  e2 <- eval p2
   { scalar: s1, units: u1 } <- reduce e1
+  e2 <- eval p2
   { scalar: s2, units: u2 } <- reduce e2
   if u1 /= u2 then
     lift $ Left $ ("Cannot add " <> describeUnits e1.units <> " and " <> describeUnits e2.units)
@@ -226,9 +227,13 @@ describeUnits units
 
 -- | Casts the given value to the given unit.
 cast :: Value -> Exponentials ConcreteUnit -> Interpreter Value
-cast value desiredUnits = do
+cast value = castShowing value value
+
+-- | Casts `value` to the given unit, naming it as `shown` (e.g. before reduction) if it fails.
+castShowing :: Value -> Value -> Exponentials ConcreteUnit -> Interpreter Value
+castShowing shown value desiredUnits = do
   { scalar, units } <- reduce $ value `dividedBy` { scalar: one, units: desiredUnits }
-  when (units /= mempty) (lift $ Left $ "Cannot convert " <> prettyValue value <> " to " <> describeUnits desiredUnits)
+  when (units /= mempty) (lift $ Left $ "Cannot convert " <> prettyValue shown <> " to " <> describeUnits desiredUnits)
   pure { scalar, units: desiredUnits }
 
 -- | Reduces a value such that units are all CannonicalUnits.

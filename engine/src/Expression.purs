@@ -60,18 +60,20 @@ scalar1 = { scalar: one, units: mempty }
 
 -- | Shows a number with at most `places` decimal places, using fewer when they add nothing: a
 -- | number within 10^-places of a shorter rounding is shown that way, so at 2 places 3.996 is 4
--- | and 6.496 is 6.5.
+-- | and 6.496 is 6.5. Negative `places` shows every significant digit calq has.
 prettyNumber :: Int -> Decimal -> String
-prettyNumber places n = show $ go 0
-  where
-  maxPlaces = max 0 places
+prettyNumber places n
+  | places < 0 = show n
+  | otherwise = show $ go 0
+      where
+      maxPlaces = places
 
-  tolerance = parseDecimalUnsafe ("1e-" <> show maxPlaces)
+      tolerance = parseDecimalUnsafe ("1e-" <> show maxPlaces)
 
-  go k
-    | k >= maxPlaces = toDecimalPlaces maxPlaces n
-    | abs (n - toDecimalPlaces k n) < tolerance = toDecimalPlaces k n
-    | otherwise = go (k + 1)
+      go k
+        | k >= maxPlaces = toDecimalPlaces maxPlaces n
+        | abs (n - toDecimalPlaces k n) < tolerance = toDecimalPlaces k n
+        | otherwise = go (k + 1)
 
 -- | Shows a value with at most `places` decimal places.
 prettyValueWith :: Int -> Value -> String

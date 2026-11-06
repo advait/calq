@@ -35,7 +35,7 @@ instance showAnswer :: Show Answer where
   show (ErrorResult s) = "(ErrorResult " <> show s <> ")"
 
 -- | Entry point for the frontend: each line's highlights and its answer as a JS object, with
--- | answers shown to at most `places` decimal places.
+-- | answers shown to at most `places` decimal places (negative for every digit).
 run :: Int -> Array String -> EditorResult
 run places inputLines =
   let

@@ -34,6 +34,8 @@ spec = do
           , ErrorResult "Cannot convert 3 ft to s"
           , ErrorResult "Cannot convert 3 to ft"
           ]
+    it "keeps conversion results from before the error-message change" do
+      answers [ "0.011 year in day" ] `shouldEqual` [ SuccessResult "4.02 day" ]
     it "rounds answers to the requested places" do
       (evaluateWith 4 [ "pi", "1 ft in m" ]).answers
         `shouldEqual` [ SuccessResult "3.1416", SuccessResult "0.3048 m" ]

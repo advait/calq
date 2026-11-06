@@ -45,17 +45,16 @@ pnpm build:spago   # compile the engine to output/
 pnpm dev           # http://localhost:8080
 ```
 
-| Command          | What it does                                                          |
-| ---------------- | --------------------------------------------------------------------- |
-| `pnpm dev`       | Vite dev server on port 8080 (run `pnpm dev:spago` alongside)         |
-| `pnpm test`      | Build the engine and run its spec and QuickCheck suites               |
-| `pnpm test:e2e`  | Browser tests against `dist/` in Chromium, Firefox, WebKit and mobile |
-| `pnpm typecheck` | Type-check the frontend and the browser tests                         |
-| `pnpm lint`      | Format PureScript (purs-tidy) and TS (ESLint, Prettier)               |
-| `pnpm run ci`    | Everything above, the same command CI runs                            |
+| Command          | What it does                                                  |
+| ---------------- | ------------------------------------------------------------- |
+| `pnpm dev`       | Vite dev server on port 8080 (run `pnpm dev:spago` alongside) |
+| `pnpm test`      | Build the engine and run its spec and QuickCheck suites       |
+| `pnpm test:e2e`  | Browser tests against `dist/` in desktop and mobile Chromium  |
+| `pnpm typecheck` | Type-check the frontend and the browser tests                 |
+| `pnpm lint`      | Format PureScript (purs-tidy) and TS (ESLint, Prettier)       |
+| `pnpm run ci`    | Everything above, the same command CI runs                    |
 
-Browsers for the e2e tests: `pnpm exec playwright install`. Where WebKit's system libraries
-are missing, narrow the run with `E2E_PROJECTS=chromium,firefox,mobile-chrome`.
+Browser for the e2e tests: `pnpm exec playwright install chromium`.
 
 Pushes to `master` that pass CI deploy to [calq.app](https://calq.app) via GitHub Pages.
 

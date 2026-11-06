@@ -11,12 +11,10 @@ Status: implemented
    then the Playwright suite (`e2e/editor.spec.ts`) against `dist/`. `pnpm test` alone prints
    `N/N tests passed`.
 2. The Playwright suite is the editor's acceptance test; extend it with every user-visible
-   change. It runs desktop Chromium, Firefox and WebKit plus mobile Chrome and Safari. Its
-   pixel test screenshots the textarea's text and the highlight overlay separately and requires
-   them to match exactly, so any layout change that desyncs the two fails it.
-   - This machine lacks WebKit's system libraries (installing them needs sudo, and there is no
-     Docker): run `E2E_PROJECTS=chromium,firefox,mobile-chrome pnpm run ci` and say that WebKit
-     and mobile Safari were left to CI.
+   change. It runs desktop Chromium and mobile Chrome (Pixel 7); the maintainer chose Chromium
+   only, so Firefox and Safari are not tested. Its pixel test screenshots the textarea's text
+   and the highlight overlay separately and requires them to match exactly, so any layout change
+   that desyncs the two fails it.
 3. Also look at what a test can't judge: `pnpm build && pnpm serve` serves `dist/` on
    <http://localhost:8080>. Load a document by setting `localStorage.value` and reloading, or by
    a share link (`/#value=<urlencoded text>`), and screenshot desktop and a 390px viewport.

@@ -2,10 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const projects = [
   { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-  { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-  { name: "webkit", use: { ...devices["Desktop Safari"] } },
   { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
-  { name: "mobile-safari", use: { ...devices["iPhone 15"] } },
 ];
 
 export default defineConfig({
@@ -20,7 +17,7 @@ export default defineConfig({
     url: "http://localhost:8080",
     reuseExistingServer: !process.env.CI,
   },
-  // E2E_PROJECTS=chromium,firefox narrows the run, e.g. where WebKit's system libraries are missing.
+  // E2E_PROJECTS=chromium narrows the run to one project.
   projects: projects.filter(
     (p) =>
       !process.env.E2E_PROJECTS ||

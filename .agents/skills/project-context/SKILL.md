@@ -12,6 +12,10 @@ calq is a public, single-maintainer side project: a notepad calculator with unit
 account or server-side data. The worst failure is a broken calq.app or a change that breaks
 documents people already have.
 
+It is a toy and art project (PureScript stays by choice). The maintainer gives standing approval
+to merge and deploy; see the **release** skill. Keep the one-way rules below, but weigh the rest
+in proportion: favour finishing and shipping over asking.
+
 ## Layout
 
 - `engine/`: PureScript interpreter (tokenizer, parser, evaluator). Package manifest

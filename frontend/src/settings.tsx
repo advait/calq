@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import * as EditorPS from "@purs-compiled/Editor";
 import { Icon } from "./icons";
+import * as storage from "./storage";
 
 export type Theme = "system" | "light" | "dark";
 
@@ -19,13 +20,13 @@ const THEMES: { value: Theme; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
-/** decimal.js keeps 20 significant digits, so 20 places shows all of them. */
+/** The engine takes negative places to mean every significant digit. */
 export const enginePlaces = (s: Settings) =>
-  s.places === "all" ? 20 : s.places;
+  s.places === "all" ? -1 : s.places;
 
 function load(): Settings {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
+    const saved = JSON.parse(storage.load(STORAGE_KEY) ?? "{}") ?? {};
     return {
       places: PLACES.includes(saved.places) ? saved.places : DEFAULTS.places,
       theme: THEMES.some((t) => t.value === saved.theme)
@@ -71,8 +72,8 @@ export function useSettings() {
 
   const update = (patch: Partial<Settings>) => {
     const next = { ...settings, ...patch };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setSettings(next);
+    storage.save(STORAGE_KEY, JSON.stringify(next));
   };
   return [settings, update] as const;
 }

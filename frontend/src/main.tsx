@@ -4,6 +4,7 @@ import Editor from "./editor";
 import { Icon } from "./icons";
 import { SettingsButton, enginePlaces, useSettings } from "./settings";
 import { readSharedValue, shareUrl } from "./share";
+import * as storage from "./storage";
 import { useToast } from "./toast";
 
 const STORAGE_KEY = "value";
@@ -30,7 +31,7 @@ const normalize = (value: string) =>
 
 const initialShared = takeSharedValue();
 const initialValue = normalize(
-  initialShared ?? localStorage.getItem(STORAGE_KEY) ?? DEFAULT_VALUE,
+  initialShared ?? storage.load(STORAGE_KEY) ?? DEFAULT_VALUE,
 );
 
 function App() {
@@ -59,8 +60,8 @@ function App() {
 
   const onChange = (raw: string) => {
     const v = normalize(raw);
-    localStorage.setItem(STORAGE_KEY, v);
     setValue(v);
+    storage.save(STORAGE_KEY, v);
   };
 
   const onClear = () => {

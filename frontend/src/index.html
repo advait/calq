@@ -16,6 +16,10 @@
           (theme === "system" &&
             matchMedia("(prefers-color-scheme: light)").matches);
         document.documentElement.dataset.theme = light ? "light" : "dark";
+        // Matches --surface for each theme in styles.css.
+        document
+          .querySelector('meta[name="theme-color"]')
+          .setAttribute("content", light ? "#f6f6f6" : "#25282b");
       } catch {}
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

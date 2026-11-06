@@ -474,6 +474,10 @@ test.describe("settings", () => {
       await page.evaluate(() => document.documentElement.dataset.theme),
     ).toBe("light");
     expect(await background()).toBe("rgb(255, 255, 255)");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+      "content",
+      "#f6f6f6",
+    );
   });
 
   test("the system theme follows the OS", async ({ page }) => {
@@ -499,4 +503,59 @@ test.describe("settings", () => {
     await expect(panel(page)).toBeHidden();
     await expect(settingsButton(page)).toBeFocused();
   });
+
+  test("All digits keeps every significant digit", async ({ page }) => {
+    await open(page, "1e-21\n1/7e10");
+    await page.getByRole("button", { name: "Settings" }).click();
+    await panel(page).getByLabel("Decimal places").selectOption("all");
+    expect(await results(page)).toEqual(["1e-21", "1.4285714285714285714e-11"]);
+  });
+
+  test("the popover fits a 320px screen", async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await open(page, "1 + 1");
+    await settingsButton(page).click();
+    const box = (await panel(page).boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(320);
+  });
+});
+
+test.describe("without storage", () => {
+  for (const [what, script] of [
+    [
+      "blocked",
+      () =>
+        Object.defineProperty(window, "localStorage", {
+          get() {
+            throw new DOMException("blocked", "SecurityError");
+          },
+        }),
+    ],
+    [
+      "full",
+      () => {
+        Storage.prototype.setItem = () => {
+          throw new DOMException("full", "QuotaExceededError");
+        };
+      },
+    ],
+  ] as const) {
+    test(`calq still works when storage is ${what}`, async ({ page }) => {
+      await page.addInitScript(script);
+      await page.goto("/");
+      await editor(page).focus();
+      await page.keyboard.press(`${mod}+End`);
+      await page.keyboard.type("\n1/7");
+      expect((await results(page)).at(-1)).toBe("0.14");
+      await page.getByRole("button", { name: "Settings" }).click();
+      const panel = page.getByRole("dialog", { name: "Settings" });
+      await panel.getByLabel("Decimal places").selectOption("4");
+      expect((await results(page)).at(-1)).toBe("0.1429");
+      await panel.getByText("Light", { exact: true }).click();
+      expect(
+        await page.evaluate(() => document.documentElement.dataset.theme),
+      ).toBe("light");
+    });
+  }
 });

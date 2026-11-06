@@ -21,7 +21,7 @@ import Decimal (canPow, toNumber, parseDecimalUnsafe)
 import Decimal as Decimal
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
-import Expression (Expr(..), Value, ConcreteUnit, singletonUnit)
+import Expression (Expr(..), Value, ConcreteUnit, prettyValue, singletonUnit)
 import Parsing (runParser)
 import TokenParser (eof, tokenExprParser)
 import Tokenizer (TokenType, removeWhitespaceAndComments)
@@ -175,17 +175,18 @@ eval (Fn2 { name: "/", p1, p2 }) = do
   mergeConvertible $ e1 `dividedBy` e2
 
 eval (Fn2 { name: "in", p1, p2 }) = do
-  e1 <- eval p1 >>= reduce
+  e1 <- eval p1
   { scalar: desiredScalar, units: desiredUnits } <- eval p2
   when (desiredScalar /= one) (lift $ Left $ "Cannot cast to a numeric unit")
   cast e1 desiredUnits
 
 eval (Fn2 { name: "+", p1, p2 }) = do
   e1@{ scalar: _, units: desiredUnits } <- eval p1
+  e2 <- eval p2
   { scalar: s1, units: u1 } <- reduce e1
-  { scalar: s2, units: u2 } <- eval p2 >>= reduce
+  { scalar: s2, units: u2 } <- reduce e2
   if u1 /= u2 then
-    lift $ Left $ ("Cannot add units " <> show u1 <> " and " <> show u2)
+    lift $ Left $ ("Cannot add " <> describeUnits e1.units <> " and " <> describeUnits e2.units)
   else
     cast { scalar: s1 + s2, units: u1 } desiredUnits
 
@@ -217,11 +218,17 @@ approxEqual { scalar: s1, units: u1 } { scalar: s2, units: u2 }
   | s1 == zero = s1 == s2
   | otherwise = (abs (s1 - s2) / s1) < (parseDecimalUnsafe "1e-5")
 
+-- | Names units the way the user wrote them, for error messages.
+describeUnits :: Exponentials ConcreteUnit -> String
+describeUnits units
+  | units == mempty = "a unitless number"
+  | otherwise = show units
+
 -- | Casts the given value to the given unit.
 cast :: Value -> Exponentials ConcreteUnit -> Interpreter Value
 cast value desiredUnits = do
   { scalar, units } <- reduce $ value `dividedBy` { scalar: one, units: desiredUnits }
-  when (units /= mempty) (lift $ Left $ "Cannot convert from " <> show value <> " to " <> show desiredUnits)
+  when (units /= mempty) (lift $ Left $ "Cannot convert " <> prettyValue value <> " to " <> describeUnits desiredUnits)
   pure { scalar, units: desiredUnits }
 
 -- | Reduces a value such that units are all CannonicalUnits.

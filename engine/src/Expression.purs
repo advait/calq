@@ -4,7 +4,7 @@ import Prelude
 import Data.Array (unsafeIndex)
 import Data.Array as Array
 import Data.Ord (abs)
-import Decimal (Decimal, toDecimalPlaces, fromInt, pointZeroOne)
+import Decimal (Decimal, toDecimalPlaces, fromInt, parseDecimalUnsafe)
 import Exponentials (Exponentials)
 import Exponentials as Exponentials
 import Partial.Unsafe (unsafePartial)
@@ -58,16 +58,30 @@ type Value = { scalar :: Decimal, units :: Exponentials ConcreteUnit }
 scalar1 :: Value
 scalar1 = { scalar: one, units: mempty }
 
-prettyBigNum :: Decimal -> String
-prettyBigNum n
-  | abs (n - toDecimalPlaces 0 n) < pointZeroOne = show $ toDecimalPlaces 0 n
-  | abs (n - toDecimalPlaces 1 n) < pointZeroOne = show $ toDecimalPlaces 1 n
-  | otherwise = show $ toDecimalPlaces 2 n
+-- | Shows a number with at most `places` decimal places, using fewer when they add nothing: a
+-- | number within 10^-places of a shorter rounding is shown that way, so at 2 places 3.996 is 4
+-- | and 6.496 is 6.5.
+prettyNumber :: Int -> Decimal -> String
+prettyNumber places n = show $ go 0
+  where
+  maxPlaces = max 0 places
 
+  tolerance = parseDecimalUnsafe ("1e-" <> show maxPlaces)
+
+  go k
+    | k >= maxPlaces = toDecimalPlaces maxPlaces n
+    | abs (n - toDecimalPlaces k n) < tolerance = toDecimalPlaces k n
+    | otherwise = go (k + 1)
+
+-- | Shows a value with at most `places` decimal places.
+prettyValueWith :: Int -> Value -> String
+prettyValueWith places { scalar, units }
+  | units == mempty = prettyNumber places scalar
+  | otherwise = prettyNumber places scalar <> " " <> show units
+
+-- | Shows a value the way calq does by default, with at most two decimal places.
 prettyValue :: Value -> String
-prettyValue { scalar, units }
-  | units == mempty = prettyBigNum scalar
-  | otherwise = prettyBigNum scalar <> " " <> show units
+prettyValue = prettyValueWith 2
 
 singletonUnit :: ConcreteUnit -> Value
 singletonUnit unit = { scalar: one, units: Exponentials.singleton unit }

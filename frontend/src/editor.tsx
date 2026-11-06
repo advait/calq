@@ -23,7 +23,7 @@ export default function Editor(props: EditorProps) {
   const textArea = props.inputRef;
   const lines = props.value.split("\n");
   const { highlights, results } = useMemo(
-    () => runEngine(props.value.split("\n")),
+    () => runEngine(2, props.value.split("\n")),
     [props.value],
   );
 
@@ -97,13 +97,15 @@ export default function Editor(props: EditorProps) {
   );
 }
 
+type EngineResult = ReturnType<ReturnType<typeof EditorPS.run>>;
+
 /**
  * Runs the engine. If it ever throws, the document stays editable and every line says why,
  * instead of the app going blank.
  */
-function runEngine(lines: string[]): ReturnType<typeof EditorPS.run> {
+function runEngine(places: number, lines: string[]): EngineResult {
   try {
-    return EditorPS.run(lines);
+    return EditorPS.run(places)(lines);
   } catch (e) {
     const error = `calq crashed: ${e instanceof Error ? e.message : String(e)}`;
     return {

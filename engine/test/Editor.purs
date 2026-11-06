@@ -4,7 +4,7 @@ import Prelude
 import Data.Array as Array
 import Data.Foldable (foldMap)
 import Data.String as String
-import Editor (Answer(..), evaluate)
+import Editor (Answer(..), evaluate, evaluateWith)
 import Data.String.CodeUnits (fromCharArray, toCharArray)
 import Test.QuickCheck ((===))
 import Test.QuickCheck.Gen (Gen, arrayOf, elements)
@@ -25,6 +25,18 @@ spec = do
       answers [ "bogus + 1" ] `shouldEqual` [ ErrorResult "Undefined variable \"bogus\"" ]
     it "treats Unicode spaces as whitespace" do
       answers [ "1" <> "\xa0" <> "ft + 1" <> "\x3000" <> "ft in inches" ] `shouldEqual` [ SuccessResult "24 inch" ]
+    it "names the units the user wrote in errors" do
+      answers [ "3 ft in m + 1", "1 + 3 ft", "3 ft + 2 s", "3 ft in s", "3 in ft" ]
+        `shouldEqual`
+          [ ErrorResult "Cannot add m and a unitless number"
+          , ErrorResult "Cannot add a unitless number and ft"
+          , ErrorResult "Cannot add ft and s"
+          , ErrorResult "Cannot convert 3 ft to s"
+          , ErrorResult "Cannot convert 3 to ft"
+          ]
+    it "rounds answers to the requested places" do
+      (evaluateWith 4 [ "pi", "1 ft in m" ]).answers
+        `shouldEqual` [ SuccessResult "3.1416", SuccessResult "0.3048 m" ]
     it "treats a bare exponent as a name" do
       answers [ "e3", "1 e3" ]
         `shouldEqual` [ ErrorResult "Undefined variable \"e3\"", ErrorResult "Undefined variable \"e3\"" ]

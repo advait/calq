@@ -2,15 +2,15 @@ module Test.Expression where
 
 import Prelude
 import Decimal (parseDecimalUnsafe)
-import Expression (prettyBigNum)
+import Expression (prettyNumber)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
 spec :: Spec Unit
 spec = do
-  describe "prettyBigNum" do
+  describe "prettyNumber" do
     let
-      pretty = prettyBigNum <<< parseDecimalUnsafe
+      pretty = prettyNumber 2 <<< parseDecimalUnsafe
     it "drops decimals near an integer" do
       pretty "4" `shouldEqual` "4"
       pretty "4.004" `shouldEqual` "4"
@@ -25,3 +25,13 @@ spec = do
     it "handles negatives" do
       pretty "-0.9144" `shouldEqual` "-0.91"
       pretty "-4.004" `shouldEqual` "-4"
+    it "honours other precisions" do
+      let
+        at places = prettyNumber places <<< parseDecimalUnsafe
+      at 0 "0.9144" `shouldEqual` "1"
+      at 0 "2.5" `shouldEqual` "3"
+      at 4 "0.9144" `shouldEqual` "0.9144"
+      at 4 "3.14159265" `shouldEqual` "3.1416"
+      at 4 "2.00001" `shouldEqual` "2"
+      at 10 "0.1" `shouldEqual` "0.1"
+      at (-1) "1.6" `shouldEqual` "2"

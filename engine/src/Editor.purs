@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Data.Maybe as Maybe
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Expression (prettyValue)
+import Expression (prettyValueWith)
 import Interpreter (Interpreter, eval, runInterpreter)
 import Parsing (parseErrorMessage, runParser)
 import TokenParser (eof, tokenExprParser)
@@ -34,11 +34,12 @@ instance showAnswer :: Show Answer where
   show (SuccessResult s) = "(SuccessResult " <> show s <> ")"
   show (ErrorResult s) = "(ErrorResult " <> show s <> ")"
 
--- | Entry point for the frontend: each line's highlights and its answer as a JS object.
-run :: Array String -> EditorResult
-run inputLines =
+-- | Entry point for the frontend: each line's highlights and its answer as a JS object, with
+-- | answers shown to at most `places` decimal places.
+run :: Int -> Array String -> EditorResult
+run places inputLines =
   let
-    { highlights, answers } = evaluate inputLines
+    { highlights, answers } = evaluateWith places inputLines
 
     answerToJS (EmptyLine) = unsafeCoerce $ { empty: true }
 
@@ -48,9 +49,13 @@ run inputLines =
   in
     { highlights, results: answerToJS <$> answers }
 
--- | Highlights and evaluates each line in order; a failing line doesn't stop the lines after it.
+-- | Highlights and evaluates each line in order, showing answers to calq's default two decimal
+-- | places; a failing line doesn't stop the lines after it.
 evaluate :: Array String -> { highlights :: Array (Array Highlight), answers :: Array Answer }
-evaluate inputLines =
+evaluate = evaluateWith 2
+
+evaluateWith :: Int -> Array String -> { highlights :: Array (Array Highlight), answers :: Array Answer }
+evaluateWith places inputLines =
   let
     tokenize input = case Tokenizer.tokenize input of
       Left err -> undefinedLog $ "This happens when tokenization fails (should never fail): " <> show err
@@ -86,7 +91,7 @@ evaluate inputLines =
           _ -> undefined_
       | otherwise = case runParser line (tokenExprParser <* eof) of
           Left err -> pure $ ErrorResult $ parseErrorMessage err
-          Right expr -> recover $ SuccessResult <<< prettyValue <$> eval expr
+          Right expr -> recover $ SuccessResult <<< prettyValueWith places <$> eval expr
 
     answers :: Interpreter (Array Answer)
     answers = traverse evalLine $ removeWhitespaceAndComments <$> tokens

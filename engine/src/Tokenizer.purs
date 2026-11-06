@@ -13,7 +13,7 @@ import Expression (infixNames)
 import Parsing (ParseError, Parser, fail, runParser)
 import Parsing as Parser
 import Parsing.Combinators (choice, try)
-import Parsing.String (satisfy, satisfyCodePoint, string)
+import Parsing.String (eof, satisfy, satisfyCodePoint, string)
 
 -- | First we parse the input into Tokens to make it easier for subsequent expression parsing.
 -- | The tokenizer allows us to more easily handle whitespace subtleties (e.g. "4 m" == "4*m").
@@ -88,7 +88,9 @@ tokenStreamParser = parser
   optional :: Parser String String -> Parser String String
   optional p = (try p) <|> pure ""
 
-  whitespace = WhitespaceTk <$> (some $ oneOfChar [ ' ', '\t' ])
+  -- | Any Unicode space other than a newline, e.g. tabs and the non-breaking space that
+  -- | Option+Space types on a Mac.
+  whitespace = WhitespaceTk <$> (some $ satisfyCodePoint (\c -> isSpace c && c /= codePointFromChar '\n'))
 
   newline = NewlineTk <$ oneOfChar [ '\n' ]
 
@@ -185,8 +187,9 @@ tokenStreamParser = parser
 
   unknown = UnknownTk <$> some (satisfyCodePoint (not <<< isSpace))
 
+  -- | Every code point belongs to some token, so the whole input is always consumed.
   parser =
-    Array.many $ oneOf
+    (_ <* eof) $ Array.many $ oneOf
       $
         [ whitespace
         , newline

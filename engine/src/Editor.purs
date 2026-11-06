@@ -27,8 +27,30 @@ data Answer
   | SuccessResult String
   | ErrorResult String
 
+derive instance eqAnswer :: Eq Answer
+
+instance showAnswer :: Show Answer where
+  show EmptyLine = "EmptyLine"
+  show (SuccessResult s) = "(SuccessResult " <> show s <> ")"
+  show (ErrorResult s) = "(ErrorResult " <> show s <> ")"
+
+-- | Entry point for the frontend: each line's highlights and its answer as a JS object.
 run :: Array String -> EditorResult
 run inputLines =
+  let
+    { highlights, answers } = evaluate inputLines
+
+    answerToJS (EmptyLine) = unsafeCoerce $ { empty: true }
+
+    answerToJS (SuccessResult success) = unsafeCoerce $ { success }
+
+    answerToJS (ErrorResult error) = unsafeCoerce $ { error }
+  in
+    { highlights, results: answerToJS <$> answers }
+
+-- | Highlights and evaluates each line in order; a failing line doesn't stop the lines after it.
+evaluate :: Array String -> { highlights :: Array (Array Highlight), answers :: Array Answer }
+evaluate inputLines =
   let
     tokenize input = case Tokenizer.tokenize input of
       Left err -> undefinedLog $ "This happens when tokenization fails (should never fail): " <> show err
@@ -36,12 +58,13 @@ run inputLines =
 
     tokens = tokenize <$> inputLines
 
-    -- | Rather than short circuiting when we have a failed expression, we keep executing lines.
-    alwaysSucceed :: Interpreter String -> Interpreter String
-    alwaysSucceed couldFail =
+    -- | Rather than short circuiting when a line fails, we report its error and keep executing
+    -- | the remaining lines.
+    recover :: Interpreter Answer -> Interpreter Answer
+    recover couldFail =
       StateT
         ( \s -> case runStateT couldFail s of
-            Left err -> Right (Tuple err s)
+            Left err -> Right (Tuple (ErrorResult err) s)
             success -> success
         )
 
@@ -63,23 +86,14 @@ run inputLines =
           _ -> undefined_
       | otherwise = case runParser line (tokenExprParser <* eof) of
           Left err -> pure $ ErrorResult $ parseErrorMessage err
-          Right expr -> SuccessResult <$> (alwaysSucceed $ (prettyValue) <$> eval expr)
+          Right expr -> recover $ SuccessResult <<< prettyValue <$> eval expr
 
-    -- | Convert the answer into the JS object.
-    answerToJS (EmptyLine) = unsafeCoerce $ { empty: true }
-
-    answerToJS (SuccessResult success) = unsafeCoerce $ { success }
-
-    answerToJS (ErrorResult error) = unsafeCoerce $ { error }
-
-    results :: Interpreter (Array Answer)
-    results = traverse evalLine' $ removeWhitespaceAndComments <$> tokens
-      where
-      evalLine' t = answerToJS <$> evalLine t
+    answers :: Interpreter (Array Answer)
+    answers = traverse evalLine $ removeWhitespaceAndComments <$> tokens
   in
     { highlights: highlightTokens <$> tokens
-    , results:
-        case runInterpreter results of
+    , answers:
+        case runInterpreter answers of
           Left s -> undefinedLog $ "Interpreter failed: " <> (show s)
           Right r -> r
     }

@@ -202,11 +202,36 @@ unit  USD
 alias dollar     = USD
 alias dollars    = USD
 
+# Fixed rates as of 2026-11-06 (CoinGecko spot).
 # TODO(advait): Load currency conversions dynamically
-unit  BTC        = 58,522.30 USD
-unit  ETH        = 3,949.02 USD
-unit  XMR        = 264.78 USD
-unit  DOGE       = 0.24 USD
+unit  BTC        = 75,796 USD
+unit  ETH        = 2,227.98 USD
+unit  XMR        = 617.65 USD
+unit  DOGE       = 0.0726 USD
+
+
+# Information (non-SI)
+# ---------------------------------------------------------------
+unit  bit
+alias bits       = bit
+
+unit  B          = 8 bit
+alias byte       = B
+alias bytes      = B
+
+# Binary prefixes (IEC 80000-13)
+prefix kibi = 1024
+prefix Ki   = 1024
+prefix mebi = 1024^2
+prefix Mi   = 1024^2
+prefix gibi = 1024^3
+prefix Gi   = 1024^3
+prefix tebi = 1024^4
+prefix Ti   = 1024^4
+prefix pebi = 1024^5
+prefix Pi   = 1024^5
+prefix exbi = 1024^6
+prefix Ei   = 1024^6
 
 
 # ---------------------------------------------------------------

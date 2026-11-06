@@ -41,3 +41,11 @@ assertEqual(1ft - 6inch, 0.5ft)
 
 # Functions
 #assertEqual(sqrt(2), 1.4142135623730950488)
+
+# Information
+assertEqual(1 B in bits, 8 bits)
+assertEqual(1 GB in bytes, 1e9 bytes)
+assertEqual(1 KiB in B, 1024 B)
+assertEqual(1 GiB in MiB, 1024 MiB)
+assertEqual(1 GB / (100 Mbit/s) in s, 80 s)
+assertEqual(1 kilobyte in B, 1000 B)

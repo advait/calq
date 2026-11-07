@@ -2,7 +2,8 @@
 
 <p align="center">
   <strong>A calculator for humans.</strong><br />
-  Write math the way you think about it, units included.
+  Write math the way you think about it, units included.<br />
+  Written in <a href="https://www.purescript.org">PureScript</a>.
 </p>
 
 <p align="center">
@@ -33,10 +34,31 @@ calq is a notepad that evaluates every line as you type, with each answer beside
 Every unit calq knows is defined in calq's own language, in
 [`engine/src/Definitions.calq`](engine/src/Definitions.calq).
 
+## Written in PureScript
+
+calq's engine (tokenizer, parser, interpreter and unit system) is about 1,300 lines of pure,
+strongly typed functional code in [PureScript](https://www.purescript.org), compiled to
+JavaScript and run in your browser. React only draws the page.
+
+- **Parser combinators.** The tokenizer and the expression grammar are small parsers built from
+  smaller ones with [`parsing`](https://pursuit.purescript.org/packages/purescript-parsing)
+  ([`Tokenizer.purs`](engine/src/Tokenizer.purs), [`TokenParser.purs`](engine/src/TokenParser.purs)).
+- **Units form a group.** A unit like `m/s²` is a map from base units to integer powers, with a
+  `Group` instance: multiplying values multiplies their units, and every unit has an inverse
+  ([`Exponentials.purs`](engine/src/Exponentials.purs)).
+- **Errors are values.** Evaluation runs in `StateT InterpreterState (Either String)`, so a bad
+  line becomes a message beside it, never a crash
+  ([`Interpreter.purs`](engine/src/Interpreter.purs)).
+- **Decimal arithmetic.** Numbers are [decimal.js](https://mikemcl.github.io/decimal.js/)
+  decimals behind a small FFI, so `0.1 + 0.2` is `0.3`
+  ([`Decimal.purs`](engine/src/Decimal.purs)).
+- **Property-tested.** QuickCheck checks that no calculator-like input makes the engine throw,
+  and that syntax highlighting reproduces every line exactly.
+
 ## Development
 
-calq is a PureScript engine (`engine/`) behind a small React frontend (`frontend/`) with no UI
-library, built with Vite.
+The PureScript engine lives in `engine/` (built with spago); the React frontend in `frontend/`
+has no UI library and is built with Vite.
 
 Requirements: Node (version in [`.node-version`](.node-version)) and pnpm (version in
 `packageManager` in [`package.json`](package.json)).
